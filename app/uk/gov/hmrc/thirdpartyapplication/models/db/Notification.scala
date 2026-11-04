@@ -21,20 +21,19 @@ import java.time.Instant
 import play.api.libs.json.Format
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 object NotificationStatus extends Enumeration {
   type NotificationStatus = Value
   val SENT, FAILED = Value
 
-  implicit val formatNotificationStatus: Format[NotificationStatus] = EnumJson.enumFormat(NotificationStatus)
+  implicit val formatNotificationStatus: Format[NotificationStatus] = ??? // EnumJson.enumFormat(NotificationStatus)
 }
 
 object NotificationType extends Enumeration {
   type NotificationType = Value
   val PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING = Value
 
-  implicit val formatNotificationType: Format[NotificationType] = EnumJson.enumFormat(NotificationType)
+  implicit val formatNotificationType: Format[NotificationType] = ??? // EnumJson.enumFormat(NotificationType)
 }
 
 import NotificationStatus._
