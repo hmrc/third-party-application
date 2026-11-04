@@ -68,7 +68,7 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
             FixedClock.instant,
             Actors.AppCollaborator("someuser".toLaxEmail),
             List.empty,
-            List(new LoginRedirectUri("new URI"))
+            List(LoginRedirectUri.unsafeApply("http://example.com/newURI"))
           ))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
         when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))

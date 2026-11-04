@@ -20,17 +20,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
-import cats.syntax.validated._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToSelf
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -66,14 +65,14 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-       (
+      (
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),
         ensureResponsibleIndividualDefined(app),
         isNotCurrentRi(cmd.name, cmd.email, app),
         checkSubmission(maybeSubmission)
-      ).mapN( (_, _, _, _, _, submission) => submission )
+      ).mapN((_, _, _, _, _, submission) => submission)
     }
   }
 

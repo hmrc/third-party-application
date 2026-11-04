@@ -54,7 +54,7 @@ class Scheduler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends RunningOfScheduledJobs {
 
-  override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] = {
+  override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     Seq(
       upliftVerificationExpiryJob,
       productionCredentialsRequestExpiryWarningJob,

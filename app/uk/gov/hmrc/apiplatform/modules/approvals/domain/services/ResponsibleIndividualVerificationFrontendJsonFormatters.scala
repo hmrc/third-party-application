@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
 import java.time.Instant
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,

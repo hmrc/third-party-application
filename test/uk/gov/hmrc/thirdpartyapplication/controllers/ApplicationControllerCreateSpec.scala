@@ -24,15 +24,15 @@ import org.apache.pekko.stream.testkit.NoMaterializer
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{Json, OWrites}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Environment.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{UserId, *}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, _}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, *}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -46,13 +46,13 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode.*
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, QueryServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateFixtures with TableDrivenPropertyChecks

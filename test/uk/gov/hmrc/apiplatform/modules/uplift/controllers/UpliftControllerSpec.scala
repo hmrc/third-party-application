@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData}
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class UpliftControllerSpec
     extends ControllerSpec

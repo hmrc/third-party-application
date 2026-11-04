@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers.common
 
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger

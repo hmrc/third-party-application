@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.metrix.{MetricOrchestrator, MetricRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.metrics._
+import uk.gov.hmrc.thirdpartyapplication.metrics.*
 
 class MetricsScheduler @Inject() (
     actorSystem: ActorSystem,

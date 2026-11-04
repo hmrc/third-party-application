@@ -21,15 +21,14 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationSellResellOrDistribute
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -44,9 +43,9 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
   import CommandHandler._
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-     (
+    (
       ensureStandardAccess(app)
-    ).map( _ => app )
+    ).map(_ => app)
   }
 
   private def asEvents(

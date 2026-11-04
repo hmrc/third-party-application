@@ -20,13 +20,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationTermsAndConditionsUrl
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -50,10 +49,10 @@ class RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)
     )
-    .mapN( (_, _, std, _) => std.termsAndConditionsUrl )
-    .andThen(termsAndConditionsUrl =>
-      mustBeDefined(termsAndConditionsUrl, CommandFailures.GenericFailure("Cannot remove a Terms and Conditions URL that is already empty"))
-    )
+      .mapN((_, _, std, _) => std.termsAndConditionsUrl)
+      .andThen(termsAndConditionsUrl =>
+        mustBeDefined(termsAndConditionsUrl, CommandFailures.GenericFailure("Cannot remove a Terms and Conditions URL that is already empty"))
+      )
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveSandboxApplicationTermsAndConditionsUrl, oldTermsAndConditionsUrl: String): NonEmptyList[ApplicationEvent] = {

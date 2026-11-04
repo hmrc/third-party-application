@@ -20,16 +20,15 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
-import cats.syntax.validated._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteLoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -59,7 +58,7 @@ class DeleteLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
       ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasRequestedUri
-    ).mapN( (_, _, _) => existingRedirects)
+    ).mapN((_, _, _) => existingRedirects)
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteLoginRedirectUri): NonEmptyList[ApplicationEvent] = {

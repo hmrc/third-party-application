@@ -21,10 +21,10 @@ import java.time.{Instant, LocalDate, Period}
 
 import com.typesafe.config.ConfigFactory
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
@@ -48,7 +48,7 @@ case class StoredApplication(
     deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction,
     organisationId: Option[OrganisationId] = None
   ) extends HasState with HasAccess with HasCollaborators with HasEnvironment {
-  protected val deployedTo = environment
+  override val deployedTo = environment
 
   def sellResellOrDistribute = access match {
     case Access.Standard(_, _, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute

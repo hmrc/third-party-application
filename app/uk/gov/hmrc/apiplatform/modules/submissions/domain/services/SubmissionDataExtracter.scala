@@ -17,13 +17,13 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import cats.Apply
-import cats.syntax.option._
+import cats.syntax.option.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 
 object SubmissionDataExtracter extends ApplicationLogger {
 

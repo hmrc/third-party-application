@@ -29,8 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Applicat
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.ValidationRequest
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CommonApplicationId {
 

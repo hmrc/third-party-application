@@ -20,37 +20,37 @@ import scala.collection.immutable.Set
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 
-import cats.data._
+import cats.data.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, *}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.block.{BlockApplicationCommandHandler, UnblockApplicationCommandHandler}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.organisation.LinkToOrganisationCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateLoginRedirectUrisCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.*
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -382,7 +382,7 @@ class ApplicationCommandDispatcherSpec
         otherAdminAsActor,
         "previousRIName",
         "previousRIEmail".toLaxEmail,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         requestedByName,
         requestedByEmail
@@ -417,7 +417,7 @@ class ApplicationCommandDispatcherSpec
         "previousRIEmail".toLaxEmail,
         "newRIName",
         "newRIEmail".toLaxEmail,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         code,
         requestedByName,
@@ -453,7 +453,7 @@ class ApplicationCommandDispatcherSpec
         actor,
         "someUserName",
         "someUserEmail".toLaxEmail,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         "some reason or other",
         "adminName",
@@ -489,7 +489,7 @@ class ApplicationCommandDispatcherSpec
         applicationId,
         instant,
         actor,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         "adminName",
         "anAdminEmail".toLaxEmail
@@ -890,7 +890,7 @@ class ApplicationCommandDispatcherSpec
 
     "ChangeRateLimitTier is received" should {
       val oldRateLimitTier = RateLimitTier.Bronze
-      val newRateLimitTier = RateLimitTier.GOLD
+      val newRateLimitTier = RateLimitTier.Gold
       val cmd              = ChangeRateLimitTier(gatekeeperUser, timestamp, newRateLimitTier)
       val evt              = ApplicationEvents.RateLimitChanged(
         EventId.random,

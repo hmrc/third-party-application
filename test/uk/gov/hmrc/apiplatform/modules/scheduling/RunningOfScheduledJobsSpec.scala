@@ -18,7 +18,8 @@ package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import java.time.Clock
 import java.util.concurrent.{CountDownLatch, TimeUnit}
-import scala.concurrent.duration._
+import scala.compiletime.uninitialized
+import scala.concurrent.duration.*
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.apache.pekko.actor.{Cancellable, Scheduler}
@@ -32,7 +33,7 @@ import play.api.inject.{ApplicationLifecycle, bind}
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with GuiceOneAppPerTest with FixedClock {
 
@@ -50,8 +51,8 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
 
     "schedule a configured job with the given interval and initialDuration" in new TestCase {
       object Captured {
-        var initialDelay: FiniteDuration = _
-        var interval: FiniteDuration     = _
+        var initialDelay: FiniteDuration = uninitialized
+        var interval: FiniteDuration     = uninitialized
       }
 
       val hasBeenScheduled = new CountDownLatch(1)
@@ -59,11 +60,11 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
       private val testApp = fakeApplication()
 
       new RunningOfScheduledJobs {
-        override lazy val ec: ExecutionContext                       = ExecutionContext.Implicits.global
-        override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
-        override lazy val scheduledJobs: Seq[ScheduledJob]           = Seq(testScheduledJob)
-        override lazy val application: Application                   = testApp
-        override lazy val scheduler: Scheduler                       = new StubbedScheduler {
+        override val ec: ExecutionContext                       = ExecutionContext.Implicits.global
+        override val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
+        override val scheduledJobs: Seq[ScheduledJob]           = Seq(testScheduledJob)
+        override val application: Application                   = testApp
+        override lazy val scheduler: Scheduler                  = new StubbedScheduler {
           override def scheduleWithFixedDelay(initialDelay: FiniteDuration, interval: FiniteDuration)(runnable: Runnable)(implicit executor: ExecutionContext): Cancellable = {
             Captured.initialDelay = initialDelay
             Captured.interval = interval
@@ -85,7 +86,7 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
     "set up the scheduled job to run the execute method" in new TestCase {
       private val testApp = fakeApplication()
 
-      var capturedRunnable: Runnable = _
+      var capturedRunnable: Runnable = uninitialized
       val hasBeenScheduled           = new CountDownLatch(1)
 
       override val testScheduledJob = new TestScheduledJob {
@@ -98,9 +99,9 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
       }
 
       new RunningOfScheduledJobs {
-        override lazy val ec: ExecutionContext                       = ExecutionContext.Implicits.global
-        override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
-        override lazy val scheduler: Scheduler                       = new StubbedScheduler {
+        override val ec: ExecutionContext                       = ExecutionContext.Implicits.global
+        override val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
+        override lazy val scheduler: Scheduler                  = new StubbedScheduler {
           override def scheduleWithFixedDelay(initialDelay: FiniteDuration, interval: FiniteDuration)(runnable: Runnable)(implicit executor: ExecutionContext): Cancellable = {
             capturedRunnable = runnable
             hasBeenScheduled.countDown()
@@ -111,8 +112,8 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
           }
         }
 
-        override lazy val scheduledJobs: Seq[ScheduledJob] = Seq(testScheduledJob)
-        override lazy val application: Application         = testApp
+        override val scheduledJobs: Seq[ScheduledJob] = Seq(testScheduledJob)
+        override val application: Application         = testApp
       }
 
       hasBeenScheduled.await(10, TimeUnit.SECONDS)
@@ -128,10 +129,10 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
     "cancel all of the scheduled jobs" in new TestCase {
       private val testApp = fakeApplication()
       private val runner  = new RunningOfScheduledJobs {
-        override lazy val ec: ExecutionContext                       = ExecutionContext.Implicits.global
-        override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
-        override lazy val scheduledJobs: Seq[ScheduledJob]           = Seq.empty
-        override lazy val application: Application                   = testApp
+        override val ec: ExecutionContext                       = ExecutionContext.Implicits.global
+        override val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
+        override val scheduledJobs: Seq[ScheduledJob]           = Seq.empty
+        override val application: Application                   = testApp
       }
       runner.cancellables = Seq(new StubCancellable, new StubCancellable)
 
@@ -146,10 +147,10 @@ class RunningOfScheduledJobsSpec extends AsyncHmrcSpec with Eventually with Guic
         override def name: String = "StoppableJob"
       }
       new RunningOfScheduledJobs {
-        override lazy val ec: ExecutionContext                       = ExecutionContext.Implicits.global
-        override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
-        override lazy val scheduledJobs: Seq[ScheduledJob]           = Seq(stoppableJob)
-        override lazy val application: Application                   = testApp
+        override val ec: ExecutionContext                       = ExecutionContext.Implicits.global
+        override val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
+        override val scheduledJobs: Seq[ScheduledJob]           = Seq(stoppableJob)
+        override val application: Application                   = testApp
       }
 
       stoppableJob.isRunning = Future.successful(true)

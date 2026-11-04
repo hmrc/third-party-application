@@ -20,12 +20,11 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationDescription
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -48,7 +47,7 @@ class ChangeSandboxApplicationDescriptionCommandHandler @Inject() (
       isAppActorACollaboratorOnApp(cmd.actor, app),
       cond(cmd.description.isBlank() == false, "Description cannot be blank when changing the description"),
       cond(app.description != Some(cmd.description).filterNot(_.isBlank()), "App already has that description")
-    ).mapN( (_,_,_,_,_) => app )
+    ).mapN((_, _, _, _, _) => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeSandboxApplicationDescription): NonEmptyList[ApplicationEvent] = {

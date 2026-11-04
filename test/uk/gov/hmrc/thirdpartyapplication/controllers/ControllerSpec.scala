@@ -21,8 +21,8 @@ import scala.concurrent.Future
 import play.api.mvc.Result
 
 import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
-import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 abstract class ControllerSpec extends AsyncHmrcSpec
     with LogSuppressing {

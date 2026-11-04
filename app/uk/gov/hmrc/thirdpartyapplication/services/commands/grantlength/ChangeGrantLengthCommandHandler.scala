@@ -21,16 +21,15 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
@@ -53,7 +52,7 @@ class ChangeGrantLengthCommandHandler @Inject() (
         (cmd.grantLength.period != app.refreshTokensAvailableFor),
         CommandFailures.GenericFailure(printRefreshTokensAvailableFor(app.refreshTokensAvailableFor))
       )
-    ).map( _ => () )
+    ).map(_ => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeGrantLength): NonEmptyList[ApplicationEvent] = {

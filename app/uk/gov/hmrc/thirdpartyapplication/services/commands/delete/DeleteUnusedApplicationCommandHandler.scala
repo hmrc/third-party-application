@@ -23,9 +23,8 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
@@ -60,7 +59,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this application")
 
   private def validate(app: StoredApplication, cmd: DeleteUnusedApplication): Validated[Failures, StoredApplication] = {
-    matchesAuthorisationKey(cmd).map( _ => app )
+    matchesAuthorisationKey(cmd).map(_ => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteUnusedApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {

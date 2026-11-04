@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 case class Totp(secret: String, id: String)
 

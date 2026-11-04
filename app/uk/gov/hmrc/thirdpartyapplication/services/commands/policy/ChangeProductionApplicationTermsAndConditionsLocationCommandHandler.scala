@@ -20,9 +20,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
@@ -54,7 +53,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app),
         ensureIsAUrl
-      ).mapN( (_, _, _, url) => url )
+      ).mapN((_, _, _, url) => url)
     }
 
     def asEvents(newUrl: String): NonEmptyList[ApplicationEvent] = {
@@ -83,7 +82,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app)
-      ).mapN( (_, _, _) => app )
+      ).mapN((_, _, _) => app)
     }
 
     def asEvents: NonEmptyList[ApplicationEvent] = {

@@ -20,14 +20,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationPrivacyPolicyUrl
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -54,10 +53,10 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)
     )
-    .mapN( (_, _, std, _) => std.privacyPolicyUrl )
-    .andThen(privacyPolicyUrl =>
-      mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot remove a Privacy Policy URL that is already empty"))
-    )
+      .mapN((_, _, std, _) => std.privacyPolicyUrl)
+      .andThen(privacyPolicyUrl =>
+        mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot remove a Privacy Policy URL that is already empty"))
+      )
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveSandboxApplicationPrivacyPolicyUrl, oldPrivacyPolicyUrl: String): NonEmptyList[ApplicationEvent] = {

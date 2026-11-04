@@ -20,14 +20,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddClientSecret
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
@@ -46,7 +45,7 @@ class AddClientSecretCommandHandler @Inject() (
     (
       isAdminIfInProduction(cmd.actor, app),
       appHasLessThanLimitOfSecrets(app, clientSecretLimit)
-    ).mapN( (_,_) => () )
+    ).mapN((_, _) => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: AddClientSecret): NonEmptyList[ApplicationEvent] = {

@@ -20,18 +20,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
-
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CidrBlock, IpAllowlist}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeIpAllowlist
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
@@ -61,7 +59,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
     (
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       cond(validateAllNewIps(cmd), CommandFailures.GenericFailure("Not all new allowlist IP addresses are valid CIDR blocks"))
-    ).mapN( (_, _) => () )
+    ).mapN((_, _) => ())
   }
 
   private def buildIpAllowlist(cmd: ChangeIpAllowlist) = {

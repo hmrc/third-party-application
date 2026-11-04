@@ -18,9 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.Instant
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)

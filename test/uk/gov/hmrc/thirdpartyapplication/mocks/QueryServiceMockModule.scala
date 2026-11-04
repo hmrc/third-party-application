@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Applicat
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.models.db.QueriedApplicationWithOptionalToken
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 

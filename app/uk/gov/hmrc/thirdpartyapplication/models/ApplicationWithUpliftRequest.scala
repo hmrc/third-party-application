@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.Instant
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 
 object ApplicationWithUpliftRequest {
 

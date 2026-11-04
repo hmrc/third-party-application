@@ -145,7 +145,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       emailStub.willPostEmailNotification()
 
-      import com.github.t3hnar.bcrypt._
+      import uk.gov.hmrc.apiplatform.modules.crypto.services.bcrypt.bcrypt
       val secret       = UUID.randomUUID().toString
       val hashedSecret = secret.bcrypt(4)
       val cmd          = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, instant)

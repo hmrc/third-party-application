@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{Json, OWrites}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -30,11 +30,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.Stri
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, Collaborators, GrantLength}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, DispatchRequest}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandServiceMockModule, ApplicationServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec

@@ -20,7 +20,7 @@ import play.api.mvc.{ControllerComponents, RequestHeader}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 abstract class ExtraHeadersController(cc: ControllerComponents) extends BackendController(cc) {
 

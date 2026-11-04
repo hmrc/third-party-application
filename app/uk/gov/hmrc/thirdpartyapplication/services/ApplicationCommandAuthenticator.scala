@@ -45,14 +45,14 @@ class ApplicationCommandAuthenticator @Inject() (
       cmd match {
         case gkcmd: (ApplicationCommand & GatekeeperMixin) => isStrideAuthorised(gkcmd)
         // TODO case something Process Mixin
-        case _                                              => successful(true)
+        case _                                             => successful(true)
       }
     } else {
       successful(true)
     }
   }
 
-  private def isStrideAuthorised(gkcmd: (ApplicationCommand & GatekeeperMixin) )(implicit hc: HeaderCarrier): Future[Boolean] = {
+  private def isStrideAuthorised(gkcmd: (ApplicationCommand & GatekeeperMixin))(implicit hc: HeaderCarrier): Future[Boolean] = {
     authorise() map {
       case Some(name) => checkName(gkcmd, name)
       case _          => {

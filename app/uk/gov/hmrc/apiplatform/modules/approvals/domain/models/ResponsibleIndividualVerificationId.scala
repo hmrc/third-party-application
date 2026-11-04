@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import java.{util => ju}
+import java.util as ju
 
 import play.api.libs.json.Format
 

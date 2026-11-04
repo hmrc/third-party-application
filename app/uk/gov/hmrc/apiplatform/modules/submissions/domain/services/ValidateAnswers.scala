@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import cats.syntax.either._
+import cats.syntax.either.*
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 
 object ValidateAnswers {
 

@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.applications.query.domain.services
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
-import cats.syntax.all._
+import cats.syntax.all.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorsOr
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param

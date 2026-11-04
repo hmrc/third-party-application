@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.apiplatformmicroservice.thirdpartyapplication.services
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.*
 
 trait SubscriptionFieldsData {
   val context1 = ApiContext("C1")
@@ -36,7 +36,7 @@ trait SubscriptionFieldsData {
     val cs = "abcdefghijklmnopqrstuxwxyz".charAt(c)
     val vs = "abcdefghijklmnopqrstuxwxyz".charAt(v)
     val fs = "abcdefghijklmnopqrstuxwxyz".charAt(f)
-    FieldDefinition(FieldName(s"F$cs$vs$fs"), s"field $f", "", FieldDefinitionType.STRING, s"short $f", None)
+    FieldDefinition(FieldName(s"F$cs$vs$fs"), s"field $f", "", FieldDefinitionType.PlainText, s"short $f", None)
   }
 
   def fv(c: Int, v: Int, f: Int) = FieldValue(s"$c-$v-$f")

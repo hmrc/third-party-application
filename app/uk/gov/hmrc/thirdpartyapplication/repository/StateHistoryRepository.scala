@@ -36,6 +36,8 @@ object StateHistoryRepository {
 
   object MongoFormats {
     import play.api.libs.json.{Format, Json, OFormat}
+    import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor.given
+
     implicit val formatInstant: Format[Instant]            = MongoJavatimeFormats.instantFormat
     implicit val formatStateHistory: OFormat[StateHistory] = Json.format[StateHistory]
   }

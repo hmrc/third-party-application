@@ -20,12 +20,11 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationTermsAndConditionsUrl
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -49,7 +48,7 @@ class ChangeSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
       cond(cmd.termsAndConditionsUrl.isBlank() == false, "Terms and Conditions URL cannot be empty")
-    ).mapN( (_, _, std, _, _) => std.termsAndConditionsUrl )
+    ).mapN((_, _, std, _, _) => std.termsAndConditionsUrl)
   }
 
   private def asEvents(app: StoredApplication, oldTermsAndConditionsUrl: Option[String], cmd: ChangeSandboxApplicationTermsAndConditionsUrl): NonEmptyList[ApplicationEvent] = {

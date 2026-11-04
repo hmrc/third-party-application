@@ -22,16 +22,16 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{Json, OWrites}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.approvals.services._
+import uk.gov.hmrc.apiplatform.modules.approvals.services.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtures with SubmissionsTestData {
   implicit val mat: Materializer = NoMaterializer

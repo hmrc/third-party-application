@@ -18,9 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{apply => _}
+import scala.concurrent.Future.apply as _
 
-import org.apache.http.HttpStatus._
+import org.apache.http.HttpStatus.*
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
@@ -28,10 +28,10 @@ import play.api.libs.json.{JsValue, Json, OWrites}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateFixtures {
 

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMap, FieldValue}
 
 final case class QueriedApplicationWithOptionalToken(

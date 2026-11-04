@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with StoredApplicationFixtures
     with utils.FixedClock {

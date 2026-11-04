@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInfo
 
 class JsonFormatSpec extends AnyWordSpec with Matchers {
 
-  implicit val jsonFormat: Reads[CheckInformation] = CheckInformation.format
+  import CheckInformation.given
 
   "CheckInformation parsing from REST API Json" should {
     "parse fully populated json" in {

@@ -19,10 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
-import cats.syntax.validated._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, UserId}
@@ -32,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collabor
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, *}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait CommandHandler {

@@ -26,10 +26,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.*
 import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.*
 
 @Singleton
 class SubmissionsService @Inject() (

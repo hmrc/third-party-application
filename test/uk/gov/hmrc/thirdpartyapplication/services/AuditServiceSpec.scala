@@ -31,21 +31,22 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper.asLocalDateTime
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, LoginRedirectUri}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class AuditServiceSpec
     extends AsyncHmrcSpec
@@ -199,7 +200,7 @@ class AuditServiceSpec
       )
       val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInTesting.id.value.toString,
-        "applicationName"        -> appInTesting.name.value,
+        "applicationName"        -> appInTesting.name,
         "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress.text).mkString(", ")
       )
@@ -280,7 +281,7 @@ class AuditServiceSpec
       )
       val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInGKApproval.id.value.toString,
-        "applicationName"        -> appInGKApproval.name.value,
+        "applicationName"        -> appInGKApproval.name,
         "upliftRequestedByEmail" -> appInGKApproval.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInGKApproval.admins.map(_.emailAddress.text).mkString(", ")
       )
@@ -513,7 +514,7 @@ class AuditServiceSpec
           "applicationId"           -> applicationId.value.toString,
           "applicationAdmins"       -> applicationData.admins.map(_.emailAddress).mkString(", "),
           "upliftRequestedByEmail"  -> applicationData.state.requestedByEmailAddress.getOrElse("-"),
-          "applicationName"         -> applicationData.name.value,
+          "applicationName"         -> applicationData.name,
           "requestedByEmailAddress" -> adminOne.emailAddress.text
         )
       )

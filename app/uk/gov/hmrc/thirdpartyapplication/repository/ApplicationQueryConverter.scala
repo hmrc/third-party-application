@@ -19,16 +19,16 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import scala.reflect.ClassTag
 
 import org.bson.conversions.Bson
-import org.mongodb.scala.bson._
+import org.mongodb.scala.bson.*
 import org.mongodb.scala.bson.collection.immutable.Document
-import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
+import org.mongodb.scala.model.Filters.*
 
 import uk.gov.hmrc.mongo.play.json.Codecs
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestrictionType, State}
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.*
 
 object ApplicationQueryConverter {
 

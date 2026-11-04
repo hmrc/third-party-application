@@ -20,11 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.OptionT
-import cats.data.NonEmptyList
-import cats.syntax.apply._
-import cats.syntax.validated._
+import cats.data.{NonEmptyList, OptionT, Validated}
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -33,11 +31,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.Applic
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitApplicationApprovalRequest
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -70,13 +68,13 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, String)]
       ) {
         case (submission, nameFromSubmission, nameValidationResult) => {
-           (
+          (
             ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
             cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, CommandFailures.DuplicateApplicationName(nameFromSubmission)),
             cond(nameValidationResult != ApplicationNameValidationResult.Invalid, CommandFailures.InvalidApplicationName(nameFromSubmission))
-          ).mapN( (_,_,_,_,_) => (submission, nameFromSubmission) )
+          ).mapN((_, _, _, _, _) => (submission, nameFromSubmission))
         }
       }
   }

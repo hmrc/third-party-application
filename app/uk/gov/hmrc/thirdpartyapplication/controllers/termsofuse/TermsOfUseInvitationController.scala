@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode.*
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{JsErrorResponse, JsonUtils}
 import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseSearch
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationDataService, TermsOfUseInvitationService}

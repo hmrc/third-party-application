@@ -23,9 +23,9 @@ import play.api.libs.json.{Json, OWrites}
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
 object QuestionnairesController {
   case class ErrorMessage(message: String)

@@ -20,17 +20,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
-import cats.syntax.validated._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ResendRequesterEmailVerification
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -52,14 +51,14 @@ class ResendRequesterEmailVerificationCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-       (
+      (
         isStandardNewJourneyApp(app),
         isPendingRequesterVerification(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app),
         ensureVerificationCodeDefined(app),
         checkSubmission(maybeSubmission)
-      ).mapN( (_, _, requesterEmail, requesterName, _, submission) => (requesterEmail, requesterName, submission) )
+      ).mapN((_, _, requesterEmail, requesterName, _, submission) => (requesterEmail, requesterName, submission))
     }
   }
 

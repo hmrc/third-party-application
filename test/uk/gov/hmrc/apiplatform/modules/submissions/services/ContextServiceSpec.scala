@@ -20,13 +20,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.scalatest.Inside
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ContextServiceSpec
     extends AsyncHmrcSpec

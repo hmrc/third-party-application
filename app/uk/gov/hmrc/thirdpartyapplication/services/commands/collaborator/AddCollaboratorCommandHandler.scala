@@ -20,9 +20,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.AddCollaborator
@@ -41,13 +40,13 @@ class AddCollaboratorCommandHandler @Inject() (
 
   private def validate(app: StoredApplication, cmd: AddCollaborator): Validated[Failures, Unit] = {
     cmd.actor match {
-      case actor: Actors.AppCollaborator => 
+      case actor: Actors.AppCollaborator =>
         (
           isAppActorACollaboratorOnApp(actor, app),
           collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
-        ).mapN( (_, _) => () )
+        ).mapN((_, _) => ())
       case _                             =>
-        collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app).map( _ => () )
+        collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app).map(_ => ())
     }
   }
 

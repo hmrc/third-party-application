@@ -27,11 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Applicat
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
+import uk.gov.hmrc.thirdpartyapplication.mocks.*
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 

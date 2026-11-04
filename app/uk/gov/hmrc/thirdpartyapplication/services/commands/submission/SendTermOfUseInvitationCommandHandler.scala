@@ -17,24 +17,23 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
 import java.time.Clock
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.Validated
-import cats.data.NonEmptyList
-import cats.syntax.apply._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SendTermsOfUseInvitation
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationConfig
@@ -66,12 +65,12 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
 
     getExistingRecords(app.id).map {
       case (maybeSubmission, maybeInvitation) => {
-         (
+        (
           ensureStandardAccess(app),
           isInProduction(app),
           cond(maybeSubmission.isEmpty, s"Submission already exists for application ${app.id.value}"),
           cond(maybeInvitation.isEmpty, s"Terms of Use Invitation already exists for application ${app.id.value}")
-        ).mapN( (_,_,_,_) => app )
+        ).mapN((_, _, _, _) => app)
       }
     }
   }

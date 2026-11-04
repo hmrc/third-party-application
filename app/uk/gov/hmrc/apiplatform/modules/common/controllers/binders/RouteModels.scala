@@ -24,9 +24,9 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 // Workaround for Play unable to path bind opaque types
 
 object RouteModels {
-  case class SimpleApplicationId(value: UUID)  extends AnyVal
-  case class SimpleUserId(value: UUID)         extends AnyVal
-  case class SimpleSubmissionId(value: UUID)   extends AnyVal
+  case class SimpleApplicationId(value: UUID) extends AnyVal
+  case class SimpleUserId(value: UUID)        extends AnyVal
+  case class SimpleSubmissionId(value: UUID)  extends AnyVal
 
   type SimpleClientId      = String
   type SimpleApiVersionNbr = String

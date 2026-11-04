@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import cats.data.OptionT
 
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 

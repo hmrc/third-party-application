@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.scheduling
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 

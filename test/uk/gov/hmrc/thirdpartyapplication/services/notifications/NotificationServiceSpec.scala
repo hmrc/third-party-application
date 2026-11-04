@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyList
@@ -24,18 +24,18 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, *}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -438,7 +438,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendAddedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         obfuscatedSecret,
-        applicationData.name.value,
+        applicationData.name,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }
@@ -456,7 +456,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendRemovedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         clientSecretName,
-        applicationData.name.value,
+        applicationData.name,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }

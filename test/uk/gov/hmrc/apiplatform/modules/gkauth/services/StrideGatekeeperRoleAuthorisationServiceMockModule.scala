@@ -20,7 +20,7 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import play.api.mvc.Results._
+import play.api.mvc.Results.*
 
 trait StrideGatekeeperRoleAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>

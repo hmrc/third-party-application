@@ -22,13 +22,15 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess, Json, OWrites, Reads}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.given
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ExtendedSubmission, MarkedSubmission, Submission}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.{ApplicationsByAnswerTestData, SubmissionsTestData}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission._

@@ -23,12 +23,13 @@ import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 
 object SubmissionsRepository {
@@ -84,8 +85,9 @@ object SubmissionsRepository {
       .and[Created]("created")
       .format
 
-    import GroupOfQuestionnaires._
-    import Question._
+    import GroupOfQuestionnaires.given
+    import Question.given
+    import NonEmptyListFormatters.given
 
     implicit val submissionInstanceFormat: OFormat[Submission.Instance] = Json.format[Submission.Instance]
     implicit val submissionFormat: OFormat[Submission]                  = Json.format[Submission]

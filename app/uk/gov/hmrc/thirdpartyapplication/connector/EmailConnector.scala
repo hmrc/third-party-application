@@ -23,7 +23,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.{Json, OFormat}
-import play.mvc.Http.Status._
+import play.api.libs.ws.JsonBodyWritables
+import play.mvc.Http.Status.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
@@ -31,7 +32,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxE
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator, Collaborators}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import play.api.libs.ws.JsonBodyWritables
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -91,7 +91,8 @@ class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector
       case _: Collaborators.Developer     => "developer"
     }
 
-  def sendCollaboratorAddedConfirmation(collaborator: Collaborator, applicationName: ApplicationName, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendCollaboratorAddedConfirmation(collaborator: Collaborator, applicationName: ApplicationName, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier)
+      : Future[HasSucceeded] = {
     val article = if (collaborator.isAdministrator) "an" else "a"
 
     post(SendEmailRequest(
@@ -107,7 +108,8 @@ class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector
       .map(_ => HasSucceeded)
   }
 
-  def sendCollaboratorAddedNotification(collaborator: Collaborator, applicationName: ApplicationName, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendCollaboratorAddedNotification(collaborator: Collaborator, applicationName: ApplicationName, recipients: Set[LaxEmailAddress])(implicit hc: HeaderCarrier)
+      : Future[HasSucceeded] = {
     post(SendEmailRequest(
       recipients,
       addedCollaboratorNotification,

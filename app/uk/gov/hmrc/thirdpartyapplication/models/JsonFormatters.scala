@@ -18,14 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.Period
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
 
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
@@ -71,7 +71,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val createApplicationResponseWrites: OWrites[CreateApplicationResponse] = (
     JsPath.write[ApplicationWithCollaborators] and (JsPath \ "totp").writeNullable[CreateApplicationResponse.TotpSecret]
-  )( car => (car.application, car.totp) )
+  )(car => (car.application, car.totp))
 }
 
 object JsonFormatters extends JsonFormatters

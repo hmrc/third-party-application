@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import com.github.t3hnar.bcrypt._
-
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.crypto.services.bcrypt.bcrypt
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
 
 trait ApplicationTestData extends ApplicationWithCollaboratorsFixtures with CollaboratorTestData with FixedClock {
 

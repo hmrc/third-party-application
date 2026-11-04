@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.PostLogou
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdatePostLogoutRedirectUris
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.PostLogoutRedirectUrisUpdated
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
 class UpdatePostLogoutRedirectUrisCommandHandlerSpec extends CommandHandlerBaseSpec {

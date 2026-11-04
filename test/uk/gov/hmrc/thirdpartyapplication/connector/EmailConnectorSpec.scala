@@ -18,9 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
-import play.api.http.Status._
+import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.HttpClientV2Support
 
@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Applicati
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
@@ -295,7 +295,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val appName                                 = ApplicationName("my app")
       val expectedParameters: Map[String, String] = Map(
         "responsibleIndividualName" -> responsibleIndividualName,
-        "applicationName"           -> appName.value,
+        "applicationName"           -> appName,
         "requesterName"             -> adminName
       )
       val expectedRequest: SendEmailRequest       = SendEmailRequest(Set(anAdminEmail), "apiResponsibleIndividualReminderToAdmin", expectedParameters)
@@ -311,7 +311,7 @@ class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
       val appName                                 = ApplicationName("my app")
       val expectedParameters: Map[String, String] = Map(
         "responsibleIndividualName" -> responsibleIndividualName,
-        "applicationName"           -> appName.value,
+        "applicationName"           -> appName,
         "requesterName"             -> adminName
       )
       val expectedRequest: SendEmailRequest       = SendEmailRequest(Set(anAdminEmail), "apiResponsibleIndividualDidNotVerify", expectedParameters)

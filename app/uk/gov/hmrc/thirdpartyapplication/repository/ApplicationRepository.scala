@@ -21,38 +21,38 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
-import cats.syntax.option._
+import cats.syntax.option.*
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import com.typesafe.config.ConfigFactory
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
 import org.bson.BsonValue
 import org.bson.conversions.Bson
-import org.mongodb.scala.bson._
+import org.mongodb.scala.bson.*
 import org.mongodb.scala.model
-import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters.{exists, _}
+import org.mongodb.scala.model.*
+import org.mongodb.scala.model.Aggregates.*
+import org.mongodb.scala.model.Filters.{exists, *}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
-import org.mongodb.scala.model._
 
-import play.api.libs.json.Json._
-import play.api.libs.json._
+import play.api.libs.json.*
+import play.api.libs.json.Json.*
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.mongo.{MongoComment, MongoComponent}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.given
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, _}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, _}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, *}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, *}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
@@ -62,6 +62,7 @@ object ApplicationRepository {
 
   object MongoFormats {
     import uk.gov.hmrc.play.json.Union
+    import Actor.given
 
     implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 

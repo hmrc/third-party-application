@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait CommandApplicationExamples extends CommonApplicationId with StoredApplicationFixtures with CollaboratorTestData {
 

@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import java.util.concurrent.TimeUnit._
+import java.util.concurrent.TimeUnit.*
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-import pureconfig._
+import pureconfig.*
 
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
@@ -28,9 +28,9 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.connector.*
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.*
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, CredentialConfig, TermsOfUseInvitationConfig}
 
 class ConfigurationModule extends Module {

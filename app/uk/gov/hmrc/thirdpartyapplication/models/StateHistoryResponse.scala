@@ -29,6 +29,6 @@ object StateHistoryResponse {
   def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)
 
   import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters._
-
+  import Actor.given
   implicit val format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
 }

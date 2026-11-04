@@ -21,7 +21,7 @@ import java.time.temporal.ChronoUnit
 
 import cats.data.NonEmptyList
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 
 object AnswerQuestion {
   import Submission.AnswersToQuestions

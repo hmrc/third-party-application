@@ -20,9 +20,11 @@ import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import com.mongodb.client.result.DeleteResult
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.bson.{BsonDocument, BsonNull}
-import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.Aggregates.*
+import org.mongodb.scala.model.Filters.*
 import org.mongodb.scala.model.Sorts.descending
 import org.mongodb.scala.model.{Accumulators, Filters, Projections}
 
@@ -30,10 +32,8 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
-import org.mongodb.scala.ObservableFuture
-import com.mongodb.client.result.DeleteResult
 
 @Singleton
 class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {

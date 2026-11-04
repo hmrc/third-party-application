@@ -32,14 +32,14 @@ import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -50,16 +50,16 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.mocks.ApiSubscriptionFieldsConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.connector.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateExamples, Deleted}
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.mocks.*
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, *}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -239,7 +239,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -272,7 +272,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -302,7 +302,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -337,7 +337,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -373,7 +373,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -514,7 +514,7 @@ class ApplicationServiceSpec
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
-      val data: StoredApplication = storedApp.copy(rateLimitTier = Some(RateLimitTier.SILVER))
+      val data: StoredApplication = storedApp.copy(rateLimitTier = Some(RateLimitTier.Silver))
 
       ApplicationRepoMock.Fetch.thenReturn(data)
 
@@ -532,7 +532,7 @@ class ApplicationServiceSpec
           grantLength = GrantLength.EIGHTEEN_MONTHS,
           access = data.access,
           state = data.state,
-          rateLimitTier = RateLimitTier.SILVER,
+          rateLimitTier = RateLimitTier.Silver,
           checkInformation = None,
           blocked = false,
           ipAllowlist = IpAllowlist(),

@@ -24,7 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, State}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByGatekeeper
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec, DeleteApplicationCommandHandlers}
 
@@ -76,8 +76,8 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
               appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name.toString()
-              newAppState shouldBe State.Deleted.toString()
+              oldAppState shouldBe app.state
+              newAppState shouldBe State.Deleted
               requestingAdminEmail shouldBe requestedByEmail
               requestingAdminName shouldBe requestedByEmail.text
           }
