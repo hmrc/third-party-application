@@ -21,6 +21,8 @@ lazy val microservice = Project(appName, file("."))
     scalacOptions   += "-Wconf:src=routes/.*:s",
     routesImport ++= Seq(
       "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.common.controllers.binders.RouteModels.*",
+      "uk.gov.hmrc.apiplatform.modules.common.controllers.binders.RouteModels.Conversions.given",
       "uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"
@@ -32,10 +34,6 @@ lazy val microservice = Project(appName, file("."))
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "shared-test"),
   )
-  // .settings(
-  //   target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
-  //   coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
-  // )
 
 val it = (project in file("it"))
   .enablePlugins(PlayScala)
