@@ -20,19 +20,18 @@ import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.{ObservableFuture, SingleObservableFuture}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.ObservableFuture
-import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object StateHistoryRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random

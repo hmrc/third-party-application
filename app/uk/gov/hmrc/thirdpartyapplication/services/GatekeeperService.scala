@@ -25,21 +25,16 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, *}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, *}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
-import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 @Singleton
 class GatekeeperService @Inject() (
-    queryService: QueryService,
     applicationRepository: ApplicationRepository,
-    stateHistoryRepository: StateHistoryRepository,
     auditService: AuditService,
-    emailConnector: EmailConnector,
     applicationService: ApplicationService,
     val clock: Clock
   )(implicit val ec: ExecutionContext

@@ -219,16 +219,16 @@ class QueryControllerSpec
     }
 
     "work for post query with applicationIdQP" in new Setup {
-      val qry                          = ApplicationQuery.ById(applicationIdOne, Nil, wantSubscriptions = true)
+      val qry                               = ApplicationQuery.ById(applicationIdOne, Nil, wantSubscriptions = true)
       // val payload: Map[String, String] = QueryParamsToQueryStringMap.toHttpQueryString(qry)
-      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toHttpQueryString(qry).map{ case (k,v) => k->Seq(v) }
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toHttpQueryString(qry).map { case (k, v) => k -> Seq(v) }
 
       QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(qry, appWithSubs)
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubs(appWithSubs)
 
       val request = FakeRequest("POST", "/").withJsonBody(Json.toJson(payload)).withHeaders(CONTENT_TYPE -> "application/json", ACCEPT -> "application/json")
       println(request.body)
-      val result = underTest.queryPost()(request)
+      val result  = underTest.queryPost()(request)
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(appWithSubs)

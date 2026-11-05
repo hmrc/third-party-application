@@ -47,7 +47,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, FixCollaboratorRequest, *}
 import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
-import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils.*
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, MetricsTimer}
@@ -55,7 +54,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, MetricsTimer}
 @Singleton
 class ApplicationService @Inject() (
     val metrics: Metrics,
-    queryService: QueryService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subscriptionRepository: SubscriptionRepository,
@@ -63,7 +61,6 @@ class ApplicationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     auditService: AuditService,
-    apiPlatformEventService: ApiPlatformEventService,
     emailConnector: EmailConnector,
     totpConnector: TotpConnector,
     system: ActorSystem,
@@ -73,7 +70,6 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
-    applicationCommandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends MetricsTimer with ApplicationLogger with ActorHelper with ClockNow {

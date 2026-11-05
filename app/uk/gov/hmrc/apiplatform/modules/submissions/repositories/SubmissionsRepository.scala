@@ -86,7 +86,6 @@ object SubmissionsRepository {
       .format
 
     import GroupOfQuestionnaires.given
-    import Question.given
     import NonEmptyListFormatters.given
 
     implicit val submissionInstanceFormat: OFormat[Submission.Instance] = Json.format[Submission.Instance]

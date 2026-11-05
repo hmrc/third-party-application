@@ -63,13 +63,13 @@ class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config
   }
 
   def fetchAllFieldDefinitions()(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldDefinition]] = {
-    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse._
+    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse.given
     httpClient.get(url"${config.baseUrl}/definition")
       .execute[ApiFieldMap[FieldDefinition]]
   }
 
   def fetchFieldValues(clientId: ClientId)(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
-    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse._
+    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse.given
 
     httpClient.get(url"${config.baseUrl}/field/application/$clientId")
       .execute[Option[ApiFieldMap[FieldValue]]]

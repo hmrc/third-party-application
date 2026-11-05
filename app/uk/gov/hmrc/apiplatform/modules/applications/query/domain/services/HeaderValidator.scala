@@ -74,7 +74,7 @@ object HeaderValidator {
 
     headerValidators.map(hv => {
       rawHeaders.find {
-        case (k, vs) => hv.headerName.equalsIgnoreCase(k)
+        case (k, _) => hv.headerName.equalsIgnoreCase(k)
       }
         .map { mh =>
           hv.validate(mh._2)

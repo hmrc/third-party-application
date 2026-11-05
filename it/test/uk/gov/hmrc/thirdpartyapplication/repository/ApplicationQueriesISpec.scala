@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration}
 
 import org.apache.pekko.stream.scaladsl.Sink
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.bson.collection.mutable.Document
 import org.scalatest.BeforeAndAfterEach
 
@@ -28,19 +29,18 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, GrantLength, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedApplicationWithOptionalToken, StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.ObservableFuture
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec

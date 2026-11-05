@@ -77,7 +77,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, instant)
 
     (for {
-      savedApp <- commandDispatcher.dispatch(app.id, request, Set.empty)
+      _ <- commandDispatcher.dispatch(app.id, request, Set.empty)
     } yield HasSucceeded).value
   }
 }

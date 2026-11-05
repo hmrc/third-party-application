@@ -20,16 +20,16 @@ import java.net.URLEncoder
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.connectors.WiremockSugar
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector.SubscriptionFieldsPutRequest
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMapFixtures, FieldDefinitionFixtures, FieldNameFixtures, FieldValueFixtures, FieldsFixtures}

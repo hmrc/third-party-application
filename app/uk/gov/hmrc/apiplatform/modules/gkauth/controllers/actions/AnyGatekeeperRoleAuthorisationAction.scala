@@ -44,13 +44,13 @@ trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
           ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE
         }
         .flatMap(_ match {
-          case Some(failureToAuthorise) =>
+          case Some(_) =>
             strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
               .flatMap(_ match {
                 case None                     => block(request)
                 case Some(failureToAuthorise) => successful(failureToAuthorise)
               })
-          case None                     => block(request)
+          case None    => block(request)
         })
     }
   }

@@ -23,7 +23,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{OverridesResponse, ScopeResponse}
@@ -52,11 +51,11 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
     }
   }
 
-  trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
+  trait Fixture extends ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val accessService = new AccessService(ApplicationRepoMock.aMock, AuditServiceMock.aMock)
+    val accessService = new AccessService(ApplicationRepoMock.aMock)
   }
 
   trait ScopeFixture extends Fixture {

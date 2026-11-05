@@ -43,9 +43,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, *}
+import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, TermsOfUseInvitationState, *}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
@@ -75,7 +74,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
 
     lazy val underTest =
       new GatekeeperController(
-        QueryServiceMock.aMock,
         ApplicationServiceMock.aMock,
         LdapGatekeeperRoleAuthorisationServiceMock.aMock,
         StrideGatekeeperRoleAuthorisationServiceMock.aMock,

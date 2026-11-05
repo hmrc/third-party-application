@@ -20,7 +20,6 @@ import java.time.Instant
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import com.mongodb.client.result.DeleteResult
 import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.bson.{BsonDocument, BsonNull}
 import org.mongodb.scala.model.Aggregates.*

@@ -20,28 +20,28 @@ import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.{EitherValues, Inside}
-import sttp.client3._
+import sttp.client3.*
 import sttp.model.{Header, Method, StatusCode}
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, OWrites}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands, DispatchRequest}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.*
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.ObservableFuture
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherValues with CollaboratorTestData with Inside with FixedClock {
 

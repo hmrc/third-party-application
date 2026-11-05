@@ -20,9 +20,7 @@ import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, SellResellOrDistribute}
@@ -72,10 +70,10 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
       applicationData.withAccess(getStandardAccess(applicationData).copy(sellResellOrDistribute = Some(newSellResellOrDistribute)))
 
     for {
-      validateResult           <- E.fromValidated(validate(app))
+      _                        <- E.fromValidated(validate(app))
       oldSellResellOrDistribute = getSellResellOrDistribute(app)
       newSellResellOrDistribute = cmd.sellResellOrDistribute
-      persistedApplicationData <- E.liftF(applicationRepository.save(updateWithSellResellOrDistribute(app, newSellResellOrDistribute)))
+      _                        <- E.liftF(applicationRepository.save(updateWithSellResellOrDistribute(app, newSellResellOrDistribute)))
       events                    = asEvents(app, cmd, oldSellResellOrDistribute, newSellResellOrDistribute)
     } yield (app, events)
   }

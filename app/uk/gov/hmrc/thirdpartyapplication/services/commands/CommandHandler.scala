@@ -18,9 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.apply.*
 import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser

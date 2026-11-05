@@ -25,7 +25,8 @@ enum ResponsibleIndividualVerificationState {
 object ResponsibleIndividualVerificationState {
   def apply(text: String): Option[ResponsibleIndividualVerificationState] = ResponsibleIndividualVerificationState.values.find(_.toString().equalsIgnoreCase(text))
 
-  def unsafeApply(text: String): ResponsibleIndividualVerificationState = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Responsible Individual Verification State"))
+  def unsafeApply(text: String): ResponsibleIndividualVerificationState =
+    apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Responsible Individual Verification State"))
 
   import play.api.libs.json.Format
   given Format[ResponsibleIndividualVerificationState] = SimpleEnumJsonFormatting.createStringFormatFor("Responsible Individual Verification State", apply)

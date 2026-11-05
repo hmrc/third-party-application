@@ -39,7 +39,7 @@ class SubscriptionFieldsService @Inject() (
     }
 
     def fillFields(defns: ApiFieldMap[FieldDefinition])(fields: ApiFieldMap[FieldValue]): ApiFieldMap[FieldValue] = {
-      ThreeDMap.map((c: ApiContext, v: ApiVersionNbr, fn: FieldName, fv: FieldDefinition) => ThreeDMap.get((c, v, fn))(fields).getOrElse(FieldValue("")))(defns)
+      ThreeDMap.map((c: ApiContext, v: ApiVersionNbr, fn: FieldName, _: FieldDefinition) => ThreeDMap.get((c, v, fn))(fields).getOrElse(FieldValue("")))(defns)
     }
 
     for {

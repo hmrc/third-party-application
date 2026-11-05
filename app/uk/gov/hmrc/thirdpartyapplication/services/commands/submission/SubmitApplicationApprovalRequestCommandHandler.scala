@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, OptionT, Validated}
 import cats.syntax.apply.*
 import cats.syntax.validated.*
@@ -134,7 +133,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.Testing, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
-      createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)
+      createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission)
 
       verificationId <- E.liftF(createTouUpliftResult)
       _               = logCompletedApprovalRequest(savedApp)
@@ -179,8 +178,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def createResponsibleIndividualVerificationRecordIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
       application: StoredApplication,
-      submission: Submission,
-      cmd: SubmitApplicationApprovalRequest
+      submission: Submission
     ): Future[Option[ResponsibleIndividualVerificationId]] = {
     if (!isRequesterTheResponsibleIndividual) {
       for {

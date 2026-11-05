@@ -23,15 +23,15 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.mvc.Results.*
 
 trait StrideGatekeeperRoleAuthorisationServiceMockModule {
-  self: MockitoSugar with ArgumentMatchersSugar =>
+  self: MockitoSugar & ArgumentMatchersSugar =>
 
   protected trait BaseStrideGatekeeperRoleAuthorisationServiceMock {
     def aMock: StrideGatekeeperRoleAuthorisationService
 
     object EnsureHasGatekeeperRole {
-      def authorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(None))
+      def authorised = when(aMock.ensureHasGatekeeperRole()(using *)).thenReturn(successful(None))
 
-      def notAuthorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(Some(Unauthorized("bang"))))
+      def notAuthorised = when(aMock.ensureHasGatekeeperRole()(using *)).thenReturn(successful(Some(Unauthorized("bang"))))
     }
   }
 

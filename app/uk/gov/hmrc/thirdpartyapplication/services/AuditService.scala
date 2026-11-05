@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, Instant, ZoneOffset}
 import javax.inject.{Inject, Singleton}
+import scala.annotation.unused
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.NonEmptyList
@@ -29,6 +30,7 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.EnumJsonHelper.asScreamingSnakeCase
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
@@ -40,7 +42,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, *}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.EnumJsonHelper.asScreamingSnakeCase
 
 @Singleton
 class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) {
@@ -124,7 +125,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
-  private def auditSandboxApplicationTermsAndConditionsUrlRemoved(app: StoredApplication, evt: SandboxApplicationTermsAndConditionsUrlRemoved)(implicit hc: HeaderCarrier)
+  private def auditSandboxApplicationTermsAndConditionsUrlRemoved(app: StoredApplication, @unused evt: SandboxApplicationTermsAndConditionsUrlRemoved)(implicit hc: HeaderCarrier)
       : Future[Option[AuditResult]] = {
     E.liftF(
       audit(
@@ -148,7 +149,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
-  private def auditSandboxApplicationPrivacyPolicyUrlRemoved(app: StoredApplication, evt: SandboxApplicationPrivacyPolicyUrlRemoved)(implicit hc: HeaderCarrier)
+  private def auditSandboxApplicationPrivacyPolicyUrlRemoved(app: StoredApplication, @unused evt: SandboxApplicationPrivacyPolicyUrlRemoved)(implicit hc: HeaderCarrier)
       : Future[Option[AuditResult]] = {
     E.liftF(
       audit(
@@ -180,7 +181,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     (
       for {
         submission  <- E.fromOptionF(submissionService.fetchLatest(app.id), "No submission provided to audit")
-        extraDetails = AuditHelper.createExtraDetailsForApplicationApprovalRequestGranted(app, submission, user, warnings, escalatedTo)
+        extraDetails = AuditHelper.createExtraDetailsForApplicationApprovalRequestGranted(app, submission, warnings, escalatedTo)
         result      <- E.liftF(auditGatekeeperAction(user, app, ApplicationApprovalGranted, extraDetails))
       } yield result
     )
@@ -261,7 +262,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
-  private def auditCompletedApprovalRequest(app: StoredApplication, evt: ApplicationApprovalRequestSubmitted)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+  private def auditCompletedApprovalRequest(app: StoredApplication, @unused evt: ApplicationApprovalRequestSubmitted)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     E.liftF(audit(
       ApplicationUpliftRequested,
       AuditHelper.applicationId(app.id) ++ Map("newApplicationName" -> app.name)
@@ -494,7 +495,6 @@ object AuditHelper {
   def createExtraDetailsForApplicationApprovalRequestGranted(
       updatedApp: StoredApplication,
       submission: Submission,
-      gatekeeperUserName: String,
       warnings: Option[String],
       escalatedTo: Option[String]
     ): Map[String, String] = {

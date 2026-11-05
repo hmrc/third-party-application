@@ -28,13 +28,12 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UnsubscribeFromApi
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 
 @Singleton
 class PublisherController @Inject() (
     subscriptionRepository: SubscriptionRepository,
-    applicationRepository: ApplicationRepository,
     applicationCommandDispatcher: ApplicationCommandDispatcher,
     cc: ControllerComponents,
     val clock: Clock

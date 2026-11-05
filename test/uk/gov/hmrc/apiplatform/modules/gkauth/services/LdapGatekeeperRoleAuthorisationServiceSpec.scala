@@ -40,7 +40,7 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   trait Setup {
     val mockStubBehaviour     = mock[StubBehaviour]
-    val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(cc, implicitly)
+    val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(using cc, implicitly)
 
     def authControlConfig: AuthControlConfig
     lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authControlConfig, backendAuthComponents)
@@ -76,13 +76,13 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
   }
 
   trait Authorised {
-    self: Setup with AuthHeaderPresent =>
+    self: Setup & AuthHeaderPresent =>
 
     stub(true)
   }
 
   trait Unauthorised {
-    self: Setup with AuthHeaderPresent =>
+    self: Setup & AuthHeaderPresent =>
 
     stub(false)
   }

@@ -28,7 +28,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter.lenientFormatter
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.given
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
@@ -50,7 +49,7 @@ class SubmissionsController @Inject() (
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) {
-  import Submission._
+  import Submission.given
   import SubmissionsController._
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>

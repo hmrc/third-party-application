@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-  import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
 enum NotificationStatus {
   case SENT, FAILED

@@ -18,6 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories
 
 import java.time.Clock
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
@@ -28,7 +29,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import org.mongodb.scala.ObservableFuture
 
 class UpliftLinksRepositoryISpec
     extends ServerBaseISpec

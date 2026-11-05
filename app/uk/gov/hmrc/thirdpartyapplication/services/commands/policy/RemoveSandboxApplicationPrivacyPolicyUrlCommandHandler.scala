@@ -19,11 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationPrivacyPolicyUrl
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
@@ -43,10 +41,6 @@ class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
       app: StoredApplication,
       cmd: RemoveSandboxApplicationPrivacyPolicyUrl
     ): Validated[Failures, String] = {
-    val (isStd, privacyPolicyUrl) = app.access match {
-      case Standard(_, _, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
-      case _                                            => (false, None)
-    }
     (
       isInSandboxEnvironment(app),
       isApproved(app),

@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -73,7 +72,7 @@ class AddClientSecretCommandHandler @Inject() (
         hashedSecret = cmd.hashedSecret
       )
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.addClientSecret(app.id, asStoredClientSecret(cmd)))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)

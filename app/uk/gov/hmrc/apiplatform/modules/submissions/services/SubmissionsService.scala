@@ -64,13 +64,12 @@ class SubmissionsService @Inject() (
   def create(applicationId: ApplicationId, requestedBy: String): Future[Either[String, Submission]] = {
     (
       for {
-        groups           <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
-        allQuestionnaires = groups.flatMap(_.links)
-        submissionId      = SubmissionId.random
-        context          <- contextService.deriveContext(applicationId)
-        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant, requestedBy)))
-        submission        = Submission(submissionId, applicationId, instant, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
-        savedSubmission  <- liftF(submissionsDAO.save(submission))
+        groups          <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
+        submissionId     = SubmissionId.random
+        context         <- contextService.deriveContext(applicationId)
+        newInstance      = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant, requestedBy)))
+        submission       = Submission(submissionId, applicationId, instant, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        savedSubmission <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )
       .value
@@ -79,7 +78,7 @@ class SubmissionsService @Inject() (
   def fetchOrganisationIdentifiers(startedOn: Instant): Future[Map[String, Int]] = {
     submissionsDAO.fetchLatestSubmissionForAll(startedOn)
       .map(_.map(sub => sub.latestInstance.answersToQuestions.get(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2.id))
-        .filter(_.isDefined).map {
+        .filter(_.isDefined).collect {
           case Some(ActualAnswer.SingleChoiceAnswer(value)) => value
         }.groupMapReduce(identity)(_ => 1)(_ + _))
   }

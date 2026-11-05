@@ -26,7 +26,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
 case class StoredApplication(
     id: ApplicationId,
@@ -122,8 +121,8 @@ object StoredApplication {
 
     val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if (v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
-      case v2: CreateApplicationRequestV2                                   => None
-      case x: CreateApplicationRequestV1                                    => None
+      case _: CreateApplicationRequestV2                                    => None
+      case _: CreateApplicationRequestV1                                    => None
     }
 
     val applicationAccess: Access = createApplicationRequest match {

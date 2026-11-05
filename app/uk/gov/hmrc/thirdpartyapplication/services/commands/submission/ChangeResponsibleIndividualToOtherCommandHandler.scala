@@ -20,7 +20,6 @@ import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -44,9 +43,8 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
@@ -89,7 +87,6 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     }
 
     def asEvents(
-        stateHistory: StateHistory,
         responsibleIndividual: ResponsibleIndividual,
         requesterEmail: LaxEmailAddress,
         requesterName: String
@@ -136,7 +133,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
       _                                                     <- E.liftF(responsibleIndividualVerificationRepository.deleteResponsibleIndividualVerification(cmd.code))
       stateHistory                                           = StateHistory(app.id, State.PendingGatekeeperApproval, Actors.AppCollaborator(requesterEmail), Some(app.state.name), changedAt = cmd.timestamp)
       _                                                     <- E.liftF(stateHistoryRepository.insert(stateHistory))
-      (riEvt, stateEvt)                                      = asEvents(stateHistory, responsibleIndividual, requesterEmail, requesterName)
+      (riEvt, stateEvt)                                      = asEvents(responsibleIndividual, requesterEmail, requesterName)
     } yield (savedApp, NonEmptyList(riEvt, List(stateEvt)))
   }
 

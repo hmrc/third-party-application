@@ -98,7 +98,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
         app       <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
         _         <- E.cond(!app.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
         recipients = getRecipients(app)
-        sent      <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
+        _         <- E.liftF(emailConnector.sendNewTermsOfUseInvitation(invite.dueBy, app.name, recipients))
         _         <- E.liftF(termsOfUseInvitationRepository.updateReminderSent(invite.applicationId))
       } yield HasSucceeded
     ).value

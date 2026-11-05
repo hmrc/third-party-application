@@ -20,33 +20,32 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration, Instant}
 import scala.util.Random.nextString
 
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.ObservableFuture
-
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock with CommonApplicationId with CollaboratorTestData {
   val clientId       = ClientId.random
@@ -1440,7 +1439,7 @@ class ApplicationRepositoryISpec
     val userIdToDelete        = existingCollaborators.head.userId
 
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
-    appWithOutDeletedCollaborator.collaborators should contain only(existingCollaborators.toList.filterNot(_.userId == userIdToDelete))
+    appWithOutDeletedCollaborator.collaborators should contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete))
   }
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {

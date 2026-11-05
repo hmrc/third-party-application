@@ -61,7 +61,7 @@ class ApplicationCommandController @Inject() (
 
     val hasAuthErrors = e.filter(failure =>
       failure match {
-        case e: CommandFailures.InsufficientPrivileges => true
+        case _: CommandFailures.InsufficientPrivileges => true
         case _                                         => false
       }
     )

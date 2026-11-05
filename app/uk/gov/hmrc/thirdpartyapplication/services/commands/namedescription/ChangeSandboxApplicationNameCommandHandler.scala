@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -73,7 +72,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeSandboxApplicationName): AppCmdResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationNameWithExclusions(cmd.newName, noExclusions))
-      valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
+      _                    <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
       savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)
     } yield (savedApp, events)

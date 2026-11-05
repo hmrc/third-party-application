@@ -50,7 +50,7 @@ class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with
     val request = FakeRequest()
 
     "return verification record if found" in new Setup {
-      ResponsibleIndividualVerificationServiceMock.GetVerification.thenGetVerification(code)
+      ResponsibleIndividualVerificationServiceMock.GetVerification.thenGetVerification()
 
       val result = underTest.getVerification(code)(request)
 

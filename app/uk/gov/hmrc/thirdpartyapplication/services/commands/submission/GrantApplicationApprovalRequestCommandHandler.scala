@@ -21,7 +21,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, OptionT, Validated}
 import cats.syntax.apply.*
 import cats.syntax.validated.*
@@ -112,16 +111,16 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
     logStartingApprovalRequestProcessing(originalApp.id)
 
     for {
-      validateResult                       <- E.fromValidatedF(validate(originalApp))
-      (submission, importantSubmissionData) = validateResult
+      validateResult   <- E.fromValidatedF(validate(originalApp))
+      (submission, _)   = validateResult
       // Set application state to user verification
-      updatedApp                            = grantApp(originalApp)
-      savedApp                             <- E.liftF(applicationRepository.save(updatedApp))
-      _                                    <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PendingGatekeeperApproval, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
-      updatedSubmission                     = grantSubmission(cmd.gatekeeperUser, cmd.warnings, cmd.escalatedTo)(submission)
-      savedSubmission                      <- E.liftF(submissionService.store(updatedSubmission))
-      events                                = asEvents(savedApp, cmd, savedSubmission)
-      _                                     = logCompletedApprovalRequest(savedApp, savedSubmission)
+      updatedApp        = grantApp(originalApp)
+      savedApp         <- E.liftF(applicationRepository.save(updatedApp))
+      _                <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PendingGatekeeperApproval, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
+      updatedSubmission = grantSubmission(cmd.gatekeeperUser, cmd.warnings, cmd.escalatedTo)(submission)
+      savedSubmission  <- E.liftF(submissionService.store(updatedSubmission))
+      events            = asEvents(savedApp, cmd, savedSubmission)
+      _                 = logCompletedApprovalRequest(savedApp, savedSubmission)
     } yield (updatedApp, events)
   }
 

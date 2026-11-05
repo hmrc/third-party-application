@@ -21,9 +21,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.sequence
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.apply.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -87,13 +85,13 @@ class ChangeApplicationScopesCommandHandler @Inject() (
     }
 
     for {
-      validateResult           <- E.fromValidated(validate(app))
-      oldScopes                 = getScopes(app)
-      newScopes                 = cmd.scopes
-      persistedApplicationData <- E.liftF(applicationRepository.save(updateWithScopes(app, newScopes)))
-      _                         = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
-      _                         = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
-      events                    = asEvents(app, cmd, oldScopes, newScopes)
+      _        <- E.fromValidated(validate(app))
+      oldScopes = getScopes(app)
+      newScopes = cmd.scopes
+      _        <- E.liftF(applicationRepository.save(updateWithScopes(app, newScopes)))
+      _         = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
+      _         = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
+      events    = asEvents(app, cmd, oldScopes, newScopes)
     } yield (app, events)
   }
 

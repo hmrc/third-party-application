@@ -28,8 +28,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, Application
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, QueryServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.util.*
@@ -45,9 +45,7 @@ class GatekeeperServiceSpec
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
   trait Setup extends AuditServiceMockModule
-      with QueryServiceMockModule
-      with ApplicationRepositoryMockModule
-      with StateHistoryRepositoryMockModule {
+      with ApplicationRepositoryMockModule {
 
     lazy val locked            = false
     val mockEmailConnector     = mock[EmailConnector](withSettings.strictness(Strictness.Lenient))
@@ -57,16 +55,12 @@ class GatekeeperServiceSpec
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new GatekeeperService(
-      QueryServiceMock.aMock,
       ApplicationRepoMock.aMock,
-      StateHistoryRepoMock.aMock,
       AuditServiceMock.aMock,
-      mockEmailConnector,
       mockApplicationService,
       clock
     )
 
-    StateHistoryRepoMock.Insert.thenAnswer()
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))

@@ -21,7 +21,6 @@ import java.time.temporal.ChronoUnit.*
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -107,9 +106,9 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
     lazy val noInvitation                                                    = NonEmptyList.one(GenericFailure(s"Failed to create terms of use invitation for application ${app.id}"))
 
     for {
-      validateResult <- E.fromValidatedF(validate(app))
-      newInvite      <- E.fromOptionF(termsOfUseInvitationRepository.create(createInvitation(app.id)), noInvitation)
-      events          = asEvents(app, cmd, newInvite)
+      _         <- E.fromValidatedF(validate(app))
+      newInvite <- E.fromOptionF(termsOfUseInvitationRepository.create(createInvitation(app.id)), noInvitation)
+      events     = asEvents(app, cmd, newInvite)
     } yield (app, events)
   }
 }

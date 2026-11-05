@@ -22,14 +22,13 @@ import scala.concurrent.ExecutionContext
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, DeleteRestrictionType}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RestrictApplicationDelete
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType
 
 @Singleton
 class RestrictApplicationDeleteCommandHandler @Inject() (
@@ -60,8 +59,9 @@ class RestrictApplicationDeleteCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: RestrictApplicationDelete): AppCmdResultT = {
 
     for {
-      _    <- E.fromEither(validate(app).toEither)
-      savedApp <- E.liftF(applicationRepository.updateDeleteRestriction(app.id, DeleteRestriction.DoNotDelete(cmd.reasons, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
+      _        <- E.fromEither(validate(app).toEither)
+      savedApp <-
+        E.liftF(applicationRepository.updateDeleteRestriction(app.id, DeleteRestriction.DoNotDelete(cmd.reasons, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }

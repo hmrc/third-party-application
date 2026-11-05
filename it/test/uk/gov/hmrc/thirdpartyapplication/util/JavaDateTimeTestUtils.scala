@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.util
 import java.time.temporal.{ChronoField, ChronoUnit}
 import java.time.{Clock, Instant}
 
-import org.scalatest.matchers.should.Matchers._
+import org.scalatest.matchers.should.Matchers.*
 
 trait JavaDateTimeTestUtils {
 

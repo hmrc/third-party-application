@@ -55,7 +55,6 @@ object TermsOfUseInvitationActionBuilders {
 trait TermsOfUseInvitationActionBuilders {
   self: BackendController =>
 
-  import TermsOfUseInvitationActionBuilders.ApplicationStateFilter
   import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 
   def applicationDataService: ApplicationDataService
@@ -78,13 +77,13 @@ trait TermsOfUseInvitationActionBuilders {
         ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
           .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }
           .flatMap(_ match {
-            case Some(failureToAuthorise) =>
+            case Some(_) =>
               strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
                 .flatMap(_ match {
                   case None                     => successful(Right(request))
                   case Some(failureToAuthorise) => successful(Left(failureToAuthorise))
                 })
-            case None                     => successful(Right(request))
+            case None    => successful(Right(request))
           })
       }
     }
@@ -129,8 +128,6 @@ trait TermsOfUseInvitationActionBuilders {
     }
 
   def anyAuthenticatedGatekeeperUserWithProductionApplicationAndNoSubmissionAndNoInvitation(
-      allowedStateFilter: ApplicationStateFilter.Type = ApplicationStateFilter.production
-    )(
       applicationId: ApplicationId
     )(
       block: ApplicationRequest[?] => Future[Result]

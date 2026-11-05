@@ -20,7 +20,6 @@ import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -78,7 +77,7 @@ class RemoveCollaboratorCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: RemoveCollaborator): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)

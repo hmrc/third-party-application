@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.mongodb.scala.Document
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.result.InsertOneResult
+import org.mongodb.scala.{Document, ObservableFuture}
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
@@ -34,11 +34,10 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.ObservableFuture
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec

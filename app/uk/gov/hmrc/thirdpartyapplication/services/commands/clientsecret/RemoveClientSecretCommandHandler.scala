@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -68,7 +67,7 @@ class RemoveClientSecretCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: RemoveClientSecret): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.deleteClientSecret(app.id, cmd.clientSecretId))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

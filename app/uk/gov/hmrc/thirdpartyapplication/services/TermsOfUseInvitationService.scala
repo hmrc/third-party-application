@@ -24,15 +24,18 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse, TermsOfUseSearch}
+import uk.gov.hmrc.thirdpartyapplication.models.{
+  HasSucceeded,
+  TermsOfUseInvitationResponse,
+  TermsOfUseInvitationState,
+  TermsOfUseInvitationWithApplicationResponse,
+  TermsOfUseSearch
+}
 import uk.gov.hmrc.thirdpartyapplication.repository.TermsOfUseInvitationRepository
 
 @Singleton
 class TermsOfUseInvitationService @Inject() (
     termsOfUseRepository: TermsOfUseInvitationRepository,
-    emailConnector: EmailConnector,
     val clock: Clock,
     config: TermsOfUseInvitationConfig
   )(implicit val ec: ExecutionContext

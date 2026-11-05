@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -41,9 +40,8 @@ import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.Applica
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 

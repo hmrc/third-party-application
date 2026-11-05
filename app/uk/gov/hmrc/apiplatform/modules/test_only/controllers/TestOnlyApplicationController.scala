@@ -47,8 +47,8 @@ class TestOnlyApplicationController @Inject() (
 
     (
       for {
-        app <- ET.fromOptionF(applicationService.fetch(id).value, NotFound("No application was found"))
-        _   <- ET.liftF(applicationService.deleteApplication(id, None, noAuditing))
+        _ <- ET.fromOptionF(applicationService.fetch(id).value, NotFound("No application was found"))
+        _ <- ET.liftF(applicationService.deleteApplication(id, None, noAuditing))
       } yield NoContent
     )
       .fold(identity, identity)

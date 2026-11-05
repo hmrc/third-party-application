@@ -71,7 +71,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: DeleteApplicationByGatekeeper)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
-      valid              <- E.fromEither(validate(app).toEither)
+      _                  <- E.fromEither(validate(app).toEither)
       kindOfRequesterName = cmd.requestedByEmailAddress.text
       stateHistory        = StateHistory(app.id, State.Deleted, Actors.GatekeeperUser(cmd.gatekeeperUser), Some(app.state.name), changedAt = cmd.timestamp)
       savedApp           <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Deleted, cmd.timestamp, kindOfRequesterName, kindOfRequesterName))

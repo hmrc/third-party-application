@@ -19,13 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
@@ -33,10 +34,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.SingleObservableFuture
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random

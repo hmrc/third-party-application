@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.subscription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -76,7 +75,7 @@ class SubscribeToApiCommandHandler @Inject() (
     for {
       rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))
-      valid            <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
+      _                <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
       _                <- E.liftF(subscriptionRepository.add(app.id, cmd.apiIdentifier))
     } yield (app, asEvents(app, cmd))
   }

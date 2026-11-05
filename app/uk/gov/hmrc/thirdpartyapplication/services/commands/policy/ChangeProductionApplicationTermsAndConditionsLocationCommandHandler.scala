@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -99,7 +98,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     }
 
     for {
-      valid    <- E.fromEither(validate.toEither)
+      _        <- E.fromEither(validate.toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationTermsAndConditionsLocation(app.id, cmd.newLocation))
       events    = asEvents
     } yield (savedApp, events)

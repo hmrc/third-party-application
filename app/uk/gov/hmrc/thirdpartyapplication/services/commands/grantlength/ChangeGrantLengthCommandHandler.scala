@@ -20,9 +20,7 @@ import java.time.Period
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength
@@ -71,8 +69,8 @@ class ChangeGrantLengthCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeGrantLength): AppCmdResultT = {
 
     for {
-      valid                <- E.fromEither(validate(app, cmd).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period))
+      _                    <- E.fromEither(validate(app, cmd).toEither)
+      _                    <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period))
       savedAppAfterCleanUp <- E.liftF(applicationRepository.removeOldGrantLength(app.id))
       events                = asEvents(app, cmd)
     } yield (savedAppAfterCleanUp, events)

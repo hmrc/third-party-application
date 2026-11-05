@@ -61,7 +61,7 @@ class LinkToOrganisationCommandHandler @Inject() (
     }
 
     for {
-      valid <- E.fromEither(validate(app).toEither)
+      _     <- E.fromEither(validate(app).toEither)
       _     <- E.liftF(applicationRepository.save(linkToOrganisation(app)))
       events = asEvents(app, cmd)
     } yield (app, events)

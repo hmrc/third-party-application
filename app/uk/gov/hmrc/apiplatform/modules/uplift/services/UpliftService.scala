@@ -40,7 +40,6 @@ class UpliftService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    applicationNamingService: UpliftNamingService,
     val clock: Clock
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {

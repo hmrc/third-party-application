@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 import org.apache.commons.net.util.SubnetUtils
@@ -47,7 +46,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
       new SubnetUtils(cidrBlock.ipAddress)
       true
     } catch {
-      case e: IllegalArgumentException => false
+      case _: IllegalArgumentException => false
     }
   }
 
@@ -82,7 +81,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeIpAllowlist): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationIpAllowlist(app.id, buildIpAllowlist(cmd)))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

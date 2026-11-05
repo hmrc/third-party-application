@@ -21,9 +21,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.sequence
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.apply.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -79,13 +77,13 @@ class ChangeApplicationAccessOverridesCommandHandler @Inject() (
       applicationData.withAccess(getStandardAccess(applicationData).copy(overrides = newOverrides))
 
     for {
-      _                        <- E.fromValidated(validate(app))
-      oldOverrides              = getOverrides(app)
-      newOverrides              = cmd.overrides
-      _                        <- E.liftF(applicationRepository.save(updateWithOverrides(app, newOverrides)))
-      _                         = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
-      _                         = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
-      events                    = asEvents(app, cmd, oldOverrides, newOverrides)
+      _           <- E.fromValidated(validate(app))
+      oldOverrides = getOverrides(app)
+      newOverrides = cmd.overrides
+      _           <- E.liftF(applicationRepository.save(updateWithOverrides(app, newOverrides)))
+      _            = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
+      _            = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
+      events       = asEvents(app, cmd, oldOverrides, newOverrides)
     } yield (app, events)
   }
 

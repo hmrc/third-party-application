@@ -23,12 +23,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ResponsibleIndividualVerificationRequired
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 object ResponsibleIndividualVerificationRequiredNotification {
 
-  def sendAdviceEmail(emailConnector: EmailConnector, app: StoredApplication, event: ResponsibleIndividualVerificationRequired)(implicit hc: HeaderCarrier)
-      : Future[HasSucceeded] = {
+  def sendAdviceEmail(emailConnector: EmailConnector, event: ResponsibleIndividualVerificationRequired)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     emailConnector.sendVerifyResponsibleIndividualNotification(
       event.responsibleIndividualName,
       event.responsibleIndividualEmail,

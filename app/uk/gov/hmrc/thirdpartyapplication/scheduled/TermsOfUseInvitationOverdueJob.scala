@@ -73,9 +73,9 @@ class TermsOfUseInvitationOverdueJob @Inject() (
 
     (
       for {
-        app     <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
-        _       <- E.cond(!app.state.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
-        updated <- E.liftF(termsOfUseInvitationRepository.updateState(invite.applicationId, TermsOfUseInvitationState.OVERDUE))
+        app <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
+        _   <- E.cond(!app.state.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
+        _   <- E.liftF(termsOfUseInvitationRepository.updateState(invite.applicationId, TermsOfUseInvitationState.OVERDUE))
       } yield HasSucceeded
     ).value
   }

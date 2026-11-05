@@ -63,7 +63,7 @@ class UnblockApplicationCommandHandler @Inject() (
     }
 
     for {
-      valid <- E.fromEither(validate(app).toEither)
+      _     <- E.fromEither(validate(app).toEither)
       _     <- E.liftF(applicationRepository.save(unblock(app)))
       events = asEvents(app, cmd)
       _      = logUnblocked(app)

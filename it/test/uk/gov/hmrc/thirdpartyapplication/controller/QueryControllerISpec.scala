@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controller
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 
-import play.api.http._
+import play.api.http.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.libs.ws._
+import play.api.libs.ws.*
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientIdFixtures, UserIdFixtures}
@@ -37,7 +38,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.QueryP
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, ApplicationRepositoryTestData}
 import uk.gov.hmrc.thirdpartyapplication.util.WiremockSugar
-import org.mongodb.scala.ObservableFuture
 
 class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with BeforeAndAfterEach with ApplicationLogger with FixedClock with ClientIdFixtures with UserIdFixtures
     with ApplicationWithCollaboratorsFixtures with ApplicationRepositoryTestData {

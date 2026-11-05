@@ -20,6 +20,7 @@ import java.time.{Clock, Duration, Instant}
 import java.util.UUID
 
 import cats.data.NonEmptyList
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject
@@ -28,25 +29,17 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.common.utils._
+import uk.gov.hmrc.apiplatform.modules.common.utils.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
-  ResponsibleIndividualToUVerification,
-  ResponsibleIndividualTouUpliftVerification,
-  ResponsibleIndividualUpdateVerification,
-  ResponsibleIndividualVerification,
-  ResponsibleIndividualVerificationId
-}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.EventId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util._
-import org.mongodb.scala.ObservableFuture
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object ResponsibleIndividualVerificationRepositoryISpec extends FixedClock with CommonApplicationId {
   val appName = ApplicationName("my app")
@@ -341,7 +334,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
       buildAndSaveDoc(ResponsibleIndividualVerificationState.REMINDERS_SENT, instant.minus(Duration.ofDays(MANY_DAYS_AGO)))
       buildAndSaveDoc(ResponsibleIndividualVerificationState.REMINDERS_SENT, instant.minus(Duration.ofDays(FEW_DAYS_AGO)))
 
-      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, instant.minus(Duration.ofDays(UPDATE_THRESHOLD))))
+      val results = await(repository.fetchByTypeStateAndAge(
+        ResponsibleIndividualVerification.VerificationTypeToU,
+        ResponsibleIndividualVerificationState.INITIAL,
+        instant.minus(Duration.ofDays(UPDATE_THRESHOLD))
+      ))
 
       results shouldBe List(initialWithOldDate)
     }

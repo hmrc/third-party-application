@@ -27,9 +27,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 

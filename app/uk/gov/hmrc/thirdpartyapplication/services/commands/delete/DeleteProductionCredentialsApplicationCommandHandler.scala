@@ -19,9 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.delete
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.apply.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -71,7 +69,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: DeleteProductionCredentialsApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
-      valid       <- E.fromEither(validate(app).toEither)
+      _           <- E.fromEither(validate(app).toEither)
       savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Deleted, cmd.timestamp, cmd.jobId, cmd.jobId))
       stateHistory = StateHistory(app.id, State.Deleted, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
       events       = asEvents(savedApp, cmd, stateHistory)

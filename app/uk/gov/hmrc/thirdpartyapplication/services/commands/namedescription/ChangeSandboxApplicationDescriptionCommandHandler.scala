@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -65,7 +64,7 @@ class ChangeSandboxApplicationDescriptionCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeSandboxApplicationDescription): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateDescription(app.id, Some(cmd.description)))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

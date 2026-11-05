@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import java.util.UUID
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
 import play.api.http.Status.OK
 

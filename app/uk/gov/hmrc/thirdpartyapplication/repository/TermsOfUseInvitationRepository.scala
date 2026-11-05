@@ -36,9 +36,8 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.thirdpartyapplication.models.*
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationState, *}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object TermsOfUseInvitationRepository {

@@ -84,8 +84,8 @@ class ApplicationController @Inject() (
     def processV2(applicationId: ApplicationId)(requestV2: CreateApplicationRequestV2): Future[HasSucceeded] =
       (
         for {
-          _          <- E.liftF(upliftLinkService.createUpliftLink(requestV2.sandboxApplicationId, applicationId))
-          submission <- E.fromEitherF(submissionsService.create(applicationId, requestV2.requestedBy))
+          _ <- E.liftF(upliftLinkService.createUpliftLink(requestV2.sandboxApplicationId, applicationId))
+          _ <- E.fromEitherF(submissionsService.create(applicationId, requestV2.requestedBy))
         } yield HasSucceeded
       )
         .getOrElseF(Future.failed(new RuntimeException("Bang")))
@@ -173,7 +173,7 @@ class ApplicationController @Inject() (
     }
   }
 
-  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
+  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async(_ =>
     subscriptionService.fetchAllSubscriptions()
       .map(subs => Ok(toJson(subs))) recover recovery
   )

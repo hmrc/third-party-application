@@ -21,7 +21,6 @@ import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.TermsOfUsePassed
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -30,8 +29,7 @@ object TermsOfUsePassedNotification {
 
   def sendAdviceEmail(
       emailConnector: EmailConnector,
-      app: StoredApplication,
-      event: TermsOfUsePassed
+      app: StoredApplication
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     val recipients = getRecipients(app)

@@ -23,7 +23,6 @@ import play.api.libs.json.{Json, OWrites}
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
@@ -38,8 +37,10 @@ class QuestionnairesController @Inject() (
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) {
+
   import QuestionnairesController._
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires._
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires.given
+  import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
 
   def activeQuestionnaires = Action.async {
     dao.fetchActiveGroupsOfQuestionnaires().map(xs => Ok(Json.toJson(xs)))

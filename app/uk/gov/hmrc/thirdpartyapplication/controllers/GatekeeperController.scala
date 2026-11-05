@@ -32,11 +32,9 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.common.{JsonUtils, WarnStil
 import uk.gov.hmrc.thirdpartyapplication.models.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
 import uk.gov.hmrc.thirdpartyapplication.services.*
-import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 @Singleton
 class GatekeeperController @Inject() (
-    queryService: QueryService,
     val applicationService: ApplicationService,
     val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,

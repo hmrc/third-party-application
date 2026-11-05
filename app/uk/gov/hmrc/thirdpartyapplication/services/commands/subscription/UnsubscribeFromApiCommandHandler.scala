@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.subscription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 import cats.syntax.apply.*
 
@@ -43,7 +42,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
 
   import CommandHandler._
 
-  private def validate(app: StoredApplication, cmd: UnsubscribeFromApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
+  private def validate(app: StoredApplication, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))
     def alreadySubscribedTo = cond(alreadySubcribed, CommandFailures.NotSubscribedToApi)
 
@@ -77,7 +76,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
     for {
       rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))
-      valid            <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
+      _                <- E.fromEither(validate(app, rolePassed, alreadySubcribed).toEither)
       _                <- E.liftF(subscriptionRepository.remove(app.id, cmd.apiIdentifier))
     } yield (app, asEvents(app, cmd))
   }

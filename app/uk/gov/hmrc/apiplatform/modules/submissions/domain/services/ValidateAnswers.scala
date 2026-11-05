@@ -31,7 +31,7 @@ object ValidateAnswers {
       case (_, Nil)                                        => "Question requires an answer".asLeft
 //
       case (q: Question.MultiChoiceQuestion, answers)      => validateAgainstPossibleAnswers(q, answers.toSet)
-      case (_, a :: b :: Nil)                              => "Question only accepts one answer".asLeft
+      case (_, _ :: _ :: Nil)                              => "Question only accepts one answer".asLeft
 //
       case (q: Question.TextQuestion, head :: Nil)         => validateAgainstPossibleTextValidationRule(q, head)
       case (q: Question.SingleChoiceQuestion, head :: Nil) => validateAgainstPossibleAnswers(q, head)

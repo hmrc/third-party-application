@@ -63,7 +63,7 @@ class BlockApplicationCommandHandler @Inject() (
     }
 
     for {
-      valid <- E.fromEither(validate(app).toEither)
+      _     <- E.fromEither(validate(app).toEither)
       _     <- E.liftF(applicationRepository.save(block(app)))
       events = asEvents(app, cmd)
       _      = logBlocked(app)

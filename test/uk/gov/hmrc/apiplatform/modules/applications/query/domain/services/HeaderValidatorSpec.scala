@@ -32,7 +32,7 @@ class HeaderValidatorSpec extends HmrcSpec with EitherValues {
   val userAgent   = HttpHeaders.INTERNAL_USER_AGENT -> Seq(ApiGatewayUserAgent)
 
   "parseParams" should {
-    val test = HeaderValidator.parseHeaders _ andThen (_.toEither)
+    val test = HeaderValidator.parseHeaders andThen (_.toEither)
 
     "extract valid header - server token" in {
       test(Map(serverToken)).value shouldBe List(ServerTokenQP("ABC"))

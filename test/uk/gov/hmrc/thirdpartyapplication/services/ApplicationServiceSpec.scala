@@ -134,7 +134,6 @@ class ApplicationServiceSpec
 
     val underTest = new ApplicationService(
       metrics,
-      QueryServiceMock.aMock,
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
       SubscriptionRepoMock.aMock,
@@ -142,7 +141,6 @@ class ApplicationServiceSpec
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       TermsOfUseInvitationRepositoryMock.aMock,
       AuditServiceMock.aMock,
-      mockApiPlatformEventService,
       mockEmailConnector,
       mockTotpConnector,
       actorSystem.get,
@@ -152,7 +150,6 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
-      ApplicationCommandDispatcherMock.aMock,
       clock
     ) with NoOpMetricsTimer
 
