@@ -120,7 +120,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, secret)).value)
 
       val exceptionCaptor = ArgCaptor[Throwable]
-      verify(mockLogger).warn(any[String], exceptionCaptor)(*)
+      verify(mockLogger).warn(any[String], exceptionCaptor)(using *)
 
       exceptionCaptor hasCaptured thrownException
       result shouldBe Some(expectedApplicationResponse)

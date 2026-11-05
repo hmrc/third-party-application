@@ -56,7 +56,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ProductionCredentialsApplicationDeletedV2 => true

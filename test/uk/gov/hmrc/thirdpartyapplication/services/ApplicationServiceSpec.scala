@@ -154,11 +154,11 @@ class ApplicationServiceSpec
     ) with NoOpMetricsTimer
 
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedNotification(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedNotification(*[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(using *)).thenReturn(successful(HasSucceeded))
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
@@ -225,7 +225,7 @@ class ApplicationServiceSpec
 
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = CreationAccess.Standard, environment = Environment.Production)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication = storedApp.withId(createdApp.application.id).withState(appStateTesting).withCollaborators(adminTwo).copy(description = None)
 
@@ -252,7 +252,7 @@ class ApplicationServiceSpec
 
       val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(environment = Environment.Production)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication = storedApp.copy(
         id = createdApp.application.id,
@@ -282,7 +282,7 @@ class ApplicationServiceSpec
 
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.Production)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication =
         storedApp.copy(
@@ -311,7 +311,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.Sandbox)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication =
         storedApp.copy(
@@ -352,7 +352,7 @@ class ApplicationServiceSpec
       val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP)
       when(mockTotpConnector.generateTotp()).thenAnswer(successful(totpQueue.dequeue()))
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication = storedApp.copy(
         id = createdApp.application.id,
@@ -383,7 +383,7 @@ class ApplicationServiceSpec
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
-        await(underTest.create(applicationRequest)(hc))
+        await(underTest.create(applicationRequest)(using hc))
       }
     }
 
@@ -564,7 +564,7 @@ class ApplicationServiceSpec
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
       TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(using *)).thenReturn(successful(HasSucceeded))
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {

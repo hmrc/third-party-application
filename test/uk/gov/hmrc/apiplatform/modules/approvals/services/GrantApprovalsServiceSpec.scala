@@ -101,7 +101,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
@@ -134,7 +134,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
@@ -168,7 +168,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.resetForTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
@@ -194,7 +194,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.deleteTouUplift(applicationProduction))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.DeleteAll.verifyCalledWith(applicationProduction.id)
       TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.verifyCalledWith(applicationProduction.id)

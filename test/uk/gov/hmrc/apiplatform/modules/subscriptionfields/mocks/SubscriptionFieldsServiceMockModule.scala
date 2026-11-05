@@ -38,7 +38,7 @@ trait SubscriptionFieldsServiceMockModule extends MockitoSugar with ArgumentMatc
     object FetchFieldValuesWithDefaults {
 
       def returns(fields: ApiFieldMap[FieldValue]) =
-        when(aMock.fetchFieldValuesWithDefaults(*, *)(*)).thenReturn(successful(fields))
+        when(aMock.fetchFieldValuesWithDefaults(*, *)(using *)).thenReturn(successful(fields))
     }
   }
 

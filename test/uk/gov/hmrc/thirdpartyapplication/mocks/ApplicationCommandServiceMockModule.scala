@@ -47,17 +47,17 @@ trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatc
 
       def succeedsWith(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnSuccessOn(cmd: ApplicationCommand)(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
-        when(aMock.authenticateAndDispatch(*[ApplicationId], eqTo(cmd), *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], eqTo(cmd), *[Set[LaxEmailAddress]])(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnSuccess(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnCommandSuccess(applicationData: StoredApplication) = {
@@ -71,46 +71,46 @@ trait ApplicationCommandServiceMockModule extends MockitoSugar with ArgumentMatc
             List(LoginRedirectUri.unsafeApply("https://example.com/newURI"))
           ))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnSuccess(applicationData: StoredApplication, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
         val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents*))
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(E.pure(success))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnFailed() =
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(mockErrors))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(EitherT.leftT(mockErrors))
 
       def thenReturnFailedFor(appId: ApplicationId) =
-        when(aMock.authenticateAndDispatch(eqTo(appId), *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(mockErrors))
+        when(aMock.authenticateAndDispatch(eqTo(appId), *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(EitherT.leftT(mockErrors))
 
       def thenReturnFailed(fails: CommandFailure, otherFails: CommandFailure*) =
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails*)))
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails*)))
 
       def thenReturnFailed(msg: String, otherMsgs: String*) =
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(EitherT.leftT(NonEmptyList.of(
           CommandFailures.GenericFailure(msg),
           otherMsgs.map(CommandFailures.GenericFailure(_))*
         )))
 
       def thenReturnAuthFailed(msg: String, otherMsgs: String*) =
-        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)).thenReturn(EitherT.leftT(NonEmptyList.of(
+        when(aMock.authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)).thenReturn(EitherT.leftT(NonEmptyList.of(
           CommandFailures.InsufficientPrivileges(msg),
           otherMsgs.map(CommandFailures.GenericFailure(_))*
         )))
 
       def verifyNeverCalled =
-        verify(aMock, never).authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(*)
+        verify(aMock, never).authenticateAndDispatch(*[ApplicationId], *[ApplicationCommand], *[Set[LaxEmailAddress]])(using *)
 
       def verifyCalledWith(applicationId: ApplicationId) = {
         val captor = ArgCaptor[ApplicationCommand]
-        verify(aMock).authenticateAndDispatch(eqTo(applicationId), captor.capture, *)(*)
+        verify(aMock).authenticateAndDispatch(eqTo(applicationId), captor.capture, *)(using *)
         captor.value
       }
 
       def verifyCalledWith(applicationId: ApplicationId, command: ApplicationCommand) = {
-        verify(aMock).authenticateAndDispatch(eqTo(applicationId), eqTo(command), *)(*)
+        verify(aMock).authenticateAndDispatch(eqTo(applicationId), eqTo(command), *)(using *)
       }
     }
   }

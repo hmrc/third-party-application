@@ -53,7 +53,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
         val event = events.head
 

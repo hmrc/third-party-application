@@ -220,7 +220,7 @@ class QueryControllerSpec
 
     "work for post query with applicationIdQP" in new Setup {
       val qry                               = ApplicationQuery.ById(applicationIdOne, Nil, wantSubscriptions = true)
-      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry).map { case (k,v) => k.text -> v }
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry).map { case (k, v) => k.text -> v }
 
       QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(qry, appWithSubs)
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubs(appWithSubs)
@@ -234,9 +234,9 @@ class QueryControllerSpec
     }
 
     "work for post query with userIdsQP" in new Setup {
-      val postFilterQPs                = List(UserIdsQP(List(userIdOne, userIdTwo, userIdThree)))
-      val qry                          = GeneralOpenEndedApplicationQuery(postFilterQPs, sorting = Sorting.NameAscending)
-      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry).map { case (k,v) => k.text -> v }
+      val postFilterQPs                     = List(UserIdsQP(List(userIdOne, userIdTwo, userIdThree)))
+      val qry                               = GeneralOpenEndedApplicationQuery(postFilterQPs, sorting = Sorting.NameAscending)
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry).map { case (k, v) => k.text -> v }
 
       QueryServiceMock.FetchApplicationsByQuery.thenReturns(appWithCollaborators)
 

@@ -16,13 +16,25 @@
 
 package uk.gov.hmrc.apiplatform.modules.test_only.scheduled
 
-import com.google.inject.AbstractModule
+import play.api.inject.Module
+import play.api.{Configuration, Environment}
+import javax.inject.{Inject, Singleton}
+import com.google.inject.Provider
+import uk.gov.hmrc.apiplatform.modules.scheduling.ScheduledJobs
+import uk.gov.hmrc.thirdpartyapplication.scheduled.TestApplicationsCleanupJob
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
-class TestOnlySchedulerModule extends AbstractModule with ApplicationLogger {
+class TestOnlySchedulerModule extends Module {
 
-  override def configure(): Unit = {
-    bind(classOf[TestOnlyScheduler]).asEagerSingleton()
-  }
+  override def bindings(environment: Environment, configuration: Configuration) = Seq(
+    bind[ScheduledJobs].toProvider[TestAppsCleanupScheduledJobsProvider],
+    bind[ScheduledJobsRunner].toSelf.eagerly()
+  )
+}
+
+@Singleton
+class TestAppsCleanupScheduledJobsProvider @Inject() (
+    testAppsCleanupJob: TestApplicationsCleanupJob
+) extends Provider[ScheduledJobs] {
+  override def get(): ScheduledJobs = ScheduledJobs(List(testAppsCleanupJob))
 }

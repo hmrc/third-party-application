@@ -43,7 +43,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
     "handle an ApplicationDeleted event by calling the connector" in new Setup {
       val clientId = ClientId.random
 
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(using hc)).thenReturn(successful(HasSucceeded))
 
       val result = await(underTest.revokeApplicationAuthorities(clientId))
 

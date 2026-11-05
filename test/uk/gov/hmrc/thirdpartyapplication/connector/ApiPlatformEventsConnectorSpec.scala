@@ -78,20 +78,20 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicatio
   "ApiPlatformEventsConnector" should {
     "return true when httpclient receives CREATED status" in new Setup() {
       apiApplicationEventWillReturnCreated(exampleEvent)
-      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(using hc))
 
       result shouldBe true
     }
 
     "return true when connector is disabled" in new Setup(false) {
-      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(using hc))
 
       result shouldBe true
     }
 
     "return false when httpclient receives internal server error status" in new Setup() {
       apiApplicationEventWillFailWith(INTERNAL_SERVER_ERROR)
-      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(using hc))
 
       result shouldBe false
     }

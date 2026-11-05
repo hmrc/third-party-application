@@ -80,13 +80,13 @@ class ApplicationCommandDispatcherSpec
     def verifyServicesCalledWithEvent(expectedEvent: ApplicationEvent) = {
 
       verify(ApiPlatformEventServiceMock.aMock)
-        .applyEvents(*[NonEmptyList[ApplicationEvent]])(*[HeaderCarrier])
+        .applyEvents(*[NonEmptyList[ApplicationEvent]])(using *[HeaderCarrier])
 
       verify(AuditServiceMock.aMock)
-        .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
+        .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(using *[HeaderCarrier])
 
       verify(NotificationServiceMock.aMock)
-        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)), *)(*[HeaderCarrier])
+        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)), *)(using *[HeaderCarrier])
     }
 
     val allCommandHandlers = Set(
@@ -134,7 +134,7 @@ class ApplicationCommandDispatcherSpec
 
     def verifyNoneButGivenCmmandHandlerCalled[A <: CommandHandler]()(implicit ct: ClassTag[A]) = {
       allCommandHandlers.filter {
-        case a: A => false
+        case _: A => false
         case _    => true
       }
         .foreach(handler => verifyZeroInteractions(handler))
@@ -529,7 +529,7 @@ class ApplicationCommandDispatcherSpec
       "call DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[StoredApplication], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[StoredApplication], *[DeleteApplicationByCollaborator])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -562,7 +562,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[StoredApplication], *[DeleteApplicationByGatekeeper])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[StoredApplication], *[DeleteApplicationByGatekeeper])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -652,7 +652,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeApplicationScopes Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeApplicationScopesCommandHandler.process(*[StoredApplication], *[ChangeApplicationScopes])(*)).thenReturn(E.pure((
+        when(mockChangeApplicationScopesCommandHandler.process(*[StoredApplication], *[ChangeApplicationScopes])(using *)).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -685,7 +685,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeApplicationAccessOverrides Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeApplicationAccessOverridesCommandHandler.process(*[StoredApplication], *[ChangeApplicationAccessOverrides])(*)).thenReturn(E.pure((
+        when(mockChangeApplicationAccessOverridesCommandHandler.process(*[StoredApplication], *[ChangeApplicationAccessOverrides])(using *)).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -717,7 +717,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteUnusedApplicationCommandHandler.process(*[StoredApplication], *[DeleteUnusedApplication])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteUnusedApplicationCommandHandler.process(*[StoredApplication], *[DeleteUnusedApplication])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -748,10 +748,12 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[StoredApplication], *[DeleteProductionCredentialsApplication])(*[HeaderCarrier])).thenReturn(E.pure((
-          applicationData,
-          NonEmptyList.one(evt)
-        )))
+        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[StoredApplication], *[DeleteProductionCredentialsApplication])(using *[HeaderCarrier])).thenReturn(
+          E.pure((
+            applicationData,
+            NonEmptyList.one(evt)
+          ))
+        )
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -781,7 +783,7 @@ class ApplicationCommandDispatcherSpec
       "call SubscribeToApi Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockSubscribeToApiCommandHandler.process(*[StoredApplication], *[SubscribeToApi])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockSubscribeToApiCommandHandler.process(*[StoredApplication], *[SubscribeToApi])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -814,7 +816,7 @@ class ApplicationCommandDispatcherSpec
       "call UnsubscribeFromApi Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockUnsubscribeFromApiCommandHandler.process(*[StoredApplication], *[UnsubscribeFromApi])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockUnsubscribeFromApiCommandHandler.process(*[StoredApplication], *[UnsubscribeFromApi])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))

@@ -109,16 +109,16 @@ class ApplicationControllerSpec
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
+      testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
+      testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
-    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
+    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
         .thenReturn(
           OptionT.pure[Future](privilegedApp),
@@ -489,7 +489,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(using *)
     }
 
     "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
@@ -503,7 +503,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(inTestingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inTestingId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inTestingId), eqTo(None), *)(using *)
     }
 
     "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
@@ -516,7 +516,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(using *)
     }
 
     "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
@@ -529,7 +529,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(using *)
     }
 
     "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
@@ -542,7 +542,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(inProdId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe BAD_REQUEST
-      verify(ApplicationServiceMock.aMock, never).deleteApplication(*[ApplicationId], *, *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(*[ApplicationId], *, *)(using *)
     }
 
     "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new Setup with ProductionAuthSetup {
@@ -552,7 +552,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe BAD_REQUEST
-      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(using *)
     }
 
     "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new Setup with ProductionAuthSetup {
@@ -568,7 +568,7 @@ class ApplicationControllerSpec
       )
 
       status(result) shouldBe BAD_REQUEST
-      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(using *)
     }
 
     "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
@@ -581,7 +581,7 @@ class ApplicationControllerSpec
         .asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(using *)
     }
 
     "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new Setup with SandboxAuthSetup {
@@ -590,7 +590,7 @@ class ApplicationControllerSpec
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NOT_FOUND
-      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(using *)
     }
   }
 

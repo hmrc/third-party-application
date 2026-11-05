@@ -31,11 +31,11 @@ trait StrideAuthConnectorMockModule {
     def aMock: StrideAuthConnector
 
     object Authorise {
-      def succeeds = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(successful(()))
+      def succeeds = when(aMock.authorise[Unit](*, *)(using *, *)).thenReturn(successful(()))
 
-      def succeedsAndReturnsName(name: String) = when(aMock.authorise[Option[Name]](*, *)(*, *)).thenReturn(successful((Some(Name(Some(name), Some("Example"))))))
+      def succeedsAndReturnsName(name: String) = when(aMock.authorise[Option[Name]](*, *)(using *, *)).thenReturn(successful((Some(Name(Some(name), Some("Example"))))))
 
-      def fails = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(failed(new RuntimeException))
+      def fails = when(aMock.authorise[Unit](*, *)(using *, *)).thenReturn(failed(new RuntimeException))
 
       def verifyNotCalled = verify(aMock, never).authorise[Unit](*, *)(using *, *)
 

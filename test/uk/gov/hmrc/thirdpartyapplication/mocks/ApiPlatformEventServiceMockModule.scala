@@ -41,11 +41,11 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
     object ApplyEvents {
 
       def succeeds = {
-        when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
+        when(aMock.applyEvents(*)(using *)).thenReturn(Future.successful(true))
       }
 
       def verifyCalledWith(events: NonEmptyList[ApplicationEvent]) = {
-        verify(aMock).applyEvents(eqTo(events))(*)
+        verify(aMock).applyEvents(eqTo(events))(using *)
       }
     }
   }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import javax.inject.{Inject, Singleton}
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 import com.google.inject.AbstractModule

@@ -66,15 +66,15 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object Create {
 
       def onRequestReturn(request: CreateApplicationRequest)(response: CreateApplicationResponse) = {
-        when(aMock.create(eqTo(request))(*)).thenReturn(successful(response))
+        when(aMock.create(eqTo(request))(using *)).thenReturn(successful(response))
       }
     }
 
     object DeleteApplication {
-      def thenSucceeds() = when(aMock.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+      def thenSucceeds() = when(aMock.deleteApplication(*[ApplicationId], *, *)(using *)).thenReturn(successful(Deleted))
 
       def verifyCalledWith(applicationId: ApplicationId, request: Option[DeleteApplicationRequest]) = {
-        verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(*)
+        verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(using *)
       }
     }
 

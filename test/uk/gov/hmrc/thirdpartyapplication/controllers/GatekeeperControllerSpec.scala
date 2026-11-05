@@ -92,16 +92,16 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
+      testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
+      testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
-    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
+    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
         .thenReturn(
           OptionT.pure[Future](privilegedApp),
@@ -168,27 +168,27 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*)).thenReturn(successful(Deleted))
+      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(using *)).thenReturn(successful(Deleted))
 
       val result = underTest.deleteApplication(applicationId).apply(request
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
       status(result) shouldBe NO_CONTENT
-      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
+      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(using *)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*))
+      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(using *))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.deleteApplication(applicationId).apply(request
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
+      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(using *)
     }
   }
 }

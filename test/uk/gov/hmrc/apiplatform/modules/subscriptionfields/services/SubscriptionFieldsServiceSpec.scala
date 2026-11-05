@@ -40,7 +40,7 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
     in.flatMap(tupleXY =>
       tupleXY._2.flatMap(tupleYZ =>
         tupleYZ._2.map {
-          case (z, v) => (tupleXY._1, tupleYZ._1, z)
+          case (z, _) => (tupleXY._1, tupleYZ._1, z)
         }
       )
     )
