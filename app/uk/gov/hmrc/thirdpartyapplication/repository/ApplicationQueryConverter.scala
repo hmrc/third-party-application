@@ -32,7 +32,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.*
 
 object ApplicationQueryConverter {
 
-  private val excludeDeleted = notEqual("state.name", State.Deleted.toString)
+  private val excludeDeleted = notEqual("state.name", Codecs.toBson(State.Deleted))
 
   def first[T <: Param[?]](implicit params: List[Param[?]], ct: ClassTag[T]): Option[T] = params.collect {
     case qp: T => qp

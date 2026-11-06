@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{*, given}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
@@ -46,6 +46,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats.given
+import uk.gov.hmrc.apiplatform.modules.test_only.scheduled.TestAppsCleanupSchedulerModule
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock with CommonApplicationId with CollaboratorTestData {
   val clientId       = ClientId.random
@@ -202,6 +204,7 @@ class ApplicationRepositoryISpec
       )
       .overrides(bind[Clock].toInstance(clock))
       .disable(classOf[SchedulerModule])
+      .disable(classOf[TestAppsCleanupSchedulerModule])
   }
 
   private val applicationRepository =
@@ -1424,7 +1427,7 @@ class ApplicationRepositoryISpec
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
-    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator))
+    appWithNewCollaborator.collaborators shouldBe (existingCollaborators.toList ++ List(collaborator)).toSet
   }
 
   "handle removeCollaborator correctly" in {
