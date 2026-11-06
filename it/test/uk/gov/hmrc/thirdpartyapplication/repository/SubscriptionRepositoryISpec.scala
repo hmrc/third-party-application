@@ -34,11 +34,11 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubscriptionRepositoryISpec
@@ -226,7 +226,7 @@ class SubscriptionRepositoryISpec
 
       forAll(scenarios) { (apiIdentifier, expectedApplications) =>
         val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers(apiIdentifier))
-        applications should contain only (expectedApplications)
+        applications shouldBe expectedApplications.toSet
       }
     }
   }

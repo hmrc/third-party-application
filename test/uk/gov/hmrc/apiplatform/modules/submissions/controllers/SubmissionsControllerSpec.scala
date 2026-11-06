@@ -100,8 +100,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) => succeed
-        case JsError(e)                       => fail(s"Not parsed as a response $e")
+        case JsSuccess(_, _) => succeed
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -123,8 +123,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) => succeed
-        case JsError(e)                       => fail(s"Not parsed as a response $e")
+        case JsSuccess(_, _) => succeed
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
 

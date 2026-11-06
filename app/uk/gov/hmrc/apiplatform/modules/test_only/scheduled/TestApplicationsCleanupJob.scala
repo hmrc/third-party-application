@@ -19,24 +19,23 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+import pureconfig.ConfigReader
+
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
+import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveLockedScheduledJob
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-
-import uk.gov.hmrc.apiplatform.modules.scheduling.ExclusiveLockedScheduledJob
-import uk.gov.hmrc.mongo.lock.MongoLockRepository
-import pureconfig.ConfigReader
 
 object TestApplicationsCleanupJob {
   case class Config(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, expiryDuration: FiniteDuration) derives ConfigReader
@@ -49,16 +48,17 @@ class TestApplicationsCleanupJob @Inject() (
     applicationService: ApplicationService,
     val clock: Clock,
     jobConfig: TestApplicationsCleanupJob.Config
-  )(
-    implicit val ec: ExecutionContext
+  )(implicit val ec: ExecutionContext
   ) extends ExclusiveLockedScheduledJob with ClockNow {
 
   override def name: String                 = "TestApplicationsCleanupJob"
   override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
-  override val lockService: LockService     = LockService(mongoLockRepository, lockId = s"$name-lock", ttl = interval + 1.hours)
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+
+  override val lockSafetyMarginExcess = 1.hour
+
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   logger.info("TestApplicationsCleanupJob ready!!!")
 
@@ -73,9 +73,11 @@ class TestApplicationsCleanupJob @Inject() (
         _           <- Future.sequence(idsToRemove.map(deleteExpiredApplication(_)))
       } yield "Successful"
     )
-    .recoverWith {
-      case e: Throwable => Future.failed(RuntimeException("Something useful needs to go here."))//RunningOfJobFailed(name, e))
-    }
+      .recoverWith {
+        case NonFatal(e) =>
+          logger.error("Failed to retry failed push pull confirmation", e)
+          Future.failed(e)
+      }
   }
 
   private def deleteExpiredApplication(appId: ApplicationId): Future[HasSucceeded] = {

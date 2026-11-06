@@ -26,8 +26,8 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.test_only.scheduled.TestOnlySchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.apiplatform.modules.test_only.scheduled.TestAppsCleanupSchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 
 trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
   self: TestSuite =>
@@ -40,6 +40,6 @@ trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
       .configure("metrics.jvm" -> false)
       .overrides(bind[Clock].toInstance(FixedClock.clock))
       .disable(classOf[SchedulerModule])
-      .disable(classOf[TestOnlySchedulerModule])
+      .disable(classOf[TestAppsCleanupSchedulerModule])
   }
 }

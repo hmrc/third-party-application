@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.given
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.*
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, *}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
@@ -57,7 +56,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         val result = await(underTest.create(applicationId, "bob@example.com"))
 
         inside(result.value) {
-          case s @ Submission(_, applicationId, _, groupings, testQuestionIdsOfInterest, instances, _) =>
+          case Submission(_, applicationId, _, _, _, instances, _) =>
             applicationId shouldBe applicationId
             instances.head.answersToQuestions.size shouldBe 0
         }
@@ -74,7 +73,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         val result1 = await(underTest.create(applicationId, "bob@example.com"))
 
         inside(result1.value) {
-          case s @ Submission(_, applicationId, _, _, testQuestionIdsOfInterest, answersToQuestions, _) =>
+          case s @ Submission(_, applicationId, _, _, _, _, _) =>
             applicationId shouldBe applicationId
             s.allQuestionnaires.size shouldBe allQuestionnaires.size
         }
@@ -83,7 +82,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val result2 = await(underTest.create(applicationId, "bob@example.com"))
         inside(result2.value) {
-          case s @ Submission(_, applicationId, _, _, testQuestionIdsOfInterest, answersToQuestions, _) =>
+          case s @ Submission(_, applicationId, _, _, _, _, _) =>
             s.allQuestionnaires.size shouldBe allQuestionnaires.size - 1 // The number from the dropped group
         }
       }

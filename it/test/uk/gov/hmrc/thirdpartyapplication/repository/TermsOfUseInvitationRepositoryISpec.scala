@@ -34,9 +34,9 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, *}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationState, *}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object TermsOfUseInvitationRepositoryISpecExample extends FixedClock {

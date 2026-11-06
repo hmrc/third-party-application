@@ -35,8 +35,8 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationRepositorySerialisationISpec
@@ -89,7 +89,7 @@ class ApplicationRepositorySerialisationISpec
     def validateGrantLength(raw: BsonDocument, required: Boolean): Unit = {
       val path: JsPath = __ \ "grantLength"
       path(Json.parse(raw.toJson)) match {
-        case Seq(x) => if (required) () else fail()
+        case Seq(_) => if (required) () else fail()
         case _      => if (required) fail() else ()
       }
     }

@@ -43,15 +43,15 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.mongo.{MongoComment, MongoComponent}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{*, given}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute, given}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{*, given}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{SingleApplicationQuery, *}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
-import uk.gov.hmrc.thirdpartyapplication.models.*
-import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedStoredApplication, *}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{*, given}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{*, given}
+import uk.gov.hmrc.thirdpartyapplication.models.{*, given}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{*, given}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {

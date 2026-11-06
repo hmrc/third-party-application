@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{*,given}
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
@@ -43,8 +43,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRes
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock with CommonApplicationId with CollaboratorTestData {
@@ -178,6 +178,7 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     "deleteRestriction"         -> Json.obj("deleteRestrictionType" -> JsString("NO_RESTRICTION"))
   )
 }
+
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec

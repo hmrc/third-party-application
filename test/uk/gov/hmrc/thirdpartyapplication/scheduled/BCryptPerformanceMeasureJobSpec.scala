@@ -41,7 +41,7 @@ class BCryptPerformanceMeasureJobSpec extends AsyncHmrcSpec {
       stubLogger.infoMessages.size should be(2)
       stubLogger.infoMessages.head should be("[bcrypt Performance] Starting performance measurement")
       testedWorkFactorRange.foreach { testedWorkFactor =>
-        stubLogger.infoMessages.last contains s"Hashing with Work Factor [$testedWorkFactor]"
+        stubLogger.infoMessages.last.contains(s"Hashing with Work Factor [$testedWorkFactor]")
       }
     }
   }

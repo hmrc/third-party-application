@@ -28,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.scheduled.TestApplicationsCleanupJob
 
 class ConfigurationModule extends Module with ApplicationLogger {
+
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[?]] = {
     List(
       bind[TestApplicationsCleanupJob.Config].toProvider[TestApplicationsCleanupJobConfigProvider]
@@ -36,6 +37,7 @@ class ConfigurationModule extends Module with ApplicationLogger {
 }
 
 object ConfigHelper {
+
   def getConfig[T](key: String, f: String => Option[T]): T = {
     f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
   }

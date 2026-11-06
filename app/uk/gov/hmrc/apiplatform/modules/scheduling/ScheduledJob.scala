@@ -23,7 +23,7 @@ trait ScheduledJob {
   def name: String
 
   def execute(using ExecutionContext): Future[String]
-  
+
   def isEnabled: Boolean
 
   def configKey: String = name

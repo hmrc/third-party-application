@@ -35,12 +35,12 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands, DispatchRequest}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherValues with CollaboratorTestData with Inside with FixedClock {
@@ -209,7 +209,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       Given("No applications exist")
       emptyApplicationRepository()
 
-      awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.Bronze)
+      awsApiGatewayStub.willCreateOrUpdateApplication(RateLimitTier.Bronze)
       val appName = "privileged-app-name"
 
       Given("The gatekeeper is logged in")
@@ -600,7 +600,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationWithCollaborators = {
-    awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.Bronze)
+    awsApiGatewayStub.willCreateOrUpdateApplication(RateLimitTier.Bronze)
     val createdResponse = sendJsonRequest("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe StatusCode.Created
     Json.parse(createdResponse.body.value).as[ApplicationWithCollaborators]

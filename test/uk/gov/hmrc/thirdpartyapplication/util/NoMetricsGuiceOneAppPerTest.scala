@@ -22,7 +22,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 
 trait NoMetricsGuiceOneAppPerTest extends GuiceOneAppPerTest {
   self: TestSuite =>

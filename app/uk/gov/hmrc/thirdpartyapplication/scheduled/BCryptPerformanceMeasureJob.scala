@@ -37,9 +37,11 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
   override def initialDelay: FiniteDuration = FiniteDuration(10, TimeUnit.MINUTES)
   override def interval: FiniteDuration     = FiniteDuration(4, TimeUnit.HOURS)
 
+  def isEnabled: Boolean = true
+
   val workFactorRangeToTest: Seq[Int] = 5 to 15
 
-  override def executeInMutex(implicit ec: ExecutionContext): Future[Result] = {
+  override def executeInMutex(implicit ec: ExecutionContext): Future[String] = {
     val stringToHash: String = UUID.randomUUID().toString
 
     logger.info("[bcrypt Performance] Starting performance measurement")
@@ -55,6 +57,6 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
 
     logger.info(s"[bcrypt Performance] Performance measurement results:\n$timings")
 
-    Future.successful(Result("Done"))
+    Future.successful("Done")
   }
 }

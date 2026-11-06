@@ -65,7 +65,7 @@ class UpliftVerificationExpiryJobSpec
         override val ttl: Duration = 1.minutes
 
         override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-          if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
+          if (lockKeeperSuccess()) body.map(value => Some(value))(using ec) else Future.successful(None)
       }
 
     val upliftVerificationValidity: FiniteDuration = FiniteDuration(expiryTimeInDays, DAYS)
@@ -135,7 +135,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result = await(underTest.execute)
 
-      result.message shouldBe
+      result shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing fetchAllByStatusDetails db query'." +
         " The next execution of the job will do retry."
     }
@@ -150,9 +150,9 @@ class UpliftVerificationExpiryJobSpec
 
       ApplicationRepoMock.Save.thenFail(new RuntimeException("A failure on executing save db query"))
 
-      val result: underTest.Result = await(underTest.execute)
+      val result: String = await(underTest.execute)
 
-      result.message shouldBe
+      result shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
     }

@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.scheduling
 
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.mongo.lock.{LockService, MongoLockRepository}
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 trait ExclusiveLockedScheduledJob extends ExclusiveScheduledJob with ApplicationLogger {
@@ -28,8 +29,10 @@ trait ExclusiveLockedScheduledJob extends ExclusiveScheduledJob with Application
 
   def mongoLockRepository: MongoLockRepository
 
-  // Lock for 10 minutes longer than the interval to allow for retries and timeouts
-  lazy val lockService: LockService = LockService(mongoLockRepository, lockId = s"$name-lock", ttl = interval + 10.minutes)
+  def lockSafetyMarginExcess: Duration = 10.minutes
+
+  // Lock for 10 minutes (or other) longer than the interval to allow for retries and timeouts
+  private val lockService: LockService = LockService(mongoLockRepository, lockId = s"$name-lock", ttl = interval + lockSafetyMarginExcess)
 
   final def executeInMutex(using ExecutionContext): Future[String] =
     lockService.withLock {

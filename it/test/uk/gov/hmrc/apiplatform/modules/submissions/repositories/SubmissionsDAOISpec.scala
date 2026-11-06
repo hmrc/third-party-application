@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ActualAnswer.TextAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubmissionsDAOISpec

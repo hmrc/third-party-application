@@ -46,7 +46,7 @@ class QuestionnairesControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[Questionnaire] match {
-        case JsSuccess(s, _) => succeed
+        case JsSuccess(_, _) => succeed
         case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
@@ -67,7 +67,7 @@ class QuestionnairesControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[List[GroupOfQuestionnaires]] match {
-        case JsSuccess(s, _) => succeed
+        case JsSuccess(_, _) => succeed
         case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }

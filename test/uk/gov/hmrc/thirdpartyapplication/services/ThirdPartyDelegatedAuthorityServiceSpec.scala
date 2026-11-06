@@ -48,7 +48,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
       val result = await(underTest.revokeApplicationAuthorities(clientId))
 
       result shouldBe Some(HasSucceeded)
-      verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(hc)
+      verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(using hc)
     }
   }
 }
