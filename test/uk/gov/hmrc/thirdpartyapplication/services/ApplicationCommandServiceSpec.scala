@@ -41,7 +41,7 @@ class ApplicationCommandServiceSpec
   trait Setup
       extends ApplicationCommandDispatcherMockModule with ApplicationCommandAuthenticatorMockModule {
 
-    implicit val headers: HeaderCarrier = HeaderCarrier()
+    given headers: HeaderCarrier = HeaderCarrier()
 
     val command = UnsubscribeFromRetiredApi(Actors.Process("Api Publisher"), apiIdentifierOne, instant)
 

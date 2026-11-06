@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 private[controllers] case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersionNbr, partialEmailMatch: Option[String])
 
 private[controllers] object SearchCollaboratorsRequest {
-  implicit val readsSearchCollaboratorsRequest: Reads[SearchCollaboratorsRequest] = Json.reads[SearchCollaboratorsRequest]
+  given readsSearchCollaboratorsRequest: Reads[SearchCollaboratorsRequest] = Json.reads[SearchCollaboratorsRequest]
 }
 
 @Singleton
@@ -41,7 +41,7 @@ class CollaboratorController @Inject() (
     val applicationService: ApplicationService,
     subscriptionService: SubscriptionService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
   override implicit def hc(implicit request: RequestHeader): HeaderCarrier = {

@@ -47,7 +47,7 @@ class NotificationServiceSpec
 
   trait Setup extends EmailConnectorMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationIdData.one
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")

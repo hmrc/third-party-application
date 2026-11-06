@@ -37,7 +37,7 @@ class ResendRequesterEmailVerificationCommandHandlerSpec extends CommandHandlerB
 
   trait Setup extends SubmissionsServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission     = aSubmission
     val appAdminUserId = UserId.random

@@ -52,7 +52,7 @@ class GatekeeperServiceSpec
     val response               = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new GatekeeperService(
       ApplicationRepoMock.aMock,

@@ -35,7 +35,7 @@ class ChangeGrantLengthCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val gatekeeperUser         = "gkuser"
     val replaceWithGrantLength = GrantLength.ONE_YEAR

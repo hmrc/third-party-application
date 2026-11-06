@@ -37,7 +37,7 @@ class SubmissionsService @Inject() (
     submissionsDAO: SubmissionsDAO,
     contextService: ContextService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends EitherTHelper[String] with ClockNow with ApplicationLogger {
   import cats.instances.future.catsStdInstancesForFuture
 

@@ -45,7 +45,7 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, QueryServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.asAppWithCollaborators
 import uk.gov.hmrc.thirdpartyapplication.models.{ConfirmSetupCompleteRequest, DeleteApplicationRequest, ValidationRequest}
@@ -74,7 +74,7 @@ class ApplicationControllerSpec
       with StrideGatekeeperRoleAuthorisationServiceMockModule
       with ApplicationServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123", "USER-AGENT" -> "testme")

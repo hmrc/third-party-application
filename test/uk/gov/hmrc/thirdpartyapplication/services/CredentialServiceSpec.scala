@@ -37,7 +37,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
   trait Setup extends ApplicationRepositoryMockModule
       with ClientSecretServiceMockModule {
 
-    implicit val hc: HeaderCarrier                           = HeaderCarrier()
+    given hc: HeaderCarrier                                  = HeaderCarrier()
     val mockLogger: Logger                                   = mock[Logger]
     val clientSecretLimit                                    = 5
     val credentialConfig: CredentialConfig                   = CredentialConfig(clientSecretLimit)

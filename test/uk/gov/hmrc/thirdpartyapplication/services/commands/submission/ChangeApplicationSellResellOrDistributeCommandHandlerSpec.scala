@@ -33,7 +33,7 @@ class ChangeApplicationSellResellOrDistributeCommandHandlerSpec extends CommandH
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminEmail             = "admin@example.com".toLaxEmail
     val oldSellResellOrDistribute = Some(SellResellOrDistribute("No"))

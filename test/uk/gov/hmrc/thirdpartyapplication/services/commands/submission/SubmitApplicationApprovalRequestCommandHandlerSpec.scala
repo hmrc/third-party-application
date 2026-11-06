@@ -49,7 +49,7 @@ class SubmitApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerB
       with TermsOfUseInvitationRepositoryMockModule
       with ResponsibleIndividualVerificationServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission               = buildFullyAnsweredSubmission(aSubmission)
     val submissionRequesterNotRI = AnswerQuestion.recordAnswer(submission, submission.questionIdsOfInterest.responsibleIndividualIsRequesterId, List("No")).value.submission

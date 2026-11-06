@@ -40,7 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseApplicationRepoMock {
-    private implicit val materializer: Materializer = NoMaterializer
+    private given materializer: Materializer = NoMaterializer
 
     def aMock: ApplicationRepository
 

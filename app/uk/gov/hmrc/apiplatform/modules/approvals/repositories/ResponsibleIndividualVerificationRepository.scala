@@ -42,7 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 @Singleton
-class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(using val ec: ExecutionContext)
     extends PlayMongoRepository[ResponsibleIndividualVerification](
       collectionName = "responsibleIndividualVerification",
       mongoComponent = mongo,

@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscript
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   val clientId = ClientId.random
 

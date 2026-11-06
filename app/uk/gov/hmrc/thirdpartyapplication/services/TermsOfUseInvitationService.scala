@@ -38,7 +38,7 @@ class TermsOfUseInvitationService @Inject() (
     termsOfUseRepository: TermsOfUseInvitationRepository,
     val clock: Clock,
     config: TermsOfUseInvitationConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
   val daysUntilDueWhenCreated = config.daysUntilDueWhenCreated

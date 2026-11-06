@@ -56,7 +56,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionsService: SubmissionsService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ClockNow {
 
   import CommandHandler._

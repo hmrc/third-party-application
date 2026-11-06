@@ -40,7 +40,7 @@ class GrantTermsOfUseApprovalCommandHandlerSpec extends CommandHandlerBaseSpec w
       with StateHistoryRepositoryMockModule
       with TermsOfUseInvitationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission = grantedWithWarningsSubmission
 

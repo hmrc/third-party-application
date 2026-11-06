@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
-  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  given ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   trait Setup
       extends SubmissionsDAOMockModule

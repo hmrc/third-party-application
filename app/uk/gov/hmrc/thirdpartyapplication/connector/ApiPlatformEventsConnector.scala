@@ -44,20 +44,20 @@ case class DisplayEvent(
 
 object DisplayEvent {
   import Actor.given
-  implicit val format: OFormat[DisplayEvent] = Json.format[DisplayEvent]
+  given format: OFormat[DisplayEvent] = Json.format[DisplayEvent]
 }
 
 case class QueryResponse(events: List[DisplayEvent])
 
 object QueryResponse {
-  implicit val format: OFormat[QueryResponse] = Json.format[QueryResponse]
+  given format: OFormat[QueryResponse] = Json.format[QueryResponse]
 }
 
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
 }
 
-class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
+class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatformEventsConnector.Config)(using val ec: ExecutionContext) extends ResponseUtils
     with ApplicationLogger with JsonBodyWritables {
 
   val serviceBaseUrl: String      = s"${config.baseUrl}"
@@ -66,7 +66,7 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatf
   def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, applicationEventUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
+    given headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
     if (config.enabled) {
       http.post(eventURI(uri))

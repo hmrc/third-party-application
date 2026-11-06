@@ -37,7 +37,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends CommandHandlerBase
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val app                                  = storedApp.inSandbox()
     val authControlConfig: AuthControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = true, "authorisationKey12345")

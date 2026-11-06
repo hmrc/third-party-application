@@ -41,7 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAut
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode.*
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsErrorResponse, JsonUtils, WarnStillInUse}
 import uk.gov.hmrc.thirdpartyapplication.models.*
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.*
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
@@ -59,7 +59,7 @@ class ApplicationController @Inject() (
     upliftLinkService: UpliftLinkService,
     val queryService: QueryService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationTypeAuthorisationActions

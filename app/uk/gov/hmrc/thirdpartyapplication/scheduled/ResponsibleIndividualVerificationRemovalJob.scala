@@ -41,14 +41,14 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
     commandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationRemovalJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "ResponsibleIndividualVerificationRemovalJob"
   override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  given hc: HeaderCarrier                   = HeaderCarrier()
   override val lockService: LockService     = responsibleIndividualVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {

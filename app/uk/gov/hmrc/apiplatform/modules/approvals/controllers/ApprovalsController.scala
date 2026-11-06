@@ -32,10 +32,10 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 object ApprovalsController {
   case class TouUpliftRequest(gatekeeperUserName: String, reasons: String)
-  implicit val readsTouUpliftRequest: Reads[TouUpliftRequest] = Json.reads[TouUpliftRequest]
+  given readsTouUpliftRequest: Reads[TouUpliftRequest] = Json.reads[TouUpliftRequest]
 
   case class TouDeleteRequest(gatekeeperUserName: String)
-  implicit val readsTouDeleteRequest: Reads[TouDeleteRequest] = Json.reads[TouDeleteRequest]
+  given readsTouDeleteRequest: Reads[TouDeleteRequest] = Json.reads[TouDeleteRequest]
 }
 
 @Singleton
@@ -44,7 +44,7 @@ class ApprovalsController @Inject() (
     val submissionService: SubmissionsService,
     grantApprovalService: GrantApprovalsService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with ApprovalsActionBuilders
     with JsonUtils

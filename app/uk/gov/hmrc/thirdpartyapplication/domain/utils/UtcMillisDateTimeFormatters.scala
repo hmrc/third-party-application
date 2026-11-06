@@ -23,11 +23,11 @@ import play.api.libs.json.{EnvReads, EnvWrites}
 trait UtcMillisDateTimeFormatters extends EnvWrites with EnvReads {
   import play.api.libs.json._
 
-  implicit val dateTimeWriter: Writes[Instant] = InstantEpochMilliWrites
+  given dateTimeWriter: Writes[Instant] = InstantEpochMilliWrites
 
-  implicit val dateTimeReader: Reads[Instant] = DefaultInstantReads
+  given dateTimeReader: Reads[Instant] = DefaultInstantReads
 
-  implicit val dateTimeFormat: Format[Instant] = Format(dateTimeReader, dateTimeWriter)
+  given dateTimeFormat: Format[Instant] = Format(dateTimeReader, dateTimeWriter)
 }
 
 object UtcMillisDateTimeFormatters extends UtcMillisDateTimeFormatters

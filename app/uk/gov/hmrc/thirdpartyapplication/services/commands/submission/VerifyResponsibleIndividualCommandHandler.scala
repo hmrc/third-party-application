@@ -43,7 +43,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     submissionService: SubmissionsService,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._

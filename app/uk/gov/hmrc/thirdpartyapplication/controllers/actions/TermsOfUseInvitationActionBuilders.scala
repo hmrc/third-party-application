@@ -72,7 +72,7 @@ trait TermsOfUseInvitationActionBuilders {
       def executionContext: ExecutionContext = ec
 
       override def refine[A](request: Request[A]): Future[Either[Result, Request[A]]] = {
-        implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+        given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
         ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
           .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }

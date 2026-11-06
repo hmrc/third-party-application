@@ -37,7 +37,7 @@ class TestOnlyApplicationController @Inject() (
     applicationService: ApplicationService,
     cloneAppService: CloneApplicationService,
     mcc: MessagesControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(mcc) with JsonUtils {
 
   val noAuditing: StoredApplication => Future[AuditResult] = _ => successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Disabled)

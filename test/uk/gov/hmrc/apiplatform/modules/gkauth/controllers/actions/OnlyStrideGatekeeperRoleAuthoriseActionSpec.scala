@@ -32,11 +32,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class OnlyStrideGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
 
-  abstract class TestController(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc)
+  abstract class TestController(val cc: ControllerComponents)(using executionContext: ExecutionContext) extends BackendController(cc)
       with OnlyStrideGatekeeperRoleAuthoriseAction {
     def applicationService: ApplicationService
     def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-    implicit val ec: ExecutionContext = executionContext
+    given ec: ExecutionContext = executionContext
 
     def testMethod = requiresAuthentication() { (_: Request[?]) =>
       Ok("Authenticated")

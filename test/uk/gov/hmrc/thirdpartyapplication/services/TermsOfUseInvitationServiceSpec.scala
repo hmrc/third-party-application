@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 class TermsOfUseInvitationServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   trait Setup extends TermsOfUseInvitationRepositoryMockModule with EmailConnectorMockModule with StoredApplicationFixtures with CommonApplicationId {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val application = TermsOfUseApplication(applicationId, ApplicationName("app name"))
     val nowInstant  = instant

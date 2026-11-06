@@ -42,7 +42,7 @@ class UpliftVerificationExpiryJob @Inject() (
     submissionService: SubmissionsService,
     val clock: Clock,
     jobConfig: UpliftVerificationExpiryJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val upliftVerificationValidity: FiniteDuration = jobConfig.validity

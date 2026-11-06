@@ -63,8 +63,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
-  implicit val v1writes: OWrites[CreateApplicationRequestV1] = Json.writes[CreateApplicationRequestV1]
-  implicit val v2writes: OWrites[CreateApplicationRequestV2] = Json.writes[CreateApplicationRequestV2]
+  given v1writes: OWrites[CreateApplicationRequestV1] = Json.writes[CreateApplicationRequestV1]
+  given v2writes: OWrites[CreateApplicationRequestV2] = Json.writes[CreateApplicationRequestV2]
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
@@ -81,7 +81,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       with UpliftLinkServiceMockModule
       with StrideGatekeeperRoleAuthorisationServiceMockModule
       with ApplicationServiceMockModule {
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")

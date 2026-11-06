@@ -40,7 +40,7 @@ class GrantApplicationApprovalRequestCommandHandlerSpec extends CommandHandlerBa
       with StateHistoryRepositoryMockModule
       with TermsOfUseInvitationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission = submittedSubmission
 

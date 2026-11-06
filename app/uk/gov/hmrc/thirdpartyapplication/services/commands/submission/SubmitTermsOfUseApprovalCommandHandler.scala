@@ -48,7 +48,7 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     responsibleIndividualVerificationService: ResponsibleIndividualVerificationService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger {
 
   import CommandHandler._

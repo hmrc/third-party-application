@@ -55,7 +55,7 @@ class ApiPlatformEventsConnectorISpec extends ServerBaseISpec with WiremockSugar
     val userName = "bobby fingers"
 
     def testJson(updateApplicationEvent: ApplicationEvent, expectedRequestBody: String) = {
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+      given request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
       ApiPlatformEventsStub.verifyApplicationEventPostBody(expectedRequestBody)
       await(inTest.sendApplicationEvent(updateApplicationEvent)) shouldBe true

@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     submissionService: SubmissionsService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._

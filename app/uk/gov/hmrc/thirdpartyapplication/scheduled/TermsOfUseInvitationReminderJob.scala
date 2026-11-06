@@ -45,7 +45,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
     emailConnector: EmailConnector,
     val clock: Clock,
     jobConfig: TermsOfUseInvitationReminderJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val termsOfUseInvitationReminderInterval: FiniteDuration = jobConfig.reminderInterval
@@ -54,7 +54,7 @@ class TermsOfUseInvitationReminderJob @Inject() (
   override def initialDelay: FiniteDuration                = jobConfig.initialDelay
   override val isEnabled: Boolean                          = jobConfig.enabled
   override val lockService: LockService                    = termsOfUseInvitationReminderLockService
-  implicit val hc: HeaderCarrier                           = HeaderCarrier()
+  given hc: HeaderCarrier                                  = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     def getSubmission(applicationId: ApplicationId): Future[Option[Submission]]                                  = {

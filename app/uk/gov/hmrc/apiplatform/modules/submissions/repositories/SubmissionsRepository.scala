@@ -37,17 +37,17 @@ object SubmissionsRepository {
   object MongoFormats {
     import uk.gov.hmrc.play.json.Union
 
-    implicit val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = KeyReads(key => JsSuccess(Questionnaire.Id(key)))
-    implicit val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = KeyWrites(_.value)
+    given keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = KeyReads(key => JsSuccess(Questionnaire.Id(key)))
+    given keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = KeyWrites(_.value)
 
-    implicit val stateWrites: Writes[QuestionnaireState] = Writes {
+    given stateWrites: Writes[QuestionnaireState] = Writes {
       case QuestionnaireState.NotStarted    => JsString("NotStarted")
       case QuestionnaireState.InProgress    => JsString("InProgress")
       case QuestionnaireState.NotApplicable => JsString("NotApplicable")
       case QuestionnaireState.Completed     => JsString("Completed")
     }
 
-    implicit val stateReads: Reads[QuestionnaireState] = Reads {
+    given stateReads: Reads[QuestionnaireState] = Reads {
       case JsString("NotStarted")    => JsSuccess(QuestionnaireState.NotStarted)
       case JsString("InProgress")    => JsSuccess(QuestionnaireState.InProgress)
       case JsString("NotApplicable") => JsSuccess(QuestionnaireState.NotApplicable)
@@ -55,25 +55,25 @@ object SubmissionsRepository {
       case _                         => JsError("Failed to parse QuestionnaireState value")
     }
 
-    implicit val questionnaireProgressFormat: OFormat[QuestionnaireProgress] = Json.format[QuestionnaireProgress]
-    implicit val questionIdsOfInterestFormat: OFormat[QuestionIdsOfInterest] = Json.format[QuestionIdsOfInterest]
+    given questionnaireProgressFormat: OFormat[QuestionnaireProgress] = Json.format[QuestionnaireProgress]
+    given questionIdsOfInterestFormat: OFormat[QuestionIdsOfInterest] = Json.format[QuestionIdsOfInterest]
 
-    implicit val dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
+    given dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
     import Submission.Status._
 
-    implicit val RejectedStatusFormat: OFormat[Declined]                                         = Json.format[Declined]
-    implicit val AcceptedStatusFormat: OFormat[Granted]                                          = Json.format[Granted]
-    implicit val AcceptedWithWarningsStatusFormat: OFormat[GrantedWithWarnings]                  = Json.format[GrantedWithWarnings]
-    implicit val failedStatusFormat: OFormat[Failed]                                             = Json.format[Failed]
-    implicit val warningsStatusFormat: OFormat[Warnings]                                         = Json.format[Warnings]
-    implicit val pendingResponsibleIndividualStatusFormat: OFormat[PendingResponsibleIndividual] = Json.format[PendingResponsibleIndividual]
-    implicit val SubmittedStatusFormat: OFormat[Submitted]                                       = Json.format[Submitted]
-    implicit val answeringStatusFormat: OFormat[Answering]                                       = Json.format[Answering]
-    implicit val CreatedStatusFormat: OFormat[Created]                                           = Json.format[Created]
-    implicit val applicationsByAnswerFormat: OFormat[ApplicationsByAnswer]                       = Json.format[ApplicationsByAnswer]
+    given RejectedStatusFormat: OFormat[Declined]                                         = Json.format[Declined]
+    given AcceptedStatusFormat: OFormat[Granted]                                          = Json.format[Granted]
+    given AcceptedWithWarningsStatusFormat: OFormat[GrantedWithWarnings]                  = Json.format[GrantedWithWarnings]
+    given failedStatusFormat: OFormat[Failed]                                             = Json.format[Failed]
+    given warningsStatusFormat: OFormat[Warnings]                                         = Json.format[Warnings]
+    given pendingResponsibleIndividualStatusFormat: OFormat[PendingResponsibleIndividual] = Json.format[PendingResponsibleIndividual]
+    given SubmittedStatusFormat: OFormat[Submitted]                                       = Json.format[Submitted]
+    given answeringStatusFormat: OFormat[Answering]                                       = Json.format[Answering]
+    given CreatedStatusFormat: OFormat[Created]                                           = Json.format[Created]
+    given applicationsByAnswerFormat: OFormat[ApplicationsByAnswer]                       = Json.format[ApplicationsByAnswer]
 
-    implicit val submissionStatus: OFormat[Submission.Status] = Union.from[Submission.Status]("Submission.StatusType")
+    given submissionStatus: OFormat[Submission.Status] = Union.from[Submission.Status]("Submission.StatusType")
       .and[Declined]("declined")
       .and[Granted]("granted")
       .and[GrantedWithWarnings]("grantedWithWarnings")
@@ -88,13 +88,13 @@ object SubmissionsRepository {
     import GroupOfQuestionnaires.given
     import NonEmptyListFormatters.given
 
-    implicit val submissionInstanceFormat: OFormat[Submission.Instance] = Json.format[Submission.Instance]
-    implicit val submissionFormat: OFormat[Submission]                  = Json.format[Submission]
+    given submissionInstanceFormat: OFormat[Submission.Instance] = Json.format[Submission.Instance]
+    given submissionFormat: OFormat[Submission]                  = Json.format[Submission]
   }
 }
 
 @Singleton
-class SubmissionsRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+class SubmissionsRepository @Inject() (mongo: MongoComponent)(using val ec: ExecutionContext)
     extends PlayMongoRepository[Submission](
       collectionName = "submissions",
       mongoComponent = mongo,

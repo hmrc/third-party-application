@@ -32,7 +32,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val reasons = "reasons description text"
     val actor   = Actors.AppCollaborator(adminOne.emailAddress)

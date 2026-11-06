@@ -37,7 +37,7 @@ class ChangeSandboxApplicationNameCommandHandlerSpec extends CommandHandlerBaseS
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldName   = app.name
     val newName   = ApplicationName("New app name")

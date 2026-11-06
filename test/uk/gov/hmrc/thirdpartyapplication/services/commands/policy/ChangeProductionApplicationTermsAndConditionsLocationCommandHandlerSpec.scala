@@ -33,7 +33,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandlerSpec ex
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldUrl      = "http://example.com/old"
     val newUrl      = "http://example.com/new"

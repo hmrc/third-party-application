@@ -69,5 +69,5 @@ case class SubscriptionCountByApi(_id: ApiIdentifier, count: Int)
 object SubscriptionCountByApi {
   import play.api.libs.json.Json
 
-  implicit val subscriptionCountByApi: OFormat[SubscriptionCountByApi] = Json.format[SubscriptionCountByApi]
+  given subscriptionCountByApi: OFormat[SubscriptionCountByApi] = Json.format[SubscriptionCountByApi]
 }

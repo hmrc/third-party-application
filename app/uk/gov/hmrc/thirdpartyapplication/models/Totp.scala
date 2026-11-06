@@ -21,5 +21,5 @@ import play.api.libs.json.*
 case class Totp(secret: String, id: String)
 
 object Totp {
-  implicit val format: OFormat[Totp] = Json.format[Totp]
+  given format: OFormat[Totp] = Json.format[Totp]
 }

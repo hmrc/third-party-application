@@ -67,7 +67,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       with SubmissionsServiceMockModule
       with ThirdPartyDelegatedAuthorityServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val response = mock[HttpResponse]
 

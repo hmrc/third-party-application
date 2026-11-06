@@ -44,13 +44,13 @@ object TermsOfUseInvitationRepository {
 
   object MongoFormats extends MongoJavatimeFormats.Implicits {
     import play.api.libs.json.{Format, Json}
-    implicit val formatInstant: Format[Instant]                           = MongoJavatimeFormats.instantFormat
-    implicit val formatTermsOfUseInvitation: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
+    given formatInstant: Format[Instant]                           = MongoJavatimeFormats.instantFormat
+    given formatTermsOfUseInvitation: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
   }
 }
 
 @Singleton
-class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock: Clock, val metrics: Metrics)(using val ec: ExecutionContext)
     extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,

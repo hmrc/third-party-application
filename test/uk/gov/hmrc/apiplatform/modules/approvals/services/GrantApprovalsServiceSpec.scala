@@ -44,9 +44,9 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       with StoredApplicationFixtures
       with SubmissionsTestData {
 
-    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+    given ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 

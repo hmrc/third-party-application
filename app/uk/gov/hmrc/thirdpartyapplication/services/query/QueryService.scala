@@ -39,7 +39,7 @@ class QueryService @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subsFieldsService: SubscriptionFieldsService
-  )(implicit val ec: ExecutionContext,
+  )(using val ec: ExecutionContext,
     mat: Materializer
   ) extends ApplicationLogger {
 

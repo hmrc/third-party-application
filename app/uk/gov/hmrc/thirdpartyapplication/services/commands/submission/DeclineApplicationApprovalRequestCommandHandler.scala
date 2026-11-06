@@ -39,7 +39,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._

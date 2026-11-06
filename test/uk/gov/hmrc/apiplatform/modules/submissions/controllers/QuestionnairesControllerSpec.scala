@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires._
-  implicit val mat: Materializer = NoMaterializer
+  given mat: Materializer = NoMaterializer
 
   trait Setup extends QuestionnaireDAOMockModule with SubmissionsTestData {
     val underTest = new QuestionnairesController(QuestionnaireDAOMock.aMock, Helpers.stubControllerComponents())

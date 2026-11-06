@@ -34,7 +34,7 @@ class StrideGatekeeperRoleAuthorisationService @Inject() (
     authControlConfig: AuthControlConfig,
     strideAuthRoles: StrideAuthRoles,
     strideAuthConnector: StrideAuthConnector
-  )(implicit val ec: ExecutionContext
+  )(using ec: ExecutionContext
   ) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   private lazy val hasAnyGatekeeperEnrolment =

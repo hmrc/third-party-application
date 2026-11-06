@@ -40,7 +40,7 @@ class ApplicationCommandAuthenticatorSpec extends AsyncHmrcSpec with StrideAuthC
     val strideAuthRoles: StrideAuthRoles     = StrideAuthRoles("admin", "super-user", "advanced-user", "user")
     val authControlConfig: AuthControlConfig = AuthControlConfig(true, true, "authKey")
 
-    implicit val headers: HeaderCarrier = HeaderCarrier()
+    given headers: HeaderCarrier = HeaderCarrier()
 
     val underTest = new ApplicationCommandAuthenticator(
       strideAuthRoles,

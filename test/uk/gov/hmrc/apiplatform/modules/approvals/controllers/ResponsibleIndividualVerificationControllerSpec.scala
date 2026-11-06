@@ -30,11 +30,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVeri
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {
-  implicit val mat: Materializer = NoMaterializer
-  val code                       = "12345678"
-  val name                       = "bob example"
-  val emailAddress               = "test@example.com"
-  val appId                      = ApplicationId.random
+  given mat: Materializer = NoMaterializer
+  val code                = "12345678"
+  val name                = "bob example"
+  val emailAddress        = "test@example.com"
+  val appId               = ApplicationId.random
 
   trait Setup
       extends ResponsibleIndividualVerificationServiceMockModule {

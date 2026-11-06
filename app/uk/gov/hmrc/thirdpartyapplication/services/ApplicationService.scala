@@ -71,7 +71,7 @@ class ApplicationService @Inject() (
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends MetricsTimer with ApplicationLogger with ActorHelper with ClockNow {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {

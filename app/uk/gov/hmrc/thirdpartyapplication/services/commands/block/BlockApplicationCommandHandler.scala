@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class BlockApplicationCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ApplicationLogger with ClockNow {
 
   import CommandHandler._

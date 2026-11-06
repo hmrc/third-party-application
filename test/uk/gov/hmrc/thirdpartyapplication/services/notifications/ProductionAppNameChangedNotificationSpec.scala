@@ -31,7 +31,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Stored
 
   trait Setup extends EmailConnectorMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationId.random
     val devEmail              = developerOne.emailAddress

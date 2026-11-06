@@ -21,7 +21,7 @@ import play.api.libs.json.{Json, Reads}
 case class ApplicationLabel(id: String, name: String)
 
 object ApplicationLabel {
-  implicit val reads: Reads[ApplicationLabel] = Json.reads[ApplicationLabel]
+  given reads: Reads[ApplicationLabel] = Json.reads[ApplicationLabel]
 }
 
 case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)

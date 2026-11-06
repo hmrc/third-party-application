@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class LinkToOrganisationCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ApplicationLogger {
 
   import CommandHandler._

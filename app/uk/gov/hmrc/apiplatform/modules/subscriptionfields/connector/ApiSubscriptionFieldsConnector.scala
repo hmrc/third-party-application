@@ -44,11 +44,11 @@ object ApiSubscriptionFieldsConnector {
       fields: Map[FieldName, FieldValue]
     )
 
-  implicit val writeSubscriptionFieldsPutRequest: Writes[SubscriptionFieldsPutRequest] = Json.writes[SubscriptionFieldsPutRequest]
+  given writeSubscriptionFieldsPutRequest: Writes[SubscriptionFieldsPutRequest] = Json.writes[SubscriptionFieldsPutRequest]
 }
 
 @Singleton
-class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
+class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(using val ec: ExecutionContext) extends ResponseUtils
     with JsonBodyWritables {
   import ApiSubscriptionFieldsConnector._
 

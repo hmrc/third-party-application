@@ -37,7 +37,7 @@ class PublisherController @Inject() (
     applicationCommandDispatcher: ApplicationCommandDispatcher,
     cc: ControllerComponents,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils with ClockNow {
 
   // What do we want to do if unsubscribing goes wrong??

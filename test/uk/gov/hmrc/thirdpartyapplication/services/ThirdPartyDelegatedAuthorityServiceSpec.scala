@@ -31,10 +31,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
-  implicit val actorSystem: ActorSystem = ActorSystem("test")
+  given actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
-    implicit val hc: HeaderCarrier                                                       = HeaderCarrier()
+    given hc: HeaderCarrier                                                              = HeaderCarrier()
     val mockThirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val underTest                                                                        = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
   }

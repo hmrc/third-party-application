@@ -33,7 +33,7 @@ class ChangeSandboxApplicationTermsnAndConditonsUrlCommandHandlerSpec extends Co
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldValue  = "some url"
     val newValue  = "new url"

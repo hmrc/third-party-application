@@ -33,7 +33,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminEmail                        = adminTwo.emailAddress
     val jobId                                = "DeleteUnusedApplicationsJob"

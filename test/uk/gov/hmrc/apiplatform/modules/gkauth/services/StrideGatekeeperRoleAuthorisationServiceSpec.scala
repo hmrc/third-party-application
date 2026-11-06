@@ -28,8 +28,8 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule {
-  val request                    = FakeRequest()
-  implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+  val request             = FakeRequest()
+  given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
 
   trait Setup {
     def authControlConfig: AuthControlConfig

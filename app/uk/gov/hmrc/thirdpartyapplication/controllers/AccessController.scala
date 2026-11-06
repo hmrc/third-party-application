@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 
 @Singleton
@@ -36,7 +36,7 @@ class AccessController @Inject() (
     val applicationService: ApplicationService,
     accessService: AccessService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils with ApplicationTypeAuthorisationActions {
 
   def readScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { _ =>

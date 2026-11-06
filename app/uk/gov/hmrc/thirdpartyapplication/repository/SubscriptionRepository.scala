@@ -41,7 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 @Singleton
-class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class SubscriptionRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(using val ec: ExecutionContext)
     extends PlayMongoRepository[SubscriptionData](
       collectionName = "subscription",
       mongoComponent = mongo,

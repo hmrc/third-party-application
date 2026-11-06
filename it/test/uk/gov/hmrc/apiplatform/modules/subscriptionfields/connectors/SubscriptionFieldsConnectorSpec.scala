@@ -45,8 +45,8 @@ class SubscriptionFieldsConnectorSpec
     with ApiFieldMapFixtures {
 
   trait SetupPrincipal {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-    val clientId                   = ClientId("123")
+    given hc: HeaderCarrier = HeaderCarrier()
+    val clientId            = ClientId("123")
 
     val httpClient = app.injector.instanceOf[HttpClientV2]
     val config     = uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector.Config(wireMockUrl)

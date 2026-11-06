@@ -42,7 +42,7 @@ class ChangeApplicationAccessOverridesCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     auditService: AuditService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ApplicationLogger with ClockNow {
 
   import CommandHandler._

@@ -34,20 +34,20 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 object SubmissionsController {
 
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
+  given writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 
   case class RecordAnswersRequest(answers: List[String])
-  implicit val readsRecordAnswersRequest: Reads[RecordAnswersRequest] = Json.reads[RecordAnswersRequest]
+  given readsRecordAnswersRequest: Reads[RecordAnswersRequest] = Json.reads[RecordAnswersRequest]
 
   case class CreateSubmissionRequest(requestedBy: String)
-  implicit val readsCreateSubmissionRequest: Reads[CreateSubmissionRequest] = Json.reads[CreateSubmissionRequest]
+  given readsCreateSubmissionRequest: Reads[CreateSubmissionRequest] = Json.reads[CreateSubmissionRequest]
 }
 
 @Singleton
 class SubmissionsController @Inject() (
     service: SubmissionsService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) {
   import Submission.given
   import SubmissionsController._

@@ -44,7 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDelete
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 @Singleton
-class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) {
+class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(using val ec: ExecutionContext) {
 
   import cats.instances.future.catsStdInstancesForFuture
   private val E = EitherTHelper.make[String]

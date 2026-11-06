@@ -31,13 +31,13 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.*
 trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
   self: BackendController =>
 
-  implicit val ec: ExecutionContext
+  given ec: ExecutionContext
   def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
 
   def anyAuthenticatedUserAction(block: Request[?] => Future[Result]): Action[AnyContent] = {
     Action.async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         .recoverWith { case NonFatal(_) =>
           logger.warn("LDAP Authenticate errored trying to find user, trying stride")

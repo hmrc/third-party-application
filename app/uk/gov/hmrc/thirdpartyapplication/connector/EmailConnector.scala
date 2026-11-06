@@ -46,12 +46,12 @@ object EmailConnector {
     )
 
   private[connector] object SendEmailRequest {
-    implicit val sendEmailRequestFmt: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
+    given sendEmailRequestFmt: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
   }
 }
 
 @Singleton
-class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector.Config)(implicit val ec: ExecutionContext) extends ApplicationLogger with JsonBodyWritables {
+class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector.Config)(using val ec: ExecutionContext) extends ApplicationLogger with JsonBodyWritables {
   import EmailConnector._
 
   val serviceUrl      = config.baseUrl

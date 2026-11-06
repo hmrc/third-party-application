@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 @Singleton
-class NotificationService @Inject() (emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class NotificationService @Inject() (emailConnector: EmailConnector)(using val ec: ExecutionContext) extends ApplicationLogger {
 
   def getActorAsString(actor: Actor): String =
     actor match {

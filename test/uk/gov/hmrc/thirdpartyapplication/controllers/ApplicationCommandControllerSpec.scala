@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, DispatchRequest}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandServiceMockModule, ApplicationServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationCommandControllerSpec
@@ -48,7 +48,7 @@ class ApplicationCommandControllerSpec
 
   import play.api.test.Helpers._
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends ApplicationCommandServiceMockModule with ApplicationServiceMockModule {
@@ -67,7 +67,7 @@ class ApplicationCommandControllerSpec
   val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), instant)
   val dispatch                = DispatchRequest(cmd, Set("fred".toLaxEmail))
 
-  implicit val tempWriter: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
+  given tempWriter: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
 
   val instigatorUserId = UUID.randomUUID().toString
 

@@ -32,7 +32,7 @@ class UnsubscribeFromRetiredApiCommandHandlerSpec extends CommandHandlerBaseSpec
 
   trait Setup extends SubscriptionRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new UnsubscribeFromRetiredApiCommandHandler(SubscriptionRepoMock.aMock)
 

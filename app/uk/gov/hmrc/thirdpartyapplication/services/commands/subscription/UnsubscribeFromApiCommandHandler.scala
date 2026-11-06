@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class UnsubscribeFromApiCommandHandler @Inject() (
     subscriptionRepository: SubscriptionRepository,
     strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._

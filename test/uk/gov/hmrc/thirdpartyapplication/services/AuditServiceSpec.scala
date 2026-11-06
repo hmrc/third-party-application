@@ -88,8 +88,8 @@ class AuditServiceSpec
 
   "AuditService audit" should {
     "pass through data to underlying auditConnector" in new Setup {
-      val data                       = Map("some-header" -> "la-di-dah")
-      implicit val hc: HeaderCarrier = HeaderCarrier()
+      val data                = Map("some-header" -> "la-di-dah")
+      given hc: HeaderCarrier = HeaderCarrier()
 
       val event = DataEvent(
         auditSource = "third-party-application",
@@ -103,10 +103,10 @@ class AuditServiceSpec
     }
 
     "add user context where it exists in the header carrier" in new Setup {
-      val data                       = Map("some-header" -> "la-di-dah")
-      val email                      = "test@example.com"
-      val name                       = "John Smith"
-      implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+      val data                = Map("some-header" -> "la-di-dah")
+      val email               = "test@example.com"
+      val name                = "John Smith"
+      given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
         LOGGED_IN_USER_EMAIL_HEADER -> email,
         LOGGED_IN_USER_NAME_HEADER  -> name
       )
@@ -130,9 +130,9 @@ class AuditServiceSpec
     }
 
     "add as much user context as possible where only partial data exists" in new Setup {
-      val data                            = Map("some-header" -> "la-di-dah")
-      val email                           = "test@example.com"
-      implicit val emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
+      val data                     = Map("some-header" -> "la-di-dah")
+      val email                    = "test@example.com"
+      given emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
 
       val event = DataEvent(
         auditSource = "third-party-application",
@@ -159,8 +159,8 @@ class AuditServiceSpec
     val requesterName  = "bill badger"
     val appInTesting   = applicationData.withState(ApplicationStateExamples.testing)
 
-    val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    val collaboratorActor   = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
+    given hc: HeaderCarrier = HeaderCarrier()
 
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
 

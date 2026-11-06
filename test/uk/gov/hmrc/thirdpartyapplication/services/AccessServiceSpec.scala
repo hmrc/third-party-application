@@ -53,7 +53,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
 
   trait Fixture extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val accessService = new AccessService(ApplicationRepoMock.aMock)
   }

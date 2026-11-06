@@ -37,7 +37,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
   trait Setup extends SubmissionsServiceMockModule with ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission  = aSubmission
     val oldRiUserId = adminTwo.userId

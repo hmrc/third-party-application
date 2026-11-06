@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
 
 private[controllers] object SubscribersResponse {
-  implicit val writer: OWrites[SubscribersResponse] = Json.writes[SubscribersResponse]
+  given writer: OWrites[SubscribersResponse] = Json.writes[SubscribersResponse]
 }
 
 @Singleton
@@ -39,7 +39,7 @@ class SubscriptionController @Inject() (
     subscriptionRepository: SubscriptionRepository,
     applicationRepository: ApplicationRepository,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
   def getSubscribers(context: ApiContext, version: ApiVersionNbr): Action[AnyContent] = Action.async { _ =>

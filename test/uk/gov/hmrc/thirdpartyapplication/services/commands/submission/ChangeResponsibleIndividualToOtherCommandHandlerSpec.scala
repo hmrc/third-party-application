@@ -54,7 +54,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       with TermsOfUseInvitationRepositoryMockModule
       with SubmissionsServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission               = aSubmission
     val riName                   = "Mr Responsible"

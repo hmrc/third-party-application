@@ -60,7 +60,7 @@ trait ApplicationTypeAuthorisationActions {
     }
 
     def filter[A](request: Request[A]): Future[Option[Result]] = {
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       deriveAccessType(request) flatMap {
         case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE

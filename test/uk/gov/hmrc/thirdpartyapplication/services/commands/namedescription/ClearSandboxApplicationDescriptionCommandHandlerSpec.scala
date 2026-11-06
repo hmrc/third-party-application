@@ -36,7 +36,7 @@ class ClearSandboxApplicationDescriptionCommandHandlerSpec extends CommandHandle
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldDescription = app.description
     val newDescription = "New app name"

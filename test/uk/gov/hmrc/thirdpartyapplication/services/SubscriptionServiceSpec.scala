@@ -78,7 +78,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
 
   trait Setup extends SetupWithoutHc {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> adminOne.emailAddress.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
@@ -88,7 +88,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
 
     val gkUserEmail = "john.smith@hmrc.co.uk"
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> gkUserEmail,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
@@ -135,9 +135,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
     }
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
-      implicit val hc: HeaderCarrier = HeaderCarrier()
-      val applicationData            = storedApp
-      val actor                      = Actors.GatekeeperUser("Gatekeeper Admin")
+      given hc: HeaderCarrier = HeaderCarrier()
+      val applicationData     = storedApp
+      val actor               = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 

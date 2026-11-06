@@ -43,7 +43,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject() (
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository,
     val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends AbstractDeleteApplicationCommandHandler {
 
   import CommandHandler._

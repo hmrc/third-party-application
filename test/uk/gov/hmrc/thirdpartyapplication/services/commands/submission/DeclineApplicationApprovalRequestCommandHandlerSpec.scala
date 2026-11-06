@@ -38,7 +38,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends CommandHandler
 
   trait Setup extends ApplicationRepositoryMockModule with StateHistoryRepositoryMockModule with SubmissionsServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val riName                   = "Mr Responsible"
     val riEmail                  = "ri@example.com".toLaxEmail

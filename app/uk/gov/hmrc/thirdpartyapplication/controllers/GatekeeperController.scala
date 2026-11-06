@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{JsonUtils, WarnStillInUse}
 import uk.gov.hmrc.thirdpartyapplication.models.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.services.*
 
 @Singleton
@@ -43,7 +43,7 @@ class GatekeeperController @Inject() (
     val applicationDataService: ApplicationDataService,
     val submissionsService: SubmissionsService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc)
     with JsonUtils
     with AnyGatekeeperRoleAuthorisationAction

@@ -27,5 +27,5 @@ object ResponsibleIndividualVerificationId {
 
   def random: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId(ju.UUID.randomUUID().toString)
 
-  implicit val JsonFormat: Format[ResponsibleIndividualVerificationId] = Json.valueFormat[ResponsibleIndividualVerificationId]
+  given JsonFormat: Format[ResponsibleIndividualVerificationId] = Json.valueFormat[ResponsibleIndividualVerificationId]
 }

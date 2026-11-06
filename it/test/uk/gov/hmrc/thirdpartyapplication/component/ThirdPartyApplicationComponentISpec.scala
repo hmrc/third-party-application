@@ -38,7 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{Appl
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.*
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
@@ -622,8 +622,8 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
   }
 
   def sendApplicationCommand(cmd: ApplicationCommand, application: ApplicationWithCollaborators, extraHeaders: Seq[Header] = Seq()): Response[Either[String, String]] = {
-    val request                                   = DispatchRequest(cmd, Set.empty)
-    implicit val writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
+    val request                            = DispatchRequest(cmd, Set.empty)
+    given writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
     sendJsonRequest(s"/application/${application.id}/dispatch", Json.toJson(request).toString(), extraHeaders, Method.PATCH)
   }
 

@@ -36,7 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class ChangeSandboxApplicationNameCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     namingService: UpliftNamingService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._

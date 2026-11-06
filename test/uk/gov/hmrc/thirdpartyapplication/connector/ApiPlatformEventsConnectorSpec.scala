@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicationId {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
 

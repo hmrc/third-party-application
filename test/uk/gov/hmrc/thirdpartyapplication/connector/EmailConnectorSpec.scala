@@ -35,10 +35,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class EmailConnectorSpec extends ConnectorSpec with CollaboratorTestData {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
-  private val hubTestTitle       = "Unit Test Hub Title"
-  private val hubUrl             = "http://localhost:9685"
-  private val environmentName    = "sandbox"
+  given hc: HeaderCarrier     = HeaderCarrier()
+  private val hubTestTitle    = "Unit Test Hub Title"
+  private val hubUrl          = "http://localhost:9685"
+  private val environmentName = "sandbox"
 
   trait Setup extends HttpClientV2Support {
     val config    = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)

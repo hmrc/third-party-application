@@ -37,7 +37,7 @@ class GatekeeperService @Inject() (
     auditService: AuditService,
     applicationService: ApplicationService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
   def fetchAppStateHistories(): Future[Seq[ApplicationStateHistoryResponse]] = {

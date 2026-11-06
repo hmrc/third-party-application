@@ -38,7 +38,7 @@ class TermsOfUseInvitationController @Inject() (
     val applicationDataService: ApplicationDataService,
     val submissionsService: SubmissionsService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
   def fetchInvitation(applicationId: ApplicationId) = Action.async { _ =>

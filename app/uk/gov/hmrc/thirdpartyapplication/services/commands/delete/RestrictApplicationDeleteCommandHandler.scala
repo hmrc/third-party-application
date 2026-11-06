@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class RestrictApplicationDeleteCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._

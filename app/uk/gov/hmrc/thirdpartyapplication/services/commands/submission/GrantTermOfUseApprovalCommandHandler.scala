@@ -47,7 +47,7 @@ class GrantTermsOfUseApprovalCommandHandler @Inject() (
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     submissionService: SubmissionsService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger with ClockNow {
 
   import CommandHandler._

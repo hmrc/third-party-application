@@ -37,7 +37,7 @@ object ApplicationCommandController {
   object DispatchResult {
     import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters.given
 
-    implicit val format: OFormat[DispatchResult] = Json.format[DispatchResult]
+    given format: OFormat[DispatchResult] = Json.format[DispatchResult]
   }
 }
 
@@ -46,7 +46,7 @@ class ApplicationCommandController @Inject() (
     val applicationCommandService: ApplicationCommandService,
     val applicationService: ApplicationService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationLogger {

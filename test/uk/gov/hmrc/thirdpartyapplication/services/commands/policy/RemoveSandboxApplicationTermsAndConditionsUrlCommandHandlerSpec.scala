@@ -34,7 +34,7 @@ class RemoveSandboxApplicationTermsAndConditionsCommandHandlerSpec extends Comma
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldValue = "Old Url"
     val newValue = "New Url"

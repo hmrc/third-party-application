@@ -39,13 +39,13 @@ import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 object TestApplicationsRepository {
   case class TestApplicationData(id: ApplicationId, createdOn: Instant = Instant.now)
 
-  implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
+  given formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  implicit val format: Format[TestApplicationData] = Json.format[TestApplicationData]
+  given format: Format[TestApplicationData] = Json.format[TestApplicationData]
 }
 
 @Singleton
-class TestApplicationsRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class TestApplicationsRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(using val ec: ExecutionContext)
     extends PlayMongoRepository[TestApplicationsRepository.TestApplicationData](
       collectionName = "testApplications",
       mongoComponent = mongo,

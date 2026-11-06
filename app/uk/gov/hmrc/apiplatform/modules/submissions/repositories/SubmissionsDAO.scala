@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
 
 @Singleton
-class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext) {
+class SubmissionsDAO @Inject() (submissionsRepository: SubmissionsRepository)(using val ec: ExecutionContext) {
 
   private lazy val collection = submissionsRepository.collection
 

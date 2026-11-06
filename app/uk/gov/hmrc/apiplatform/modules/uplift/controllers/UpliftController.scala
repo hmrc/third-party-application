@@ -31,11 +31,11 @@ object UpliftController {
   import play.api.libs.json.Json
 
   case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: LaxEmailAddress)
-  implicit val formatUpliftApplicationRequest: OFormat[UpliftApplicationRequest] = Json.format[UpliftApplicationRequest]
+  given formatUpliftApplicationRequest: OFormat[UpliftApplicationRequest] = Json.format[UpliftApplicationRequest]
 }
 
 @Singleton
-class UpliftController @Inject() (upliftService: UpliftService, cc: ControllerComponents)(implicit val ec: ExecutionContext)
+class UpliftController @Inject() (upliftService: UpliftService, cc: ControllerComponents)(using val ec: ExecutionContext)
     extends ExtraHeadersController(cc)
     with JsonUtils {
 

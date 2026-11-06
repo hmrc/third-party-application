@@ -31,7 +31,7 @@ object TotpConnector {
 }
 
 @Singleton
-class TotpConnector @Inject() (httpClient: HttpClientV2, config: TotpConnector.Config)(implicit val ec: ExecutionContext) {
+class TotpConnector @Inject() (httpClient: HttpClientV2, config: TotpConnector.Config)(using val ec: ExecutionContext) {
 
   def generateTotp()(implicit hc: HeaderCarrier): Future[Totp] = {
     val postUrl = url"${config.baseUrl}/time-based-one-time-password/secret"

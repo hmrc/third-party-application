@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.*
 @Singleton
 class ThirdPartyDelegatedAuthorityService @Inject() (
     thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture

@@ -43,7 +43,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
       with StateHistoryRepositoryMockModule
       with TermsOfUseInvitationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminUserId = UserId.random
     val appAdminEmail  = "bob@example.com".toLaxEmail

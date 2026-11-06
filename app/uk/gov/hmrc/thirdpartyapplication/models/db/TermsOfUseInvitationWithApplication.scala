@@ -46,6 +46,6 @@ final case class TermsOfUseApplication(
   )
 
 object TermsOfUseInvitationWithApplication extends MongoJavatimeFormats.Implicits {
-  implicit val formatTermsOfUseApplication: Format[TermsOfUseApplication]                             = Json.format[TermsOfUseApplication]
-  implicit val formatTermsOfUseInvitationWithApplication: Format[TermsOfUseInvitationWithApplication] = Json.format[TermsOfUseInvitationWithApplication]
+  given formatTermsOfUseApplication: Format[TermsOfUseApplication]                             = Json.format[TermsOfUseApplication]
+  given formatTermsOfUseInvitationWithApplication: Format[TermsOfUseInvitationWithApplication] = Json.format[TermsOfUseInvitationWithApplication]
 }

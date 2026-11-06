@@ -36,7 +36,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminEmail                        = adminTwo.emailAddress
     val actor: Actors.ScheduledJob           = Actors.ScheduledJob("DeleteUnusedApplicationsJob")

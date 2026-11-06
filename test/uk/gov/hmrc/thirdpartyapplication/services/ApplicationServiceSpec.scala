@@ -125,7 +125,7 @@ class ApplicationServiceSpec
       LOGGED_IN_USER_NAME_HEADER  -> "Bob Bentley"
     )
 
-    implicit val hc: HeaderCarrier = hcForLoggedInCollaborator
+    given hc: HeaderCarrier = hcForLoggedInCollaborator
 
     val mockNameValidationConfig = mock[ApplicationNamingService.Config]
 

@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{OverridesResponse, ScopeRespons
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
-class AccessService @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) {
+class AccessService @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) {
 
   def readScopes(applicationId: ApplicationId): Future[ScopeResponse] =
     fetchApp(applicationId).map(getScopes).map(ScopeResponse.apply)

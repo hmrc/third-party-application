@@ -37,7 +37,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
       with SubscriptionRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new SubscribeToApiCommandHandler(SubscriptionRepoMock.aMock, StrideGatekeeperRoleAuthorisationServiceMock.aMock)
 

@@ -66,7 +66,7 @@ class ApplicationCommandDispatcher @Inject() (
     blockCommandsProcessor: BlockCommandsProcessor,
     scopesCommandsProcessor: ScopesCommandsProcessor,
     linkToOrganisationCommandsProcessor: LinkToOrganisationCommandsProcessor
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger {
 
   import CommandHandler._

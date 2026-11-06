@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionF
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFieldsConnectorMockModule with SubscriptionFieldsData {
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   case class Setup(defns: ApiFieldMap[FieldDefinition], values: ApiFieldMap[FieldValue]) {
     ApiSubscriptionFieldsConnectorMock.FetchFieldValues.willReturnFields(values)

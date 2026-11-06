@@ -37,7 +37,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       with ApplicationNameValidationConfigMockModule
       with ApplicationWithCollaboratorsFixtures {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationId: ApplicationId = ApplicationId.random
     val accessType: AccessType       = AccessType.Standard

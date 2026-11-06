@@ -30,11 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class TotpConnectorSpec extends ConnectorSpec {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
-  private val baseUrl            = wireMockUrl
+  given hc: HeaderCarrier = HeaderCarrier()
+  private val baseUrl     = wireMockUrl
 
   trait Setup extends HttpClientV2Support {
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationName: String = "third-party-application"
     val config                  = TotpConnector.Config(baseUrl)

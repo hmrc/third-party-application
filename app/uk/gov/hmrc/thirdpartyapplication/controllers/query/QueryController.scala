@@ -41,7 +41,7 @@ class QueryController @Inject() (
     queryService: QueryService,
     cc: ControllerComponents,
     val metrics: Metrics
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationLogger

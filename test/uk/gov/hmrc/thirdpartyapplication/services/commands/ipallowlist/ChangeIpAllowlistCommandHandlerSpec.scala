@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 class ChangeIpAllowlistCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends ApplicationRepositoryMockModule {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val anApplication = storedApp
 

@@ -34,7 +34,7 @@ class RestrictApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appWithDeleteAllowed         = storedApp.inSandbox().copy(deleteRestriction = NoRestriction)
     val timestamp                    = FixedClock.instant

@@ -31,17 +31,17 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
 
 object ResponsibleIndividualVerificationController {
   case class ResponsibleIndividualVerificationRequest(code: String)
-  implicit val readsResponsibleIndividualVerificationRequest: Reads[ResponsibleIndividualVerificationRequest] = Json.reads[ResponsibleIndividualVerificationRequest]
+  given readsResponsibleIndividualVerificationRequest: Reads[ResponsibleIndividualVerificationRequest] = Json.reads[ResponsibleIndividualVerificationRequest]
 
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
+  given writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 }
 
 @Singleton
 class ResponsibleIndividualVerificationController @Inject() (
     val responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with ResponsibleIndividualVerificationFrontendJsonFormatters
     with JsonUtils
     with JsonErrorResponse {

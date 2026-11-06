@@ -48,7 +48,7 @@ class TestApplicationsCleanupJob @Inject() (
     applicationService: ApplicationService,
     val clock: Clock,
     jobConfig: TestApplicationsCleanupJob.Config
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExclusiveLockedScheduledJob with ClockNow {
 
   override def name: String                 = "TestApplicationsCleanupJob"
@@ -58,7 +58,7 @@ class TestApplicationsCleanupJob @Inject() (
 
   override val lockSafetyMarginExcess = 1.hour
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   logger.info("TestApplicationsCleanupJob ready!!!")
 

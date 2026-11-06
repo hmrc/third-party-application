@@ -41,7 +41,7 @@ class MetricsScheduler @Inject() (
     rateLimitMetrics: RateLimitMetrics,
     lockRepository: LockRepository,
     metricRepository: MetricRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger {
 
   val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)

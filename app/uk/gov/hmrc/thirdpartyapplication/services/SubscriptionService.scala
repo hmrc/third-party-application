@@ -38,7 +38,7 @@ class SubscriptionService @Inject() (
     subscriptionRepository: SubscriptionRepository,
     applicationCommandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper with ClockNow {
 
   def searchCollaborators(context: ApiContext, version: ApiVersionNbr, partialEmailMatch: Option[String]): Future[List[String]] = {

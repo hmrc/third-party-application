@@ -30,5 +30,5 @@ object StateHistoryResponse {
 
   import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters._
   import Actor.given
-  implicit val format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
+  given format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
 }

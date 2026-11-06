@@ -28,14 +28,14 @@ import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
 object QuestionnairesController {
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
+  given writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 }
 
 @Singleton
 class QuestionnairesController @Inject() (
     dao: QuestionnaireDAO,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) {
 
   import QuestionnairesController._

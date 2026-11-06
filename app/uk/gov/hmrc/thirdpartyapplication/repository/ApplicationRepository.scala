@@ -43,15 +43,16 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.mongo.{MongoComment, MongoComponent}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{*, given}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute, given}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{*, given}
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType, OverrideFlag, SellResellOrDistribute}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{*, given}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{*, given}
-import uk.gov.hmrc.thirdpartyapplication.models.{*, given}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{*, given}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats.PaginatedApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
@@ -63,24 +64,24 @@ object ApplicationRepository {
     import uk.gov.hmrc.play.json.Union
     import Actor.given
 
-    implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
+    given formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-    implicit val formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.using[Json.WithDefaultValues].format[TermsOfUseAcceptance]
-    implicit val formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
-    implicit val formatImportantSubmissionData: OFormat[ImportantSubmissionData] = Json.format[ImportantSubmissionData]
-    implicit val formatStateHistory: OFormat[StateHistory]                       = Json.format[StateHistory]
+    given formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.using[Json.WithDefaultValues].format[TermsOfUseAcceptance]
+    given formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
+    given formatImportantSubmissionData: OFormat[ImportantSubmissionData] = Json.format[ImportantSubmissionData]
+    given formatStateHistory: OFormat[StateHistory]                       = Json.format[StateHistory]
 
-    implicit val formatStoredClientSecret: OFormat[StoredClientSecret] = Json.format[StoredClientSecret]
-    implicit val formatStoredToken: OFormat[StoredToken]               = Json.format[StoredToken]
+    given formatStoredClientSecret: OFormat[StoredClientSecret] = Json.format[StoredClientSecret]
+    given formatStoredToken: OFormat[StoredToken]               = Json.format[StoredToken]
 
-    implicit val writesStandard: OWrites[Access.Standard] = Json.writes[Access.Standard]
+    given writesStandard: OWrites[Access.Standard] = Json.writes[Access.Standard]
 
     // Because the data in the db might be old and not a valid redirect URI we need this
     // to use new to avoid the filter on RedirectUri.apply()
     private val convertToLoginRedirectUri: List[String] => List[LoginRedirectUri] = items =>
       items.map(LoginRedirectUri.unsafeApply(_))
 
-    implicit val readsStandard: Reads[Access.Standard] = (
+    given readsStandard: Reads[Access.Standard] = (
       ((JsPath \ "redirectUris").read[List[String]].map[List[LoginRedirectUri]](convertToLoginRedirectUri)) and
         ((JsPath \ "postLogoutRedirectUris").read[List[PostLogoutRedirectUri]] or Reads.pure(List.empty[PostLogoutRedirectUri])) and
         (JsPath \ "termsAndConditionsUrl").readNullable[String] and
@@ -90,10 +91,10 @@ object ApplicationRepository {
         (JsPath \ "importantSubmissionData").readNullable[ImportantSubmissionData]
     )(Access.Standard.apply)
 
-    implicit val formatPrivileged: OFormat[Access.Privileged] = Json.format[Access.Privileged]
-    implicit val formatRopc: OFormat[Access.Ropc]             = Json.format[Access.Ropc]
+    given formatPrivileged: OFormat[Access.Privileged] = Json.format[Access.Privileged]
+    given formatRopc: OFormat[Access.Ropc]             = Json.format[Access.Ropc]
 
-    implicit val formatAccess: OFormat[Access] = Union.from[Access]("accessType")
+    given formatAccess: OFormat[Access] = Union.from[Access]("accessType")
       .and[Access.Standard](AccessType.Standard.toString)
       .and[Access.Privileged](AccessType.Privileged.toString)
       .and[Access.Ropc](AccessType.Ropc.toString)
@@ -111,17 +112,17 @@ object ApplicationRepository {
         ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
     )(CheckInformation.apply)
 
-    implicit val formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
+    given formatCheckInformation: Format[CheckInformation] = Format(readsCheckInformation, Json.writes[CheckInformation])
 
-    implicit val formatApplicationState: OFormat[ApplicationState]   = Json.format[ApplicationState]
-    implicit val formatApplicationTokens: OFormat[ApplicationTokens] = Json.format[ApplicationTokens]
+    given formatApplicationState: OFormat[ApplicationState]   = Json.format[ApplicationState]
+    given formatApplicationTokens: OFormat[ApplicationTokens] = Json.format[ApplicationTokens]
 
     // Non-standard format compared to companion object
-    val ipAllowlistReads: Reads[IpAllowlist]             = (
+    val ipAllowlistReads: Reads[IpAllowlist]      = (
       ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
         ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
     )(IpAllowlist.apply)
-    implicit val formatIpAllowlist: OFormat[IpAllowlist] = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
+    given formatIpAllowlist: OFormat[IpAllowlist] = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 
     def periodFromInt(i: Int): Period = (GrantLength.apply(i).getOrElse(GrantLength.EIGHTEEN_MONTHS)).period
 
@@ -149,22 +150,22 @@ object ApplicationRepository {
         (JsPath \ "organisationId").readNullable[OrganisationId]
     )(StoredApplication.apply)
 
-    implicit val formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
+    given formatStoredApplication: OFormat[StoredApplication] = OFormat(readStoredApplication, Json.writes[StoredApplication])
 
-    implicit val formatApplicationWithStateHistory: OFormat[ApplicationWithStateHistory]        = Json.format[ApplicationWithStateHistory]
-    implicit val readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
+    given formatApplicationWithStateHistory: OFormat[ApplicationWithStateHistory]        = Json.format[ApplicationWithStateHistory]
+    given readsApplicationWithSubscriptionCount: Reads[ApplicationWithSubscriptionCount] = Json.reads[ApplicationWithSubscriptionCount]
 
     case class PaginationTotal(total: Int)
     case class PaginatedApplicationData(applications: List[StoredApplication], countOfAllApps: List[PaginationTotal], countOfMatchingApps: List[PaginationTotal])
 
-    implicit val formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
-    implicit val readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
-    val readsQSA: Reads[QueriedStoredApplication]                               = Json.reads[QueriedStoredApplication]
+    given formatPaginationTotal: Format[PaginationTotal]                 = Json.format[PaginationTotal]
+    given readsPaginatedApplicationData: Reads[PaginatedApplicationData] = Json.reads[PaginatedApplicationData]
+    val readsQSA: Reads[QueriedStoredApplication]                        = Json.reads[QueriedStoredApplication]
   }
 }
 
 @Singleton
-class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metrics, val clock: Clock)(implicit val ec: ExecutionContext)
+class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metrics, val clock: Clock)(using val ec: ExecutionContext)
     extends PlayMongoRepository[StoredApplication](
       collectionName = "application",
       mongoComponent = mongo,
@@ -242,7 +243,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     with ApplicationLogger
     with ClockNow {
 
-  import ApplicationRepository.MongoFormats._
+  import ApplicationRepository.MongoFormats.given
 
   def save(application: StoredApplication): Future[StoredApplication] = {
     val query = equal("id", Codecs.toBson(application.id))
@@ -804,7 +805,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
 
-    implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
+    given rdr: Reads[QueriedStoredApplication] = ApplicationRepository.MongoFormats.readsQSA.composeWith(transformApplication)
 
     val raw = collection.aggregate[BsonValue](stages)
       .map(bson => {
@@ -818,7 +819,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
 
     val stages: Seq[Bson] = pipelineStages :+ projectionToUseStage
 
-    implicit val rdr: Reads[QueriedStoredApplication] = readsQSA.composeWith(transformApplication)
+    given rdr: Reads[QueriedStoredApplication] = ApplicationRepository.MongoFormats.readsQSA.composeWith(transformApplication)
 
     collection.aggregate[BsonValue](stages)
       .map(bson => {

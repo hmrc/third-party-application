@@ -37,7 +37,7 @@ class ChangeApplicationScopesCommandHandlerSpec extends CommandHandlerBaseSpec {
   trait Setup extends ApplicationRepositoryMockModule
       with AuditServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminUserId = UserId.random
     val appAdminEmail  = "bob@example.com".toLaxEmail

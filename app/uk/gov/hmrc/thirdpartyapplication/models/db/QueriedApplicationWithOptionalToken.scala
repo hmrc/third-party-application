@@ -33,7 +33,7 @@ object QueriedApplicationWithOptionalToken {
   import play.api.libs.json.Format
   import play.api.libs.json.Json
 
-  implicit val format: Format[QueriedApplicationWithOptionalToken] = Json.format[QueriedApplicationWithOptionalToken]
+  given format: Format[QueriedApplicationWithOptionalToken] = Json.format[QueriedApplicationWithOptionalToken]
 
   // These are just moving from one shape to another
   // $COVERAGE-OFF$
