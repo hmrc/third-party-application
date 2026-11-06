@@ -21,7 +21,6 @@ import java.time.Clock
 import com.google.inject.AbstractModule
 
 class ClockModule extends AbstractModule {
-
   override def configure(): Unit = {
     bind(classOf[Clock]).toInstance(Clock.systemUTC())
   }

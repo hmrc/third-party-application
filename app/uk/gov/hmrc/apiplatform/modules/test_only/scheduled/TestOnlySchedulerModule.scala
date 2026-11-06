@@ -20,12 +20,11 @@ import play.api.inject.Module
 import play.api.{Configuration, Environment}
 import javax.inject.{Inject, Singleton}
 import com.google.inject.Provider
-import uk.gov.hmrc.apiplatform.modules.scheduling.ScheduledJobs
+import uk.gov.hmrc.apiplatform.modules.scheduling.{ScheduledJobs, ScheduledJobsRunner}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.TestApplicationsCleanupJob
 
 
 class TestOnlySchedulerModule extends Module {
-
   override def bindings(environment: Environment, configuration: Configuration) = Seq(
     bind[ScheduledJobs].toProvider[TestAppsCleanupScheduledJobsProvider],
     bind[ScheduledJobsRunner].toSelf.eagerly()
@@ -34,7 +33,7 @@ class TestOnlySchedulerModule extends Module {
 
 @Singleton
 class TestAppsCleanupScheduledJobsProvider @Inject() (
-    testAppsCleanupJob: TestApplicationsCleanupJob
+  testAppsCleanupJob: TestApplicationsCleanupJob
 ) extends Provider[ScheduledJobs] {
-  override def get(): ScheduledJobs = ScheduledJobs(List(testAppsCleanupJob))
+  override def get(): ScheduledJobs = ScheduledJobs(List(testAppsCleanupJob).filter(_.isEnabled))
 }
