@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -38,7 +37,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
     }
 
     "return ropc scopes when repository save succeeds" in new ScopeFixture {
-      ApplicationRepoMock.Fetch.thenReturn(ropcApplicationDataWithScopes(applicationId)(scopes1to4))
+      ApplicationRepoMock.Fetch.thenReturn(ropcApplicationDataWithScopes(scopes1to4))
       await(accessService.readScopes(applicationId)) shouldBe ScopeResponse(scopes1to4)
     }
   }
@@ -46,7 +45,7 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
   "Access service read overrides function" should {
 
     "return the overrides saved on the application" in new OverridesFixture {
-      ApplicationRepoMock.Fetch.thenReturn(standardApplicationDataWithOverrides(applicationId, overrides))
+      ApplicationRepoMock.Fetch.thenReturn(standardApplicationDataWithOverrides(overrides))
       await(accessService.readOverrides(applicationId)) shouldBe OverridesResponse(overrides)
     }
   }
@@ -83,8 +82,8 @@ class AccessServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with Fix
 
   private def privilegedApplicationDataWithScopes(scopes: Set[String]): StoredApplication = storedApp.withAccess(Access.Privileged(None, scopes))
 
-  private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): StoredApplication = storedApp.withAccess(Access.Ropc(scopes))
+  private def ropcApplicationDataWithScopes(scopes: Set[String]): StoredApplication = storedApp.withAccess(Access.Ropc(scopes))
 
-  private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): StoredApplication =
+  private def standardApplicationDataWithOverrides(overrides: Set[OverrideFlag]): StoredApplication =
     storedApp.withAccess(Access.Standard(redirectUris = List.empty, overrides = overrides))
 }

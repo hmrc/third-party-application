@@ -64,10 +64,10 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
     val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail)
 
-    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResult(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (returnedApp, events) =>
+      inside(testThis) { case (_, events) =>
         events should have size 1
         val event = events.head
 
@@ -103,7 +103,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividualToSelf.thenReturn(app) // Not modified
 
-      checkSuccessResult(otherAdminAsActor, oldRiEmail, oldRiName)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
+      checkSuccessResult(underTest.process(app, changeResponsibleIndividualToSelfCommand))
     }
 
     "return an error if no submission is found for the application" in new Setup {

@@ -42,7 +42,7 @@ class RemoveClientSecretCommandHandlerSpec extends CommandHandlerBaseSpec with A
     val removeClientSecretByAdmin = RemoveClientSecret(otherAdminAsActor, clientSecret.id, instant)
 
     def checkSuccessResult(expectedActor: Actors.AppCollaborator)(result: CommandHandler.Success) = {
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         events should have size 1
         val event = events.head
 

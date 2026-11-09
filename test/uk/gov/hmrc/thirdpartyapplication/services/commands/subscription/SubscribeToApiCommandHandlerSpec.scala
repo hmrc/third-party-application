@@ -50,7 +50,7 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (returnedApp, events) =>
+      inside(testThis) { case (_, events) =>
         events should have size 1
         val event = events.head
 
@@ -67,17 +67,17 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
 
   trait PrivilegedAndRopcSetup extends Setup {
 
-    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
+    def testWithPrivilegedAndRopcGatekeeperLoggedIn(testBlock: StoredApplication => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-      testWithPrivilegedAndRopc(applicationId, testBlock)
+      testWithPrivilegedAndRopc(testBlock)
     }
 
-    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
+    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(testBlock: StoredApplication => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-      testWithPrivilegedAndRopc(applicationId, testBlock)
+      testWithPrivilegedAndRopc(testBlock)
     }
 
-    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: StoredApplication => Unit): Unit = {
+    private def testWithPrivilegedAndRopc(testBlock: StoredApplication => Unit): Unit = {
       testBlock(storedApp.withAccess(Access.Privileged(scopes = Set("scope1"))))
       testBlock(storedApp.withAccess(Access.Ropc()))
     }
@@ -110,27 +110,21 @@ class SubscribeToApiCommandHandlerSpec extends CommandHandlerBaseSpec with ApiId
 
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(
-        applicationId,
-        { app =>
-          checkSuccessResult(gatekeeperUserActor) {
-            underTest.process(app, subscribeToApi)
-          }
+      testWithPrivilegedAndRopcGatekeeperLoggedIn { app =>
+        checkSuccessResult(gatekeeperUserActor) {
+          underTest.process(app, subscribeToApi)
         }
-      )
+      }
     }
 
     "return invalid with an error message when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       SubscriptionRepoMock.IsSubscribed.isFalse()
 
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-        applicationId,
-        { app =>
-          checkFailsWith(s"Unauthorized to subscribe any API to app ${app.name}") {
-            underTest.process(app, subscribeToApi)
-          }
+      testWithPrivilegedAndRopcGatekeeperNotLoggedIn { app =>
+        checkFailsWith(s"Unauthorized to subscribe any API to app ${app.name}") {
+          underTest.process(app, subscribeToApi)
         }
-      )
+      }
     }
   }
 }

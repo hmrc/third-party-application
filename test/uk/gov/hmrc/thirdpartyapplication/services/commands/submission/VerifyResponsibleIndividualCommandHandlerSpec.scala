@@ -77,7 +77,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends CommandHandlerBaseSp
 
       val result = await(underTest.process(app, VerifyResponsibleIndividual(adminOne.userId, instant, appAdminName, riName, riEmail)).value).value
 
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         events should have size 1
 
         inside(events.head) {

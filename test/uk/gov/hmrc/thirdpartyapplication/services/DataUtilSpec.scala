@@ -17,12 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.*
+import scala.annotation.unused
 
 class DataUtilSpec extends AsyncHmrcSpec {
 
   def zip(first: Int, second: String) = s"$first-$second"
 
-  def error(from: String)(key: String) = new RuntimeException(s"$from: test error")
+  def error(from: String)(@unused key: String) = new RuntimeException(s"$from: test error")
 
   val map1 = Map("A" -> 1, "B" -> 2)
   val map2 = Map("A" -> "9", "B" -> "8")

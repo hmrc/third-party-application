@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionnaireDAOMockMod
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires._
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires.given
   given mat: Materializer = NoMaterializer
 
   trait Setup extends QuestionnaireDAOMockModule with SubmissionsTestData {

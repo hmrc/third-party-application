@@ -443,7 +443,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object FetchStoredApplications {
       def thenReturns(apps: StoredApplication*)                                               = when(aMock.fetchStoredApplications(*)).thenReturn(successful(apps.toList))
       def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*)     = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(apps.toList))
-      def thenReturnsNoneFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(Nil))
+      def thenReturnsNoneFor(qry: GeneralOpenEndedApplicationQuery) = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(Nil))
     }
 
     object FetchByPaginatedApplicationQuery {

@@ -70,7 +70,7 @@ object ApplicationRepository {
     given formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
     given formatImportantSubmissionData: OFormat[ImportantSubmissionData] = Json.format[ImportantSubmissionData]
     given formatStateHistory: OFormat[StateHistory]                       = Json.format[StateHistory]
-    
+
     given formatStoredClientSecret: OFormat[StoredClientSecret] = Json.format[StoredClientSecret]
     given formatStoredToken: OFormat[StoredToken]               = Json.format[StoredToken]
 

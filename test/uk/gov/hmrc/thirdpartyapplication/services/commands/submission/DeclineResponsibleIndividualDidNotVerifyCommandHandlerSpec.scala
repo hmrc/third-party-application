@@ -127,10 +127,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResultToU(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 3
 
         events.collect {
@@ -171,10 +171,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       }
     }
 
-    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResultUpdate(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
 
         events.collect {
@@ -192,10 +192,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       }
     }
 
-    def checkSuccessResultTouUplift(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResultTouUplift(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
 
         events.collect {
@@ -222,7 +222,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
       StateHistoryRepoMock.Insert.succeeds()
 
-      checkSuccessResultToU(Actors.AppCollaborator(adminOne.emailAddress)) {
+      checkSuccessResultToU {
         underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
@@ -233,7 +233,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
 
       val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
-      checkSuccessResultUpdate(Actors.AppCollaborator(adminOne.emailAddress)) {
+      checkSuccessResultUpdate {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
@@ -247,7 +247,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
 
       val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
-      checkSuccessResultTouUplift(Actors.AppCollaborator(adminOne.emailAddress)) {
+      checkSuccessResultTouUplift {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }

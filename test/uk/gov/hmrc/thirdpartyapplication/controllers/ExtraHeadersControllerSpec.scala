@@ -44,17 +44,17 @@ class ExtraHeadersControllerSpec
         X_REQUEST_ID_HEADER         -> "requestId"
       )
 
-      underTest.hc(req).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(LOGGED_IN_USER_NAME_HEADER -> "John Smith")
-      underTest.hc(req).headers(Seq(LOGGED_IN_USER_EMAIL_HEADER)) should contain(LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com")
-      underTest.hc(req).headers(Seq(X_REQUEST_ID_HEADER)) should contain(X_REQUEST_ID_HEADER -> "requestId")
+      underTest.hc(using req).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(LOGGED_IN_USER_NAME_HEADER -> "John Smith")
+      underTest.hc(using req).headers(Seq(LOGGED_IN_USER_EMAIL_HEADER)) should contain(LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com")
+      underTest.hc(using req).headers(Seq(X_REQUEST_ID_HEADER)) should contain(X_REQUEST_ID_HEADER -> "requestId")
     }
 
     "contain each header if only one exists" in new Setup {
       val nameHeader: (String, String)  = LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
       val emailHeader: (String, String) = LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com"
 
-      underTest.hc(request.withHeaders(nameHeader)).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(nameHeader)
-      underTest.hc(request.withHeaders(emailHeader)).headers(Seq(LOGGED_IN_USER_EMAIL_HEADER)) should contain(emailHeader)
+      underTest.hc(using request.withHeaders(nameHeader)).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(nameHeader)
+      underTest.hc(using request.withHeaders(emailHeader)).headers(Seq(LOGGED_IN_USER_EMAIL_HEADER)) should contain(emailHeader)
     }
   }
 }
