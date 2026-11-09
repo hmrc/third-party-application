@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.*
 import scala.annotation.unused
+
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class DataUtilSpec extends AsyncHmrcSpec {
 

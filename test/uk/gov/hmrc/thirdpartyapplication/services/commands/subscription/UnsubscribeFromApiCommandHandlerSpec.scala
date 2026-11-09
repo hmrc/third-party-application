@@ -111,7 +111,7 @@ class UnsubscribeFromApiCommandHandlerSpec extends CommandHandlerBaseSpec with A
 
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      testWithPrivilegedAndRopcGatekeeperLoggedIn{ app =>
+      testWithPrivilegedAndRopcGatekeeperLoggedIn { app =>
         checkSuccessResult(gatekeeperUserActor) {
           underTest.process(app, unsubscribeFromApi)
         }

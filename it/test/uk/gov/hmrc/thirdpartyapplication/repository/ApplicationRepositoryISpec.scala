@@ -43,7 +43,6 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRes
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.test_only.scheduled.TestAppsCleanupSchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats.given
 import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
@@ -204,7 +203,6 @@ class ApplicationRepositoryISpec
       )
       .overrides(bind[Clock].toInstance(clock))
       .disable(classOf[SchedulerModule])
-      .disable(classOf[TestAppsCleanupSchedulerModule])
   }
 
   private val applicationRepository =

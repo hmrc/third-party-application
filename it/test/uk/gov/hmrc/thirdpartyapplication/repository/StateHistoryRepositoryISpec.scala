@@ -159,6 +159,7 @@ class StateHistoryRepositoryISpec
       savedStateHistories shouldBe Seq(stateHistory)
     }
   }
+
   "fetchDeletedByApplicationIds" should {
     "fetch a single deleted application" in {
       val requesterEmail = "bill.badger@rupert.com".toLaxEmail

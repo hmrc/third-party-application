@@ -21,9 +21,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 import com.google.inject.Provider
+import com.typesafe.config.Config
 
 import play.api.inject.Module
-import play.api.{Configuration, Environment}
+import play.api.{Configuration, Environment, LoggerLike}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -44,8 +45,9 @@ class SchedulerModule extends Module with ApplicationLogger {
     bind[TermsOfUseInvitationReminderJobConfig].toProvider[TermsOfUseInvitationReminderJobConfigProvider],
     bind[TermsOfUseInvitationOverdueJobConfig].toProvider[TermsOfUseInvitationOverdueJobConfigProvider],
     bind[ScheduledJobs].toProvider[ScheduledJobsProvider],
-    bind[MetricsScheduler].toSelf.eagerly()
-    // bind(classOf[LoggerLike]).toInstance(logger)
+    bind[TestApplicationsCleanupJob.Config].toProvider[TestApplicationsCleanupJobConfigProvider],
+    bind[MetricsScheduler].toSelf.eagerly(),
+    bind[LoggerLike].toInstance(logger)
   )
 }
 
@@ -59,7 +61,8 @@ private class ScheduledJobsProvider @Inject() (
     responsibleIndividualVerificationSetDefaultTypeJob: ResponsibleIndividualVerificationSetDefaultTypeJob,
     responsibleIndividualUpdateVerificationRemovalJob: ResponsibleIndividualUpdateVerificationRemovalJob,
     termsOfUseInvitationReminderJob: TermsOfUseInvitationReminderJob,
-    termsOfUseInvitationOverdueJob: TermsOfUseInvitationOverdueJob
+    termsOfUseInvitationOverdueJob: TermsOfUseInvitationOverdueJob,
+    testAppsCleanupJob: TestApplicationsCleanupJob
   ) extends Provider[ScheduledJobs] {
 
   override def get(): ScheduledJobs = ScheduledJobs(
@@ -73,7 +76,8 @@ private class ScheduledJobsProvider @Inject() (
       responsibleIndividualVerificationSetDefaultTypeJob,
       responsibleIndividualUpdateVerificationRemovalJob,
       termsOfUseInvitationReminderJob,
-      termsOfUseInvitationOverdueJob
+      termsOfUseInvitationOverdueJob,
+      testAppsCleanupJob
     )
       .filter(_.isEnabled)
   )
@@ -214,5 +218,22 @@ class TermsOfUseInvitationOverdueJobConfigProvider @Inject() (val configuration:
       .getOrElse(JobConfig(FiniteDuration(8, MINUTES), FiniteDuration(8, HOURS), enabled = true))
 
     TermsOfUseInvitationOverdueJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
+  }
+}
+
+@Singleton
+class TestApplicationsCleanupJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[TestApplicationsCleanupJob.Config] {
+
+  override def get() = {
+    import pureconfig._
+
+    val conf: Config = configuration.underlying.getConfig("testApplicationsCleanupJob")
+
+    val jobConfig = ConfigSource.fromConfig(conf)
+      .load[TestApplicationsCleanupJob.Config]
+
+    jobConfig.getOrElse(throw new RuntimeException("Config for TestApplicationsCleanupJob could not be read"))
   }
 }

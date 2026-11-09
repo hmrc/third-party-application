@@ -81,7 +81,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(using val ec: Exe
   def fetchDeletedByApplicationIds(applicationIds: List[ApplicationId]): Future[List[StateHistory]] = {
     collection.find(and(
       in("applicationId", applicationIds.map(i => Codecs.toBson(i))*),
-      equal("state", Codecs.toBson(State.Deleted.toString))
+      equal("state", Codecs.toBson(State.Deleted))
     ))
       .toFuture()
       .map(x => x.toList)
