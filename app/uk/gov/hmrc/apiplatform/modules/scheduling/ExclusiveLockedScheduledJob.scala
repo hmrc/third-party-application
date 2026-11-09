@@ -29,10 +29,10 @@ trait ExclusiveLockedScheduledJob extends ExclusiveScheduledJob with Application
 
   def mongoLockRepository: MongoLockRepository
 
-  def lockSafetyMarginExcess: Duration = 10.minutes
+  val lockSafetyMarginExcess: Duration = 10.minutes
 
   // Lock for 10 minutes (or other) longer than the interval to allow for retries and timeouts
-  private val lockService: LockService = LockService(mongoLockRepository, lockId = s"$name-lock", ttl = interval + lockSafetyMarginExcess)
+  private lazy val lockService: LockService = LockService(mongoLockRepository, lockId = s"$name-lock", ttl = interval + lockSafetyMarginExcess)
 
   final def executeInMutex(using ExecutionContext): Future[String] =
     lockService.withLock {

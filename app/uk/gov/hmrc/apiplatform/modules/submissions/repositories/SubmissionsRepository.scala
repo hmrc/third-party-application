@@ -60,7 +60,7 @@ object SubmissionsRepository {
 
     given dateFormat: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-    import Submission.Status._
+    import Submission.Status.*
 
     given RejectedStatusFormat: OFormat[Declined]                                         = Json.format[Declined]
     given AcceptedStatusFormat: OFormat[Granted]                                          = Json.format[Granted]

@@ -41,15 +41,6 @@ case class OverridesRequest(overrides: Set[OverrideFlag])
 
 case class OverridesResponse(overrides: Set[OverrideFlag])
 
-case class UpdateIpAllowlistRequest(required: Boolean, allowlist: Set[String])
-
-object UpdateIpAllowlistRequest {
-
-  def toIpAllowlist(updateIpAllowlistRequest: UpdateIpAllowlistRequest): IpAllowlist = {
-    IpAllowlist(updateIpAllowlistRequest.required, updateIpAllowlistRequest.allowlist)
-  }
-}
-
 case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: LaxEmailAddress)
 
 case class DeleteSubordinateApplicationRequest(applicationId: String)

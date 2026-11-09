@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.time.Period
-
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 
@@ -28,31 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatter
 import uk.gov.hmrc.thirdpartyapplication.models.*
 
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
-
-  // NOTE - these override the defaults in order to push dates in non-mongo format
-  // given formatTermsOfUserAgreement: OFormat[TermsOfUseAgreement]        = Json.format[TermsOfUseAgreement]
-  // given formatTermsOfUseAcceptance: OFormat[TermsOfUseAcceptance]       = Json.format[TermsOfUseAcceptance]
-  // given formatImportantSubmissionData: OFormat[ImportantSubmissionData] = Json.format[ImportantSubmissionData]
-  // given formatStandard: OFormat[Access.Standard]                        = Json.format[Access.Standard]
-  // given formatPrivileged: OFormat[Access.Privileged]                    = Json.format[Access.Privileged]
-  // given formatRopc: OFormat[Access.Ropc]                                = Json.format[Access.Ropc]
-  // import uk.gov.hmrc.play.json.Union
-
-  // given formatAccess: OFormat[Access] = Union.from[Access]("accessType")
-  //   .and[Access.Standard](AccessType.Standard.asScreamingSnakeCase)
-  //   .and[Access.Privileged](AccessType.Privileged.asScreamingSnakeCase)
-  //   .and[Access.Ropc](AccessType.Ropc.asScreamingSnakeCase)
-  //   .format
-
-  // given formatCheckInformation: OFormat[CheckInformation] = Json.format[CheckInformation]
-
-  // given formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
-
-  // given writesGrantLength: Writes[GrantLength] = implicitly[Writes[Period]].contramap(gl => gl.period)
-
-  // given formatUpdateIpAllowlistRequest: OFormat[UpdateIpAllowlistRequest]     = Json.format[UpdateIpAllowlistRequest]
-  // given formatApplicationWithHistory: OFormat[ApplicationWithHistoryResponse] = Json.format[ApplicationWithHistoryResponse]
-
   given formatValidationRequest: OFormat[ValidationRequest]                                  = Json.format[ValidationRequest]
   given formatApplicationNameValidationRequest: OFormat[OldApplicationNameValidationRequest] = Json.format[OldApplicationNameValidationRequest]
   given formatApproveUpliftRequest: OFormat[ApproveUpliftRequest]                            = Json.format[ApproveUpliftRequest]

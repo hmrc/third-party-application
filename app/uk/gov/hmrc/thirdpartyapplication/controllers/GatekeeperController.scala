@@ -27,7 +27,6 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions.*
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{JsonUtils, WarnStillInUse}
 import uk.gov.hmrc.thirdpartyapplication.models.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
@@ -48,7 +47,6 @@ class GatekeeperController @Inject() (
     with JsonUtils
     with AnyGatekeeperRoleAuthorisationAction
     with OnlyStrideGatekeeperRoleAuthoriseAction
-    with TermsOfUseInvitationActionBuilders
     with WarnStillInUse {
 
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>
