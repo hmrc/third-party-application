@@ -21,7 +21,7 @@ import java.time.Instant
 import play.api.libs.json.{EnvReads, EnvWrites}
 
 trait UtcMillisDateTimeFormatters extends EnvWrites with EnvReads {
-  import play.api.libs.json._
+  import play.api.libs.json.*
 
   given dateTimeWriter: Writes[Instant] = InstantEpochMilliWrites
 

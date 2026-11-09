@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class UpdateLoginRedirectUrisCommandHandler @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: UpdateLoginRedirectUris): Validated[Failures, Access.Standard] = {
     val hasFiveOrFewerURIs = cond(cmd.newRedirectUris.size <= 5, CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))

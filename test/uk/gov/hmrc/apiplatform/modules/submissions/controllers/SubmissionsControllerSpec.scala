@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.{ApplicationsByAnswerTestData
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission._
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.*
   given mat: Materializer = NoMaterializer
 
   given readsExtendedSubmission: Reads[Submission] = Json.reads[Submission]

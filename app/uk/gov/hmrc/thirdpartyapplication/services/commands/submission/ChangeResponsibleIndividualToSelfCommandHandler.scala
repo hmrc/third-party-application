@@ -42,8 +42,8 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(

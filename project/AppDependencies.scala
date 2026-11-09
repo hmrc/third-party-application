@@ -1,4 +1,4 @@
-import sbt._
+import sbt.*
 import org.apache.ivy.core.module.descriptor.ExcludeRule
 
 object AppDependencies {

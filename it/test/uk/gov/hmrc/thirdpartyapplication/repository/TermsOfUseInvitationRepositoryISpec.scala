@@ -66,7 +66,7 @@ class TermsOfUseInvitationRepositoryISpec
     with TableDrivenPropertyChecks
     with FixedClock {
 
-  import TermsOfUseInvitationRepositoryISpecExample._
+  import TermsOfUseInvitationRepositoryISpecExample.*
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()

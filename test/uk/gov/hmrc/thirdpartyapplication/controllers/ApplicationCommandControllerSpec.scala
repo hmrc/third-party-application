@@ -46,7 +46,7 @@ class ApplicationCommandControllerSpec
     with CommonApplicationId
     with FixedClock {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   given hc: HeaderCarrier = HeaderCarrier()
 
@@ -85,7 +85,7 @@ class ApplicationCommandControllerSpec
         s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"${developerCollaborator.emailAddress}","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["${adminOne.emailAddress}"]}"""
       val cmd      = RemoveCollaborator(Actors.Unknown, developerCollaborator, instant)
       val req      = DispatchRequest(cmd, Set(adminOne.emailAddress))
-      import cats.syntax.option._
+      import cats.syntax.option.*
 
       "write to json" in {
         Json.toJson(req).toString() shouldBe jsonText
@@ -228,7 +228,7 @@ class ApplicationCommandControllerSpec
     "dispatch request" should {
       val cmd = ChangeGrantLength(gatekeeperUser = "a a", timestamp = instant, grantLength = GrantLength.SIX_MONTHS)
       val req = DispatchRequest(cmd, Set.empty[LaxEmailAddress])
-      import cats.syntax.option._
+      import cats.syntax.option.*
 
       "read from json where grant length is an Int" in {
         val jsonText =

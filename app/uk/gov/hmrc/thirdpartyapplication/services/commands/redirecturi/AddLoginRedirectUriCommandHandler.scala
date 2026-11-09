@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: AddLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
     val existingRedirects = app.access match {

@@ -61,7 +61,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     with CollaboratorTestData {
 
   import play.api.test.Helpers
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   given v1writes: OWrites[CreateApplicationRequestV1] = Json.writes[CreateApplicationRequestV1]
   given v2writes: OWrites[CreateApplicationRequestV2] = Json.writes[CreateApplicationRequestV2]

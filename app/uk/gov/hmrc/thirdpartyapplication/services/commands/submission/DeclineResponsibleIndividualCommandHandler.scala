@@ -55,7 +55,7 @@ class DeclineResponsibleIndividualCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def isApplicationIdTheSame(app: StoredApplication, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")

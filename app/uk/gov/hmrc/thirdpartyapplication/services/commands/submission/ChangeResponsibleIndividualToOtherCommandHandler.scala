@@ -59,7 +59,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler with ClockNow {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(

@@ -56,7 +56,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoF
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object ApplicationRepository {
-  import play.api.libs.functional.syntax._
+  import play.api.libs.functional.syntax.*
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
@@ -714,7 +714,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
       )
     )
 
-  import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
+  import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.*
 
   private val subscriptionsLookup: BsonDocument = BsonDocument(
     """{

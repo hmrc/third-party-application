@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateFixtures {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   implicit lazy val materializer: Materializer = NoMaterializer
 

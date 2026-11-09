@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 class QuestionnaireDAO @Inject() (implicit ec: ExecutionContext) {
   private val store: mutable.Map[Questionnaire.Id, Questionnaire] = mutable.Map()
 
-  import QuestionnaireDAO.Questionnaires._
+  import QuestionnaireDAO.Questionnaires.*
 
   allIndividualQuestionnaires.map(q => store.put(q.id, q))
 

@@ -51,7 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     with ControllerTestData with StoredApplicationFixtures with FixedClock {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   val authTokenHeader                                            = "authorization" -> "authorizationToken"
   implicit lazy val materializer: Materializer                   = NoMaterializer

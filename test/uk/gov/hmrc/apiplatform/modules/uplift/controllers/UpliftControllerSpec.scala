@@ -40,7 +40,7 @@ class UpliftControllerSpec
     with ControllerTestData
     with FixedClock {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
   import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = NoMaterializer

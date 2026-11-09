@@ -30,8 +30,8 @@ class SubscriptionCommandsProcessor @Inject() (
     unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
     unsubscribeFromRetiredApiCommandHandler: UnsubscribeFromRetiredApiCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: SubscriptionCommand)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
     case cmd: SubscribeToApi            => subscribeToApiCommandHandler.process(app, cmd)

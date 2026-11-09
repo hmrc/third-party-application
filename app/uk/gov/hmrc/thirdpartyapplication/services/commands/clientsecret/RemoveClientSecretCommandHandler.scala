@@ -36,7 +36,7 @@ class RemoveClientSecretCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: RemoveClientSecret): Validated[CommandHandler.Failures, StoredApplication] = {
     def clientSecretExists(clientSecretId: ClientSecret.Id, app: StoredApplication) =

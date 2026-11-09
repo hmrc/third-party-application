@@ -26,8 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class CommandHandlerSpec extends HmrcSpec with StoredApplicationFixtures with CollaboratorTestData with FixedClock with CommonApplicationId {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   // Application with two client secrets
   val applicationData: StoredApplication = storedApp

@@ -69,7 +69,7 @@ class ApplicationCommandDispatcher @Inject() (
   )(using val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   val E = EitherTHelper.make[CommandHandler.Failures]
 

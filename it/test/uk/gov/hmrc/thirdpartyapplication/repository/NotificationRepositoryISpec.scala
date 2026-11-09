@@ -64,7 +64,7 @@ class NotificationRepositoryISpec
     with OptionValues
     with FixedClock {
 
-  import NotificationRepositoryISpecExample._
+  import NotificationRepositoryISpecExample.*
 
   "mongo formats" should {
     import NotificationRepository.MongoFormats.formatNotification

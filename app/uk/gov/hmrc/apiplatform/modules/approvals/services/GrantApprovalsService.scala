@@ -55,7 +55,7 @@ class GrantApprovalsService @Inject() (
     with ApplicationLogger
     with ClockNow {
 
-  import GrantApprovalsService._
+  import GrantApprovalsService.*
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {

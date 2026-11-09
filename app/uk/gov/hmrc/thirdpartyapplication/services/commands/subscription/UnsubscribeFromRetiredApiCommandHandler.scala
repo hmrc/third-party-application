@@ -34,7 +34,7 @@ class UnsubscribeFromRetiredApiCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def asEvents(app: StoredApplication, cmd: UnsubscribeFromRetiredApi): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(

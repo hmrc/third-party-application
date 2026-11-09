@@ -50,10 +50,10 @@ class ApprovalsController @Inject() (
     with JsonUtils
     with JsonErrorResponse {
 
-  import ApprovalsController._
+  import ApprovalsController.*
 
   def grantWithWarningsForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.grantWithWarningsForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
@@ -69,7 +69,7 @@ class ApprovalsController @Inject() (
   }
 
   def declineForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.declineForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
@@ -85,7 +85,7 @@ class ApprovalsController @Inject() (
   }
 
   def resetForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.resetForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
@@ -102,7 +102,7 @@ class ApprovalsController @Inject() (
   }
 
   def deleteTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouDeleteRequest] { _ =>
       grantApprovalService.deleteTouUplift(request.application)

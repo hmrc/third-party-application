@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{AsIdsHelpers
 
 class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with AsIdsHelpers {
 
-  import org.scalatest.prop.TableDrivenPropertyChecks._
+  import org.scalatest.prop.TableDrivenPropertyChecks.*
 
   def answerOf(text: String*) = text.toList
   def noAnswer: List[String]  = List.empty

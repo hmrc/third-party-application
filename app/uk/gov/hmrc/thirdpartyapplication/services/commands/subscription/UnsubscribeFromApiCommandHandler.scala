@@ -40,7 +40,7 @@ class UnsubscribeFromApiCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isGatekeeperUser    = cond(rolePassed, CommandFailures.InsufficientPrivileges(s"Unauthorized to unsubscribe any API from app ${app.name}"))

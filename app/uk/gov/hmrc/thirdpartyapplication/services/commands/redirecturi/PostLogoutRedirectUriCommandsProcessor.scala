@@ -30,9 +30,9 @@ class PostLogoutRedirectUriCommandsProcessor @Inject() (
     updatePostLogoutRedirectUrisCmdHdlr: UpdatePostLogoutRedirectUrisCommandHandler
   )(implicit ec: ExecutionContext
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
-  import Implicits._
+  import CommandHandler.*
+  import ApplicationCommands.*
+  import Implicits.*
 
   val NotYetSupported: AppCmdResultT = EitherT(CommandFailures.GenericFailure(s"Command not yet supported").asFailure)
 

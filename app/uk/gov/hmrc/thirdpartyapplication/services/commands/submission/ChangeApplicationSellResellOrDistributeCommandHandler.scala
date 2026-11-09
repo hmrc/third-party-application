@@ -38,7 +38,7 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler with ClockNow {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
     (

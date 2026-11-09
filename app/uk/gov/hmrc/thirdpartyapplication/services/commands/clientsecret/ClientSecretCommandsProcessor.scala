@@ -27,8 +27,8 @@ class ClientSecretCommandsProcessor @Inject() (
     addClientSecretCmdHdlr: AddClientSecretCommandHandler,
     removeClientSecretCmdHdlr: RemoveClientSecretCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: ClientSecretCommand): AppCmdResultT = command match {
     case cmd: AddClientSecret    => addClientSecretCmdHdlr.process(app, cmd)

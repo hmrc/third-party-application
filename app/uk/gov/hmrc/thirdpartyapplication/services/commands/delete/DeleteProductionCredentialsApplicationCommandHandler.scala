@@ -46,7 +46,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends AbstractDeleteApplicationCommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
     isInTesting(app).map(_ => app)

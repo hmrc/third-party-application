@@ -35,7 +35,7 @@ class ApplicationCommandService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   val E = EitherTHelper.make[Failures]
 

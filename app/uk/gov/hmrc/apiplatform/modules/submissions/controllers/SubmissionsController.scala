@@ -50,7 +50,7 @@ class SubmissionsController @Inject() (
   )(using val ec: ExecutionContext
   ) extends BackendController(cc) {
   import Submission.given
-  import SubmissionsController._
+  import SubmissionsController.*
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))

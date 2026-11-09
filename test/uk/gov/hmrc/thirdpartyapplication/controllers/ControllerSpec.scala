@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 abstract class ControllerSpec extends AsyncHmrcSpec
     with LogSuppressing {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   def verifyErrorResult(result: Future[Result], statusCode: Int, errorCode: ErrorCode): Unit = {
     status(result) shouldBe statusCode

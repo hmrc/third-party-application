@@ -36,7 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule with ApplicationRepositoryMockModule {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   override def builder(): GuiceApplicationBuilder =
     super.builder()

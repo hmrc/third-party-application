@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, Comm
 
 class AddCollaboratorCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  import CommandFailures._
+  import CommandFailures.*
 
   trait Setup extends ApplicationRepositoryMockModule {
     val underTest = new AddCollaboratorCommandHandler(ApplicationRepoMock.aMock)

@@ -41,7 +41,7 @@ class UpliftNamingService @Inject() (
       nameValidationConfig
     ) {
 
-  import ApplicationNaming._
+  import ApplicationNaming.*
 
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] = {
     def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =

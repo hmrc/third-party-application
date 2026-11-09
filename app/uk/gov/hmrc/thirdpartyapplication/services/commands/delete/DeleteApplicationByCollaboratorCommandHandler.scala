@@ -47,7 +47,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends AbstractDeleteApplicationCommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def canDeleteApplicationsOrNotProductionApp(app: StoredApplication) =
     cond(authControlConfig.canDeleteApplications || !app.isInPreProductionOrProduction, "Cannot delete this applicaton")

@@ -47,7 +47,7 @@ abstract class AbstractApplicationNamingService(
   )(implicit ec: ExecutionContext
   ) {
 
-  import ApplicationNaming._
+  import ApplicationNaming.*
 
   def isDuplicateName(applicationName: String, exclusions: ExclusionCondition): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {

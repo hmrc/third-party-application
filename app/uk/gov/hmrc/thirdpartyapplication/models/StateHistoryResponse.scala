@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: Actor, notes: Option[String], changedAt: Instant)
 
 object StateHistoryResponse {
-  import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters._
+  import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters.*
   import Actor.given
   given format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
 }

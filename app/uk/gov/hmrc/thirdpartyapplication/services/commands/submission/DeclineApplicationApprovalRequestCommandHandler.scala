@@ -42,8 +42,8 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, (LaxEmailAddress, String, Submission)]] = {
 

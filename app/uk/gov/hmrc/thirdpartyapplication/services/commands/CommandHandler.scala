@@ -41,7 +41,7 @@ trait CommandHandler {
 object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyList[ApplicationEvent])] {
   import scala.language.implicitConversions
 
-  import CommandFailures._
+  import CommandFailures.*
 
   def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
     ApplicationEvents.ApplicationStateChanged(

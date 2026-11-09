@@ -227,7 +227,7 @@ class TestApplicationsCleanupJobConfigProvider @Inject() (val configuration: Con
     with Provider[TestApplicationsCleanupJob.Config] {
 
   override def get() = {
-    import pureconfig._
+    import pureconfig.*
 
     val conf: Config = configuration.underlying.getConfig("testApplicationsCleanupJob")
 

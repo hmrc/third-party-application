@@ -34,7 +34,7 @@ class ChangeSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(
       app: StoredApplication,

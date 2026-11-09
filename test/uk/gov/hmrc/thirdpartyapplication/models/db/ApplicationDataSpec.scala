@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
-  import ApiIdentifierSyntax._
+  import ApiIdentifierSyntax.*
 
   "StoredApplication" should {
     val refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period

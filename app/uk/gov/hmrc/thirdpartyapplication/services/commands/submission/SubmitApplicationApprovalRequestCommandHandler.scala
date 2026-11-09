@@ -52,8 +52,8 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, (Submission, String)]] = {
     (
@@ -118,7 +118,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   def process(app: StoredApplication, cmd: SubmitApplicationApprovalRequest): AppCmdResultT = {
-    import SubmissionDataExtracter._
+    import SubmissionDataExtracter.*
 
     logStartingApprovalRequestProcessing(app.id)
 

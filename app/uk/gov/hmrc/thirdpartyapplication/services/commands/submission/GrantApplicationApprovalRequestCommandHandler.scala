@@ -49,8 +49,8 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger with ClockNow {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, (Submission, ImportantSubmissionData)]] = {
     (

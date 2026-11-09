@@ -58,7 +58,7 @@ class StateHistoryRepositoryISpec
     with Eventually
     with FixedClock {
 
-  import StateHistoryRepositoryISpecExample._
+  import StateHistoryRepositoryISpecExample.*
 
   private val repository = new StateHistoryRepository(mongoComponent)
 

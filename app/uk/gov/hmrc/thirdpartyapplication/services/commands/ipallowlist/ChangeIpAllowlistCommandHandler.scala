@@ -37,7 +37,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   // Try to create a new instance of SubnetUtils with an IP address.
   // If it throws an exception then the IP address isn't in CIDR notation and fails this check.

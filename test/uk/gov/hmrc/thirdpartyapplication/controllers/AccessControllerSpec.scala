@@ -44,7 +44,7 @@ class AccessControllerSpec
     with ApplicationServiceMockModule
     with ApplicationWithCollaboratorsFixtures
     with CommonApplicationId {
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
   import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = NoMaterializer

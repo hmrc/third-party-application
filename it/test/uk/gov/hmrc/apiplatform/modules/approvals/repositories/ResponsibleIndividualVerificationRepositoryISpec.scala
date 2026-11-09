@@ -177,7 +177,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
     with BeforeAndAfterEach
     with FixedClock {
 
-  import ResponsibleIndividualVerificationRepositoryISpec._
+  import ResponsibleIndividualVerificationRepositoryISpec.*
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()

@@ -193,7 +193,7 @@ class ApplicationRepositoryISpec
 
   val adminName = "Admin Example"
 
-  import ApplicationRepositoryISpecExample._
+  import ApplicationRepositoryISpecExample.*
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()

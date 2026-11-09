@@ -444,7 +444,7 @@ object AuditAction {
 }
 
 object AuditHelper {
-  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper.*
 
   def applicationId(applicationId: ApplicationId) = Map("applicationId" -> applicationId.value.toString)
 
@@ -499,7 +499,7 @@ object AuditHelper {
       escalatedTo: Option[String]
     ): Map[String, String] = {
 
-    import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+    import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper.*
 
     val fmt                                                    = DateTimeFormatter.ISO_DATE_TIME
     val importantSubmissionData                                = updatedApp.importantSubmissionData.getOrElse(throw new RuntimeException("No importantSubmissionData found in application"))

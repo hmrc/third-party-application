@@ -60,7 +60,7 @@ trait StoredApplicationFixtures extends CoreApplicationFixtures with FixedClock 
   val storedApp = StoredApplicationData.storedApp
 
   implicit class StoredApplicationFixtureSyntax(app: StoredApplication) {
-    import monocle.syntax.all._
+    import monocle.syntax.all.*
     def withId(anId: ApplicationId): StoredApplication       = app.focus(_.id).replace(anId)
     def withName(aName: ApplicationName): StoredApplication  = app.focus(_.name).replace(aName).focus(_.normalisedName).replace(aName.toLowerCase())
     def withEnvironment(env: Environment): StoredApplication = app.focus(_.environment).replace(env)

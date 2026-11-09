@@ -60,7 +60,7 @@ object AnswerQuestion {
   }
 
   def updateSubmissionState(answers: Submission.AnswersToQuestions, areQuestionsAnswered: Boolean, submission: Submission): Submission = {
-    import Submission._
+    import Submission.*
 
     val addAnsweringStatus = addStatusHistory(Submission.Status.Answering(Instant.now().truncatedTo(ChronoUnit.MILLIS), areQuestionsAnswered))
     (addAnsweringStatus andThen updateLatestAnswersTo(answers))(submission)

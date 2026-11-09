@@ -59,7 +59,7 @@ case class StoredApplication(
     case _                                                       => None
   }
 
-  import monocle.syntax.all._
+  import monocle.syntax.all.*
   def withState(newState: ApplicationState): StoredApplication = this.focus(_.state).replace(newState)
   def withAccess(newAccess: Access): StoredApplication         = this.focus(_.access).replace(newAccess)
 
@@ -69,7 +69,7 @@ case class StoredApplication(
 }
 
 object StoredApplication {
-  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper.*
 
   private val initialLastAccessDate = LocalDate.of(2019, 6, 25)
 
@@ -111,7 +111,7 @@ object StoredApplication {
       productionToken: StoredToken,
       createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
-    import createApplicationRequest._
+    import createApplicationRequest.*
 
     val applicationState = (environment, accessType) match {
       case (Environment.Sandbox, _)                     => ApplicationState(State.Production, updatedOn = createdOn)

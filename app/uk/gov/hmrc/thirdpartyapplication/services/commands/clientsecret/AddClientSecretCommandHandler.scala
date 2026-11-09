@@ -36,7 +36,7 @@ class AddClientSecretCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private val clientSecretLimit = config.clientSecretLimit
 

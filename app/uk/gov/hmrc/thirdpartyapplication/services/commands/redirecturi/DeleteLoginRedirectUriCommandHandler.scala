@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class DeleteLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: DeleteLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
     val existingRedirects = app.access match {

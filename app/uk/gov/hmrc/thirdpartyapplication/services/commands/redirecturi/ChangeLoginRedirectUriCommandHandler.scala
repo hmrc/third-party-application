@@ -34,8 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler._
-  import cats.syntax.validated._
+  import CommandHandler.*
+  import cats.syntax.validated.*
 
   private def validate(app: StoredApplication, cmd: ChangeLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
     val existingUris = app.access match {

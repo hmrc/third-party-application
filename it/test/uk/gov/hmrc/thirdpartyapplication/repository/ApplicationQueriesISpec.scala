@@ -690,7 +690,7 @@ class ApplicationQueriesISpec
       val applicationId1   = ApplicationId.random
       val applicationId2   = ApplicationId.random
       val applicationId3   = ApplicationId.random
-      import cats.syntax.option._
+      import cats.syntax.option.*
       val testApplication1 = anApplicationDataForTest(applicationId1).some.map(a => a.copy(lastAccess = a.createdOn)).get
       val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).some.map(a => a.copy(lastAccess = a.createdOn)).get
       val testApplication3 =

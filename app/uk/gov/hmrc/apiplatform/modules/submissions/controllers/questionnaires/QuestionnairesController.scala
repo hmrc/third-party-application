@@ -38,7 +38,7 @@ class QuestionnairesController @Inject() (
   )(using val ec: ExecutionContext
   ) extends BackendController(cc) {
 
-  import QuestionnairesController._
+  import QuestionnairesController.*
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires.given
   import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
 

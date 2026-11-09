@@ -37,7 +37,7 @@ class ApprovalsNamingService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends AbstractApplicationNamingService(auditService, queryService, nameValidationConfig) {
 
-  import ApplicationNaming._
+  import ApplicationNaming.*
 
   private val excludeInTesting: ExclusionCondition                                 = (x: ApplicationWithCollaborators) => x.isInTesting
   private def or(a: ExclusionCondition, b: ExclusionCondition): ExclusionCondition = (x: ApplicationWithCollaborators) => a(x) || b(x)

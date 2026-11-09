@@ -35,7 +35,7 @@ class ChangeRateLimitTierCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def asEvents(app: StoredApplication, cmd: ChangeRateLimitTier): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(

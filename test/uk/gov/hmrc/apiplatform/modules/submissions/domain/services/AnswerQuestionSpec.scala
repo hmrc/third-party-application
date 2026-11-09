@@ -112,7 +112,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
     }
 
     "deriveProgressOfQuestionnaire" should {
-      import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
+      import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires.*
       val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
 
       "return not started, with answerable questions when nothing answered" in new Setup {

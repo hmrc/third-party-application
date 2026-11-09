@@ -39,7 +39,7 @@ class SubscribeToApiCommandHandler @Inject() (
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")

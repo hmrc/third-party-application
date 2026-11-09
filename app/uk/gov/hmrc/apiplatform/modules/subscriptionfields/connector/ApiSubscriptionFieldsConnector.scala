@@ -50,7 +50,7 @@ object ApiSubscriptionFieldsConnector {
 @Singleton
 class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(using val ec: ExecutionContext) extends ResponseUtils
     with JsonBodyWritables {
-  import ApiSubscriptionFieldsConnector._
+  import ApiSubscriptionFieldsConnector.*
 
   def delete(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     httpClient.delete(url"${config.baseUrl}/field/application/$clientId")

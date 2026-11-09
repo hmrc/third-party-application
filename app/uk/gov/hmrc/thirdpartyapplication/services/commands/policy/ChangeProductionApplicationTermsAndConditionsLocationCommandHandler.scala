@@ -37,7 +37,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
   )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   def processLegacyApp(oldUrl: String, app: StoredApplication, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     def validate: Validated[Failures, String] = {

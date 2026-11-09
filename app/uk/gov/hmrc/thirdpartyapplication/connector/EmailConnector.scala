@@ -52,7 +52,7 @@ object EmailConnector {
 
 @Singleton
 class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector.Config)(using val ec: ExecutionContext) extends ApplicationLogger with JsonBodyWritables {
-  import EmailConnector._
+  import EmailConnector.*
 
   val serviceUrl      = config.baseUrl
   val devHubBaseUrl   = config.devHubBaseUrl
@@ -484,7 +484,7 @@ class EmailConnector @Inject() (httpClient: HttpClientV2, config: EmailConnector
     }
 
     def makeCall() = {
-      import uk.gov.hmrc.http.HttpReads.Implicits._
+      import uk.gov.hmrc.http.HttpReads.Implicits.*
 
       httpClient
         .post(url"$url")

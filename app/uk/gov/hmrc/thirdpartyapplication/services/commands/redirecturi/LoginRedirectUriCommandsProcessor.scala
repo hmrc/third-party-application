@@ -29,8 +29,8 @@ class LoginRedirectUriCommandsProcessor @Inject() (
     changeLoginRedirectUriCmdHdlr: ChangeLoginRedirectUriCommandHandler,
     updateLoginRedirectUrisCmdHdlr: UpdateLoginRedirectUrisCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: LoginRedirectCommand): AppCmdResultT = command match {
     case cmd: AddLoginRedirectUri     => addLoginRedirectUriCommandHandle.process(app, cmd)
