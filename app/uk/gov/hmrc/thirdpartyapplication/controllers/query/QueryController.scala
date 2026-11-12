@@ -88,7 +88,6 @@ class QueryController @Inject() (
   }
 
   def queryPost(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    println(request.body)
     withJsonBody[Map[String, Seq[String]]] { payload =>
       handleRequest(payload, request.headers.toMap)
     }

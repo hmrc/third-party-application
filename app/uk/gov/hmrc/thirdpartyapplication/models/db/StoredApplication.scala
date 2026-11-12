@@ -121,8 +121,7 @@ object StoredApplication {
 
     val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if (v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
-      case _: CreateApplicationRequestV2                                    => None
-      case _: CreateApplicationRequestV1                                    => None
+      case _                                                                => None
     }
 
     val applicationAccess: Access = createApplicationRequest match {

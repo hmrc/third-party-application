@@ -226,7 +226,6 @@ class QueryControllerSpec
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubs(appWithSubs)
 
       val request = FakeRequest("POST", "/").withBody[JsValue](Json.toJson(payload))
-      println(request.body)
       val result  = underTest.queryPost()(request)
 
       status(result) shouldBe OK
