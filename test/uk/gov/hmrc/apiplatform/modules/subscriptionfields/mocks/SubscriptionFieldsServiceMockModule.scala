@@ -21,7 +21,7 @@ import scala.concurrent.Future.successful
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionFieldsService
 
 trait SubscriptionFieldsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -38,7 +38,7 @@ trait SubscriptionFieldsServiceMockModule extends MockitoSugar with ArgumentMatc
     object FetchFieldValuesWithDefaults {
 
       def returns(fields: ApiFieldMap[FieldValue]) =
-        when(aMock.fetchFieldValuesWithDefaults(*, *)(*)).thenReturn(successful(fields))
+        when(aMock.fetchFieldValuesWithDefaults(*, *)(using *)).thenReturn(successful(fields))
     }
   }
 

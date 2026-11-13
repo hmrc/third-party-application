@@ -21,7 +21,7 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -37,7 +37,7 @@ class TestOnlyApplicationController @Inject() (
     applicationService: ApplicationService,
     cloneAppService: CloneApplicationService,
     mcc: MessagesControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(mcc) with JsonUtils {
 
   val noAuditing: StoredApplication => Future[AuditResult] = _ => successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Disabled)
@@ -47,8 +47,8 @@ class TestOnlyApplicationController @Inject() (
 
     (
       for {
-        app <- ET.fromOptionF(applicationService.fetch(id).value, NotFound("No application was found"))
-        _   <- ET.liftF(applicationService.deleteApplication(id, None, noAuditing))
+        _ <- ET.fromOptionF(applicationService.fetch(id).value, NotFound("No application was found"))
+        _ <- ET.liftF(applicationService.deleteApplication(id, None, noAuditing))
       } yield NoContent
     )
       .fold(identity, identity)

@@ -39,11 +39,11 @@ trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object VerifyUplift {
 
       def thenSucceeds() = {
-        when(aMock.verifyUplift(*)(*)).thenReturn(successful(UpliftVerified))
+        when(aMock.verifyUplift(*)(using *)).thenReturn(successful(UpliftVerified))
       }
 
       def thenFailWithInvalidUpliftVerificationCode() = {
-        when(aMock.verifyUplift(*)(*)).thenAnswer((code: String) => failed(InvalidUpliftVerificationCode(code)))
+        when(aMock.verifyUplift(*)(using *)).thenAnswer((code: String) => failed(InvalidUpliftVerificationCode(code)))
       }
     }
   }

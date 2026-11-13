@@ -19,23 +19,23 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.data._
+import cats.data.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeRateLimitTier
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ChangeRateLimitTierCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def asEvents(app: StoredApplication, cmd: ChangeRateLimitTier): NonEmptyList[ApplicationEvent] = {
     NonEmptyList.of(
@@ -44,7 +44,7 @@ class ChangeRateLimitTierCommandHandler @Inject() (
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
-        oldRateLimit = app.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+        oldRateLimit = app.rateLimitTier.getOrElse(RateLimitTier.Bronze),
         newRateLimit = cmd.rateLimitTier
       )
     )

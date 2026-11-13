@@ -22,28 +22,28 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.OptionT
 
+import play.api.libs.json.*
 import play.api.libs.json.Json.toJson
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessType
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.CheckInformation
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.*
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
-import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.common.ErrorCode.*
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsErrorResponse, JsonUtils, WarnStillInUse}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.services.*
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 @Singleton
@@ -59,7 +59,7 @@ class ApplicationController @Inject() (
     upliftLinkService: UpliftLinkService,
     val queryService: QueryService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationTypeAuthorisationActions
@@ -74,7 +74,7 @@ class ApplicationController @Inject() (
 
   private val E = EitherTHelper.make[String]
 
-  def create = requiresAuthenticationFor(AccessType.PRIVILEGED, AccessType.ROPC).async(parse.json) { implicit request =>
+  def create = requiresAuthenticationFor(AccessType.Privileged, AccessType.Ropc).async(parse.json) { implicit request =>
     def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] =
       createApplicationRequest match {
         case _: CreateApplicationRequestV1 => successful(HasSucceeded)
@@ -84,8 +84,8 @@ class ApplicationController @Inject() (
     def processV2(applicationId: ApplicationId)(requestV2: CreateApplicationRequestV2): Future[HasSucceeded] =
       (
         for {
-          _          <- E.liftF(upliftLinkService.createUpliftLink(requestV2.sandboxApplicationId, applicationId))
-          submission <- E.fromEitherF(submissionsService.create(applicationId, requestV2.requestedBy))
+          _ <- E.liftF(upliftLinkService.createUpliftLink(requestV2.sandboxApplicationId, applicationId))
+          _ <- E.fromEitherF(submissionsService.create(applicationId, requestV2.requestedBy))
         } yield HasSucceeded
       )
         .getOrElseF(Future.failed(new RuntimeException("Bang")))
@@ -141,22 +141,24 @@ class ApplicationController @Inject() (
   }
 
   def validateCredentials: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    withJsonBody[ValidationRequest] { vr: ValidationRequest =>
-      credentialService.validateCredentials(vr).value map {
-        case Some(application) => Ok(toJson(application))
-        case None              => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
-      } recover recovery
+    withJsonBody[ValidationRequest] {
+      (vr: ValidationRequest) =>
+        credentialService.validateCredentials(vr).value map {
+          case Some(application) => Ok(toJson(application))
+          case None              => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
+        } recover recovery
     }
   }
 
   def validateApplicationName: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
-      withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
-        (applicationNameValidationRequest match {
-          case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
-          case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
-        })
-          .map(r => Ok(Json.toJson(r)))
+      withJsonBody[ApplicationNameValidationRequest] {
+        (applicationNameValidationRequest: ApplicationNameValidationRequest) =>
+          (applicationNameValidationRequest match {
+            case ChangeApplicationNameValidationRequest(nameToValidate, appId) => upliftNamingService.validateApplicationName(nameToValidate, Some(appId))
+            case NewApplicationNameValidationRequest(nameToValidate)           => upliftNamingService.validateApplicationName(nameToValidate, None)
+          })
+            .map(r => Ok(Json.toJson(r)))
       } recover recovery
     }
 
@@ -171,7 +173,7 @@ class ApplicationController @Inject() (
     }
   }
 
-  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
+  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async(_ =>
     subscriptionService.fetchAllSubscriptions()
       .map(subs => Ok(toJson(subs))) recover recovery
   )

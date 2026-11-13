@@ -26,8 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class RateLimitCommandsProcessor @Inject() (
     changeRateLimitTierCommandHandler: ChangeRateLimitTierCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: RateLimitCommand): AppCmdResultT = command match {
     case cmd: ChangeRateLimitTier => changeRateLimitTierCommandHandler.process(app, cmd)

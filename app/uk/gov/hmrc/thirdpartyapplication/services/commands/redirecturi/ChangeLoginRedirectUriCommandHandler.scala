@@ -19,23 +19,23 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeLoginRedirectUri
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler._
-  import cats.syntax.validated._
+  import CommandHandler.*
+  import cats.syntax.validated.*
 
   private def validate(app: StoredApplication, cmd: ChangeLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
     val existingUris = app.access match {
@@ -50,11 +50,11 @@ class ChangeLoginRedirectUriCommandHandler @Inject() (applicationRepository: App
       else
         ().validNel
 
-    Apply[Validated[Failures, *]].map3(
+    (
       standardAccess,
       isAdminIfInProduction(cmd.actor, app),
       uriExists
-    )((_, _, _) => existingUris)
+    ).mapN((_, _, _) => existingUris)
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeLoginRedirectUri): NonEmptyList[ApplicationEvent] = {

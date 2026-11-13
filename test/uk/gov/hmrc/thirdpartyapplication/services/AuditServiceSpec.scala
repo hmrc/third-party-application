@@ -29,23 +29,24 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper.asLocalDateTime
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, LoginRedirectUri}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class AuditServiceSpec
     extends AsyncHmrcSpec
@@ -66,8 +67,8 @@ class AuditServiceSpec
     Some("organisationUrl.com"),
     responsibleIndividual,
     Set(ServerLocation.InUK),
-    TermsAndConditionsLocations.InDesktopSoftware,
-    PrivacyPolicyLocations.InDesktopSoftware,
+    TermsAndConditionsLocation.InDesktopSoftware,
+    PrivacyPolicyLocation.InDesktopSoftware,
     List.empty
   )
 
@@ -87,25 +88,25 @@ class AuditServiceSpec
 
   "AuditService audit" should {
     "pass through data to underlying auditConnector" in new Setup {
-      val data                       = Map("some-header" -> "la-di-dah")
-      implicit val hc: HeaderCarrier = HeaderCarrier()
+      val data                = Map("some-header" -> "la-di-dah")
+      given hc: HeaderCarrier = HeaderCarrier()
 
       val event = DataEvent(
         auditSource = "third-party-application",
         auditType = AppCreated.auditType,
         tags = hc.toAuditTags(AppCreated.name, "-"),
-        detail = hc.toAuditDetails(data.toSeq: _*)
+        detail = hc.toAuditDetails(data.toSeq*)
       )
 
       auditService.audit(AppCreated, data)
-      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(event)))(*, *)
+      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(event)))(using *, *)
     }
 
     "add user context where it exists in the header carrier" in new Setup {
-      val data                       = Map("some-header" -> "la-di-dah")
-      val email                      = "test@example.com"
-      val name                       = "John Smith"
-      implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+      val data                = Map("some-header" -> "la-di-dah")
+      val email               = "test@example.com"
+      val name                = "John Smith"
+      given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
         LOGGED_IN_USER_EMAIL_HEADER -> email,
         LOGGED_IN_USER_NAME_HEADER  -> name
       )
@@ -114,7 +115,7 @@ class AuditServiceSpec
         auditSource = "third-party-application",
         auditType = AppCreated.auditType,
         tags = hc.toAuditTags(AppCreated.name, "-"),
-        detail = hc.toAuditDetails(data.toSeq: _*)
+        detail = hc.toAuditDetails(data.toSeq*)
       )
 
       val expected = event.copy(
@@ -125,19 +126,19 @@ class AuditServiceSpec
       )
 
       auditService.audit(AppCreated, data)
-      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(*, *)
+      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(using *, *)
     }
 
     "add as much user context as possible where only partial data exists" in new Setup {
-      val data                            = Map("some-header" -> "la-di-dah")
-      val email                           = "test@example.com"
-      implicit val emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
+      val data                     = Map("some-header" -> "la-di-dah")
+      val email                    = "test@example.com"
+      given emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
 
       val event = DataEvent(
         auditSource = "third-party-application",
         auditType = AppCreated.auditType,
         tags = emailHc.toAuditTags(AppCreated.name, "-"),
-        detail = emailHc.toAuditDetails(data.toSeq: _*)
+        detail = emailHc.toAuditDetails(data.toSeq*)
       )
 
       val expected = event.copy(
@@ -147,7 +148,7 @@ class AuditServiceSpec
       )
 
       auditService.audit(AppCreated, data)
-      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(*, *)
+      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(using *, *)
     }
   }
 
@@ -158,8 +159,8 @@ class AuditServiceSpec
     val requesterName  = "bill badger"
     val appInTesting   = applicationData.withState(ApplicationStateExamples.testing)
 
-    val collaboratorActor          = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    val collaboratorActor   = Actors.AppCollaborator(applicationData.collaborators.head.emailAddress)
+    given hc: HeaderCarrier = HeaderCarrier()
 
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
 
@@ -199,7 +200,7 @@ class AuditServiceSpec
       )
       val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInTesting.id.value.toString,
-        "applicationName"        -> appInTesting.name.value,
+        "applicationName"        -> appInTesting.name,
         "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress.text).mkString(", ")
       )
@@ -212,7 +213,7 @@ class AuditServiceSpec
         detail = extraDetail
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
       SubmissionsServiceMock.FetchLatest.thenReturn(declinedSubmission)
 
       val result = await(auditService.applyEvents(
@@ -226,7 +227,7 @@ class AuditServiceSpec
         NonEmptyList.one(appApprovalRequestDeclined)
       ))
       result shouldBe Some(AuditResult.Success)
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a single ApplicationApprovalRequestGranted event" in new Setup {
@@ -280,7 +281,7 @@ class AuditServiceSpec
       )
       val gatekeeperDetails: Map[String, String] = Map(
         "applicationId"          -> appInGKApproval.id.value.toString,
-        "applicationName"        -> appInGKApproval.name.value,
+        "applicationName"        -> appInGKApproval.name,
         "upliftRequestedByEmail" -> appInGKApproval.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInGKApproval.admins.map(_.emailAddress.text).mkString(", ")
       )
@@ -293,7 +294,7 @@ class AuditServiceSpec
         detail = extraData
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
 
       val result = await(auditService.applyEvents(
@@ -302,7 +303,7 @@ class AuditServiceSpec
       ))
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a ClientSecretAdded event" in new Setup {
@@ -327,13 +328,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(clientSecretAdded)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a ClientSecretRemoved event" in new Setup {
@@ -357,13 +358,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(clientSecretRemoved)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a CollaboratorAdded event" in new Setup {
@@ -389,13 +390,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(collaboratorAdded)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a CollaboratorRemoved event" in new Setup {
@@ -421,13 +422,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(collaboratorRemoved)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a ApiSubscribed event" in new Setup {
@@ -452,13 +453,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(apiSubscribed)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a ApiUnsubscribed event" in new Setup {
@@ -483,13 +484,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(apiUnsubscribed)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a ApplicationDeletedByGatekeeper event" in new Setup {
@@ -513,18 +514,18 @@ class AuditServiceSpec
           "applicationId"           -> applicationId.value.toString,
           "applicationAdmins"       -> applicationData.admins.map(_.emailAddress).mkString(", "),
           "upliftRequestedByEmail"  -> applicationData.state.requestedByEmailAddress.getOrElse("-"),
-          "applicationName"         -> applicationData.name.value,
+          "applicationName"         -> applicationData.name,
           "requestedByEmailAddress" -> adminOne.emailAddress.text
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(appDeleted)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a RedirectUrisUpdated event" in new Setup {
@@ -548,13 +549,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(redirectUrisUpdated)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a SandboxNameChanged event" in new Setup {
@@ -579,13 +580,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a SandboxApplicationPrivacyPolicyUrlChanged event" in new Setup {
@@ -609,13 +610,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a SandboxApplicationPrivacyPolicyUrlRemoved event" in new Setup {
@@ -638,13 +639,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a SandboxApplicationTermsAndConditionsUrlChanged event" in new Setup {
@@ -668,13 +669,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a SandboxApplicationTermsAndConditionsUrlRemoved event" in new Setup {
@@ -697,13 +698,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(sandboxApplicationNameChanged)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
 
     "applyEvents with a ApplicationApprovalRequestSubmitted event" in new Setup {
@@ -729,13 +730,13 @@ class AuditServiceSpec
         )
       )
 
-      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditConnector.sendEvent(*)(using *, *)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(applicationApprovalRequestSubmitted)))
 
       result shouldBe Some(AuditResult.Success)
 
-      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(using *, *)
     }
   }
 }

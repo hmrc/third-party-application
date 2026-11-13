@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 
@@ -31,7 +31,7 @@ object TotpConnector {
 }
 
 @Singleton
-class TotpConnector @Inject() (httpClient: HttpClientV2, config: TotpConnector.Config)(implicit val ec: ExecutionContext) {
+class TotpConnector @Inject() (httpClient: HttpClientV2, config: TotpConnector.Config)(using val ec: ExecutionContext) {
 
   def generateTotp()(implicit hc: HeaderCarrier): Future[Totp] = {
     val postUrl = url"${config.baseUrl}/time-based-one-time-password/secret"

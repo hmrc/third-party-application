@@ -19,16 +19,15 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.validated._
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineApplicationApprovalRequest
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -40,11 +39,11 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, (LaxEmailAddress, String, Submission)]] = {
 
@@ -54,13 +53,13 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, *]].map5(
+      (
         isStandardNewJourneyApp(app),
         isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app),
         ensureRequesterEmailDefined(app),
         ensureRequesterNameDefined(app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, requesterEmail, requesterName, submission) => (requesterEmail, requesterName, submission) }
+      ).mapN((_, _, requesterEmail, requesterName, submission) => (requesterEmail, requesterName, submission))
     }
   }
 
@@ -81,7 +80,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
         actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
         decliningUserName = cmd.gatekeeperUser,
         decliningUserEmail = LaxEmailAddress(cmd.gatekeeperUser), // Not nice but we have nothing better
-        submissionId = SubmissionId(submission.id.value),
+        submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         reasons = cmd.reasons,
         requestingAdminName = requesterName,
@@ -95,7 +94,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
 
     val stateHistory = StateHistory(
       applicationId = app.id,
-      state = State.TESTING,
+      state = State.Testing,
       previousState = Some(app.state.name),
       actor = Actors.GatekeeperUser(cmd.gatekeeperUser),
       changedAt = cmd.timestamp
@@ -104,7 +103,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     for {
       validated                                  <- E.fromValidatedF(validate(app))
       (requesterEmail, requesterName, submission) = validated
-      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.TESTING, cmd.timestamp, requesterEmail.text, requesterName))
+      savedApp                                   <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Testing, cmd.timestamp, requesterEmail.text, requesterName))
       _                                          <- E.liftF(stateHistoryRepository.insert(stateHistory))
       (approvalDeclined, stateChange)             = asEvents(savedApp, cmd, submission, requesterEmail, requesterName, stateHistory)
       _                                          <- E.liftF(submissionService.declineApplicationApprovalRequest(approvalDeclined))

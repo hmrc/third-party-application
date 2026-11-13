@@ -24,12 +24,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
 
 @Singleton
 class ThirdPartyDelegatedAuthorityService @Inject() (
     thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture

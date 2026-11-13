@@ -28,19 +28,19 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar, Strictness}
 
 import uk.gov.hmrc.http.NotFoundException
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, _}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, *}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, _}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredToken, *}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseApplicationRepoMock {
-    private implicit val materializer: Materializer = NoMaterializer
+    private given materializer: Materializer = NoMaterializer
 
     def aMock: ApplicationRepository
 
@@ -441,9 +441,9 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchStoredApplications {
-      def thenReturns(apps: StoredApplication*)                                               = when(aMock.fetchStoredApplications(*)).thenReturn(successful(apps.toList))
-      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*)     = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(apps.toList))
-      def thenReturnsNoneFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(Nil))
+      def thenReturns(apps: StoredApplication*)                                           = when(aMock.fetchStoredApplications(*)).thenReturn(successful(apps.toList))
+      def thenReturnsFor(qry: GeneralOpenEndedApplicationQuery, apps: StoredApplication*) = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(apps.toList))
+      def thenReturnsNoneFor(qry: GeneralOpenEndedApplicationQuery)                       = when(aMock.fetchStoredApplications(qry)).thenReturn(successful(Nil))
     }
 
     object FetchByPaginatedApplicationQuery {

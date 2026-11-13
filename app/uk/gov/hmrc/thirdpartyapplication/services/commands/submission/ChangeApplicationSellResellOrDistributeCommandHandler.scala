@@ -20,14 +20,13 @@ import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, SellResellOrDistribute}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationSellResellOrDistribute
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -36,15 +35,15 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ClockNow {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map(
+    (
       ensureStandardAccess(app)
-    ) { case _ => app }
+    ).map(_ => app)
   }
 
   private def asEvents(
@@ -71,10 +70,10 @@ class ChangeApplicationSellResellOrDistributeCommandHandler @Inject() (
       applicationData.withAccess(getStandardAccess(applicationData).copy(sellResellOrDistribute = Some(newSellResellOrDistribute)))
 
     for {
-      validateResult           <- E.fromValidated(validate(app))
+      _                        <- E.fromValidated(validate(app))
       oldSellResellOrDistribute = getSellResellOrDistribute(app)
       newSellResellOrDistribute = cmd.sellResellOrDistribute
-      persistedApplicationData <- E.liftF(applicationRepository.save(updateWithSellResellOrDistribute(app, newSellResellOrDistribute)))
+      _                        <- E.liftF(applicationRepository.save(updateWithSellResellOrDistribute(app, newSellResellOrDistribute)))
       events                    = asEvents(app, cmd, oldSellResellOrDistribute, newSellResellOrDistribute)
     } yield (app, events)
   }

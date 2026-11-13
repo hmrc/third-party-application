@@ -29,9 +29,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateFixtures with FixedClock {
 
@@ -64,9 +64,9 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
     val startDate3 = nowInstant.minus(32, ChronoUnit.DAYS)
     val dueBy3     = startDate3.plus(21, ChronoUnit.DAYS)
 
-    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
-    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
-    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, EMAIL_SENT)
+    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.EMAIL_SENT)
+    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, TermsOfUseInvitationState.EMAIL_SENT)
+    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, TermsOfUseInvitationState.EMAIL_SENT)
 
     val submission1 = aSubmission.copy(applicationId = applicationId1)
     val submission2 = aSubmission.copy(applicationId = applicationId2)
@@ -88,7 +88,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(TermsOfUseInvitationState.EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite1.dueBy, application1.name, recipients1)
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId1)
     }
@@ -102,7 +102,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(TermsOfUseInvitationState.EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite1.dueBy, application1.name, recipients1)
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyCalledWith(applicationId1)
     }
@@ -120,7 +120,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(TermsOfUseInvitationState.EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite1.dueBy, application1.name, recipients1)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite2.dueBy, application2.name, recipients2)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyCalledWith(touInvite3.dueBy, application3.name, recipients3)
@@ -136,7 +136,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(TermsOfUseInvitationState.EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
     }
@@ -148,14 +148,14 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(TermsOfUseInvitationState.EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
     }
 
     "not send email if application record has state of DELETED" in new Setup with StoredApplicationFixtures {
       val deletedApp   = storedApp.withState(appStateDeleted)
-      val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
+      val touInviteDel = TermsOfUseInvitation(applicationId, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.thenReturn(List(touInviteDel))
       ApplicationRepoMock.Fetch.thenReturn(deletedApp)
@@ -163,7 +163,7 @@ class TermsOfUseInvitationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAf
 
       await(job.runJob)
 
-      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(EMAIL_SENT, dueBy)
+      TermsOfUseInvitationRepositoryMock.FetchByStatusBeforeDueBy.verifyCalledWith(TermsOfUseInvitationState.EMAIL_SENT, dueBy)
       EmailConnectorMock.SendNewTermsOfUseInvitation.verifyNeverCalled()
       TermsOfUseInvitationRepositoryMock.UpdateReminderSent.verifyNeverCalled()
     }

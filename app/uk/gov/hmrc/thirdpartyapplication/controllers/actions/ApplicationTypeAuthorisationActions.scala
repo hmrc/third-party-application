@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import cats.data.OptionT
 
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
@@ -44,10 +44,10 @@ trait ApplicationTypeAuthorisationActions {
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
 
   def requiresAuthenticationForStandardApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.STANDARD), true)
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.Standard), true)
 
   def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.PRIVILEGED, AccessType.ROPC), false)
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(AccessType.Privileged, AccessType.Ropc), false)
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {
@@ -60,7 +60,7 @@ trait ApplicationTypeAuthorisationActions {
     }
 
     def filter[A](request: Request[A]): Future[Option[Result]] = {
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       deriveAccessType(request) flatMap {
         case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE

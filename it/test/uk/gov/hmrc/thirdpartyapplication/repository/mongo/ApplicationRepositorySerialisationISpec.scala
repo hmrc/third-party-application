@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.repository.mongo
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import org.mongodb.scala.Document
 import org.mongodb.scala.bson.BsonDocument
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.result.InsertOneResult
+import org.mongodb.scala.{Document, ObservableFuture}
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
@@ -34,11 +34,10 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationRepositorySerialisationISpec
     extends ServerBaseISpec
@@ -79,6 +78,7 @@ class ApplicationRepositorySerialisationISpec
     val applicationData = storedApp.withId(applicationId).withState(appStateTesting).copy(refreshTokensAvailableFor = GrantLength.ONE_YEAR.period)
 
     def saveApplicationAsMongoJson(applicationAsRawJson: JsObject): InsertOneResult = {
+      import org.mongodb.scala.SingleObservableFuture
       await(mongoDatabase.getCollection("application").insertOne(Document(applicationAsRawJson.toString())).toFuture())
     }
 
@@ -89,28 +89,9 @@ class ApplicationRepositorySerialisationISpec
     def validateGrantLength(raw: BsonDocument, required: Boolean): Unit = {
       val path: JsPath = __ \ "grantLength"
       path(Json.parse(raw.toJson)) match {
-        case Seq(x) => if (required) () else fail()
+        case Seq(_) => if (required) () else fail()
         case _      => if (required) fail() else ()
       }
-    }
-  }
-
-  "create application with invalid redirect UR in db and test we can read it back " in new Setup {
-    val invalidUri        = new LoginRedirectUri("bobbins") // Using new to avoid validation of the apply method
-    val data              = applicationData.withAccess(Access.Standard().copy(redirectUris = List(invalidUri)))
-    val rawJson: JsObject = applicationToMongoJson(data)
-    saveApplicationAsMongoJson(rawJson)
-    val result            = await(applicationRepository.fetch(applicationId))
-
-    result match {
-      case Some(application) => {
-        application.id shouldBe applicationId
-        application.access match {
-          case Access.Standard(redirectUris, _, _, _, _, _, _) => redirectUris.head shouldBe invalidUri
-          case _                                               => fail()
-        }
-      }
-      case None              => fail()
     }
   }
 

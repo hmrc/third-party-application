@@ -22,19 +22,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{Json, OWrites}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, Collaborators, GrantLength}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, DispatchRequest}
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandServiceMockModule, ApplicationServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationCommandControllerSpec
     extends ControllerSpec
@@ -46,9 +46,9 @@ class ApplicationCommandControllerSpec
     with CommonApplicationId
     with FixedClock {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   trait Setup
       extends ApplicationCommandServiceMockModule with ApplicationServiceMockModule {
@@ -67,7 +67,7 @@ class ApplicationCommandControllerSpec
   val cmd: ApplicationCommand = AddCollaborator(actor, Collaborators.Administrator(UserId.random, "bob@smith.com".toLaxEmail), instant)
   val dispatch                = DispatchRequest(cmd, Set("fred".toLaxEmail))
 
-  implicit val tempWriter: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
+  given tempWriter: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
 
   val instigatorUserId = UUID.randomUUID().toString
 
@@ -85,7 +85,7 @@ class ApplicationCommandControllerSpec
         s"""{"command":{"actor":{"actorType":"UNKNOWN"},"collaborator":{"userId":"${developerCollaborator.userId.value}","emailAddress":"${developerCollaborator.emailAddress}","role":"DEVELOPER"},"timestamp":"$nowAsText","updateType":"removeCollaborator"},"verifiedCollaboratorsToNotify":["${adminOne.emailAddress}"]}"""
       val cmd      = RemoveCollaborator(Actors.Unknown, developerCollaborator, instant)
       val req      = DispatchRequest(cmd, Set(adminOne.emailAddress))
-      import cats.syntax.option._
+      import cats.syntax.option.*
 
       "write to json" in {
         Json.toJson(req).toString() shouldBe jsonText
@@ -228,7 +228,7 @@ class ApplicationCommandControllerSpec
     "dispatch request" should {
       val cmd = ChangeGrantLength(gatekeeperUser = "a a", timestamp = instant, grantLength = GrantLength.SIX_MONTHS)
       val req = DispatchRequest(cmd, Set.empty[LaxEmailAddress])
-      import cats.syntax.option._
+      import cats.syntax.option.*
 
       "read from json where grant length is an Int" in {
         val jsonText =

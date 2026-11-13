@@ -19,13 +19,13 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationName
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -36,24 +36,24 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class ChangeSandboxApplicationNameCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     namingService: UpliftNamingService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(
       app: StoredApplication,
       cmd: ChangeSandboxApplicationName,
       nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map6(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
-      cond(app.name.value != cmd.newName.value, "App already has that name"),
+      cond(app.name != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, "New name is a duplicate"),
       cond(nameValidationResult != ApplicationNameValidationResult.Invalid, "New name is invalid")
-    ) { case _ => app }
+    ).mapN((_, _, _, _, _, _) => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeSandboxApplicationName): NonEmptyList[ApplicationEvent] = {
@@ -72,7 +72,7 @@ class ChangeSandboxApplicationNameCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeSandboxApplicationName): AppCmdResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationNameWithExclusions(cmd.newName, noExclusions))
-      valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
+      _                    <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
       savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)
     } yield (savedApp, events)

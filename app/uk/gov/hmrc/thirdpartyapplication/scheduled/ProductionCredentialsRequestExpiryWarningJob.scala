@@ -41,7 +41,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     emailConnector: EmailConnector,
     val clock: Clock,
     jobConfig: ProductionCredentialsRequestExpiryWarningJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val productionCredentialsRequestExpiryWarningInterval: FiniteDuration = jobConfig.warningInterval
@@ -50,7 +50,7 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
   override def initialDelay: FiniteDuration                             = jobConfig.initialDelay
   override val isEnabled: Boolean                                       = jobConfig.enabled
   override val lockService: LockService                                 = productionCredentialsRequestExpiryWarningLockService
-  implicit val hc: HeaderCarrier                                        = HeaderCarrier()
+  given hc: HeaderCarrier                                               = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val warningTime: Instant = instant.minus(Period.ofDays(productionCredentialsRequestExpiryWarningInterval.toDays.toInt))
@@ -59,9 +59,9 @@ class ProductionCredentialsRequestExpiryWarningJob @Inject() (
     val result: Future[RunningOfJobSuccessful.type] = for {
       warningApps <-
         applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
-          state = State.TESTING,
+          state = State.Testing,
           updatedBefore = warningTime,
-          environment = Environment.PRODUCTION
+          environment = Environment.Production
         )
       _            = logger.info(s"Scheduled job $name found ${warningApps.size} applications")
       _           <- Future.sequence(warningApps.map(sendWarningEmail))

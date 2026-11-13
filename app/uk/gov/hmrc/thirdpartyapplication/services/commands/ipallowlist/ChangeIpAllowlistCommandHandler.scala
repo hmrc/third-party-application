@@ -19,26 +19,25 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data.Validated._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 import org.apache.commons.net.util.SubnetUtils
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CidrBlock, IpAllowlist}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeIpAllowlist
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ChangeIpAllowlistCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   // Try to create a new instance of SubnetUtils with an IP address.
   // If it throws an exception then the IP address isn't in CIDR notation and fails this check.
@@ -47,7 +46,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
       new SubnetUtils(cidrBlock.ipAddress)
       true
     } catch {
-      case e: IllegalArgumentException => false
+      case _: IllegalArgumentException => false
     }
   }
 
@@ -56,10 +55,10 @@ class ChangeIpAllowlistCommandHandler @Inject() (
   }
 
   private def validate(app: StoredApplication, cmd: ChangeIpAllowlist): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, *]].map2(
+    (
       isAdminIfInProductionOrGatekeeperActor(cmd.actor, app),
       cond(validateAllNewIps(cmd), CommandFailures.GenericFailure("Not all new allowlist IP addresses are valid CIDR blocks"))
-    ) { case _ => () }
+    ).mapN((_, _) => ())
   }
 
   private def buildIpAllowlist(cmd: ChangeIpAllowlist) = {
@@ -82,7 +81,7 @@ class ChangeIpAllowlistCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeIpAllowlist): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationIpAllowlist(app.id, buildIpAllowlist(cmd)))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

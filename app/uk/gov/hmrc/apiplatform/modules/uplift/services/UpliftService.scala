@@ -28,11 +28,11 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, Appl
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
-import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
+import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 
 @Singleton
@@ -40,7 +40,6 @@ class UpliftService @Inject() (
     auditService: AuditService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
-    applicationNamingService: UpliftNamingService,
     val clock: Clock
   )(implicit ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
@@ -54,7 +53,7 @@ class UpliftService @Inject() (
 
     def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] =
       for {
-        history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
+        history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PendingGatekeeperApproval)
         state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId}"))
       } yield state.actor match {
         case Actors.Unknown                => "Unknown"
@@ -73,8 +72,8 @@ class UpliftService @Inject() (
       _ <- applicationRepository.save(app.withState(app.state.toPreProduction(instant)))
       _ <- insertStateHistory(
              app,
-             State.PRE_PRODUCTION,
-             Some(State.PENDING_REQUESTER_VERIFICATION),
+             State.PreProduction,
+             Some(State.PendingRequesterVerification),
              Actors.AppCollaborator(LaxEmailAddress(app.state.requestedByEmailAddress.get)),
              (a: StoredApplication) => applicationRepository.save(a)
            )
@@ -90,9 +89,9 @@ class UpliftService @Inject() (
                )
 
       result <- app.state.name match {
-                  case State.PRE_PRODUCTION | State.PRODUCTION => verifyProduction(app)
-                  case State.PENDING_REQUESTER_VERIFICATION    => verifyPending(app)
-                  case _                                       => throw InvalidUpliftVerificationCode(verificationCode)
+                  case State.PreProduction | State.Production => verifyProduction(app)
+                  case State.PendingRequesterVerification     => verifyPending(app)
+                  case _                                      => throw InvalidUpliftVerificationCode(verificationCode)
                 }
     } yield result
   }

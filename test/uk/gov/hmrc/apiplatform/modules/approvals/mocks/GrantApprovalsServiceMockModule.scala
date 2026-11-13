@@ -21,7 +21,7 @@ import scala.concurrent.Future.successful
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
@@ -41,7 +41,7 @@ trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object DeleteTouUplift {
-      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.deleteTouUplift(*, *, *)).thenReturn(successful(result))
+      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.deleteTouUplift(*)).thenReturn(successful(result))
     }
   }
 

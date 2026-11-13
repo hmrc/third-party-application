@@ -21,10 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector.FieldErrors
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.*
 
 @Singleton
 class SubscriptionFieldsService @Inject() (
@@ -39,7 +38,7 @@ class SubscriptionFieldsService @Inject() (
     }
 
     def fillFields(defns: ApiFieldMap[FieldDefinition])(fields: ApiFieldMap[FieldValue]): ApiFieldMap[FieldValue] = {
-      ThreeDMap.map((c: ApiContext, v: ApiVersionNbr, fn: FieldName, fv: FieldDefinition) => ThreeDMap.get((c, v, fn))(fields).getOrElse(FieldValue("")))(defns)
+      ThreeDMap.map((c: ApiContext, v: ApiVersionNbr, fn: FieldName, _: FieldDefinition) => ThreeDMap.get((c, v, fn))(fields).getOrElse(FieldValue("")))(defns)
     }
 
     for {
@@ -50,36 +49,4 @@ class SubscriptionFieldsService @Inject() (
       filledFields = fillFields(subsDefs)(subsFields)
     } yield filledFields
   }
-
-  def createFieldValuesForApis(
-      clientId: ClientId,
-      apiIdentifiers: Set[ApiIdentifier]
-    )(implicit hc: HeaderCarrier
-    ): Future[Either[Map[ApiIdentifier, FieldErrors], Unit]] = {
-
-    import cats._
-    import cats.syntax.either._
-
-    Future.sequence(
-      apiIdentifiers.toList.map(api =>
-        createFieldValues(clientId, api).map(cfv =>
-          cfv.leftMap(err => Map(api -> err))
-        )
-      )
-    )
-      .map(Monoid.combineAll(_))
-  }
-
-  def createFieldValues(
-      clientId: ClientId,
-      apiIdentifier: ApiIdentifier
-    )(implicit hc: HeaderCarrier
-    ): Future[Either[FieldErrors, Unit]] = {
-    for {
-      fieldValues      <- fetchFieldValuesWithDefaults(clientId, Set(apiIdentifier))
-      fieldValuesForApi = ApiFieldMap.extractApi(apiIdentifier)(fieldValues)
-      fvResults        <- subscriptionFieldsConnector.saveFieldValues(clientId, apiIdentifier, fieldValuesForApi)
-    } yield fvResults
-  }
-
 }

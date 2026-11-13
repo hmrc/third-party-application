@@ -19,14 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.time.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.github.t3hnar.bcrypt._
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecretsHashingConfig
+import uk.gov.hmrc.apiplatform.modules.crypto.services.bcrypt.bcrypt
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with FixedClock with CommonApplicationId {
 

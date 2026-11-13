@@ -26,10 +26,10 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.*
 import uk.gov.hmrc.apiplatform.modules.submissions.models.ApplicationsByAnswer
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.*
 
 @Singleton
 class SubmissionsService @Inject() (
@@ -37,7 +37,7 @@ class SubmissionsService @Inject() (
     submissionsDAO: SubmissionsDAO,
     contextService: ContextService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends EitherTHelper[String] with ClockNow with ApplicationLogger {
   import cats.instances.future.catsStdInstancesForFuture
 
@@ -64,13 +64,12 @@ class SubmissionsService @Inject() (
   def create(applicationId: ApplicationId, requestedBy: String): Future[Either[String, Submission]] = {
     (
       for {
-        groups           <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
-        allQuestionnaires = groups.flatMap(_.links)
-        submissionId      = SubmissionId.random
-        context          <- contextService.deriveContext(applicationId)
-        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant, requestedBy)))
-        submission        = Submission(submissionId, applicationId, instant, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
-        savedSubmission  <- liftF(submissionsDAO.save(submission))
+        groups          <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
+        submissionId     = SubmissionId.random
+        context         <- contextService.deriveContext(applicationId)
+        newInstance      = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(instant, requestedBy)))
+        submission       = Submission(submissionId, applicationId, instant, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        savedSubmission <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )
       .value
@@ -79,7 +78,7 @@ class SubmissionsService @Inject() (
   def fetchOrganisationIdentifiers(startedOn: Instant): Future[Map[String, Int]] = {
     submissionsDAO.fetchLatestSubmissionForAll(startedOn)
       .map(_.map(sub => sub.latestInstance.answersToQuestions.get(QuestionnaireDAO.Questionnaires.OrganisationDetails.question2.id))
-        .filter(_.isDefined).map {
+        .filter(_.isDefined).collect {
           case Some(ActualAnswer.SingleChoiceAnswer(value)) => value
         }.groupMapReduce(identity)(_ => 1)(_ + _))
   }
@@ -134,7 +133,7 @@ class SubmissionsService @Inject() (
   def declineApplicationApprovalRequest(evt: ApplicationEvents.ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
-        extSubmission    <- fromOptionF(fetch(SubmissionId(evt.submissionId.value)), "submission not found")
+        extSubmission    <- fromOptionF(fetch(evt.submissionId), "submission not found")
         updatedSubmission = Submission.decline(evt.eventDateTime, evt.decliningUserEmail.text, evt.reasons)(extSubmission.submission) // Is this correct use of email addresss or should we use decliningUserName ?
         savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission

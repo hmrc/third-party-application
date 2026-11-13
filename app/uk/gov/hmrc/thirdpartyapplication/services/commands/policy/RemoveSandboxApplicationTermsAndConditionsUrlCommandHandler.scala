@@ -19,12 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationTermsAndConditionsUrl
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -32,24 +32,23 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class RemoveSandboxApplicationTermsAndConditionsUrlCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(
       app: StoredApplication,
       cmd: RemoveSandboxApplicationTermsAndConditionsUrl
     ): Validated[Failures, String] = {
 
-    Apply[Validated[Failures, *]].map4(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)
-    ) {
-      case (_, _, std, _) => std.termsAndConditionsUrl
-    }
+    )
+      .mapN((_, _, std, _) => std.termsAndConditionsUrl)
       .andThen(termsAndConditionsUrl =>
         mustBeDefined(termsAndConditionsUrl, CommandFailures.GenericFailure("Cannot remove a Terms and Conditions URL that is already empty"))
       )

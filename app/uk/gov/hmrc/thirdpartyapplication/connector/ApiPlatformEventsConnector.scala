@@ -22,15 +22,16 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import play.api.libs.ws.JsonBodyWritables
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 
 import uk.gov.hmrc.apiplatform.modules.common.connectors.ResponseUtils
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters.given
 
 case class DisplayEvent(
     applicationId: ApplicationId,
@@ -42,21 +43,22 @@ case class DisplayEvent(
   )
 
 object DisplayEvent {
-  implicit val format: OFormat[DisplayEvent] = Json.format[DisplayEvent]
+  import Actor.given
+  given format: OFormat[DisplayEvent] = Json.format[DisplayEvent]
 }
 
 case class QueryResponse(events: List[DisplayEvent])
 
 object QueryResponse {
-  implicit val format: OFormat[QueryResponse] = Json.format[QueryResponse]
+  given format: OFormat[QueryResponse] = Json.format[QueryResponse]
 }
 
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
 }
 
-class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
-    with ApplicationLogger {
+class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatformEventsConnector.Config)(using val ec: ExecutionContext) extends ResponseUtils
+    with ApplicationLogger with JsonBodyWritables {
 
   val serviceBaseUrl: String      = s"${config.baseUrl}"
   private val applicationEventUri = "/application-event"
@@ -64,7 +66,7 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClientV2, config: ApiPlatf
   def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, applicationEventUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
+    given headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
     if (config.enabled) {
       http.post(eventURI(uri))

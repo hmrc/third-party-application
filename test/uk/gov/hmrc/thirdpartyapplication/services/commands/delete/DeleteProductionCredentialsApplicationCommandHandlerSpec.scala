@@ -24,16 +24,16 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteProductionCredentialsApplication
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec, DeleteApplicationCommandHandlers}
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHandlerBaseSpec {
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminEmail                        = adminTwo.emailAddress
     val jobId                                = "DeleteUnusedApplicationsJob"
@@ -56,7 +56,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ProductionCredentialsApplicationDeletedV2 => true
@@ -78,8 +78,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
               appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe ts
-              oldAppState shouldBe app.state.name.toString
-              newAppState shouldBe State.DELETED.toString
+              oldAppState shouldBe app.state.name
+              newAppState shouldBe State.Deleted
               requestingAdminEmail.text shouldBe actor.jobId.toLowerCase
               requestingAdminName shouldBe actor.jobId
           }
@@ -104,7 +104,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends CommandHa
 
     "return an error when app is NOT in testing state" in new Setup {
       checkFailsWith("App is not in TESTING state") {
-        underTest.process(app.withState(app.state.copy(name = State.PRE_PRODUCTION)), cmd)
+        underTest.process(app.withState(app.state.copy(name = State.PreProduction)), cmd)
       }
     }
   }

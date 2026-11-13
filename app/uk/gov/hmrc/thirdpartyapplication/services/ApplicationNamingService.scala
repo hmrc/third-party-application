@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.AccessT
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaborators, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
 
 object ApplicationNaming {
@@ -47,7 +47,7 @@ abstract class AbstractApplicationNamingService(
   )(implicit ec: ExecutionContext
   ) {
 
-  import ApplicationNaming._
+  import ApplicationNaming.*
 
   def isDuplicateName(applicationName: String, exclusions: ExclusionCondition): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {
@@ -70,8 +70,8 @@ abstract class AbstractApplicationNamingService(
 
   def validateApplicationNameWithExclusions(applicationName: ValidatedApplicationName, exclusions: ExclusionCondition): Future[ApplicationNameValidationResult] = {
     for {
-      isDuplicate <- isDuplicateName(applicationName.value, exclusions)
-      isDenyListed = isDenyListedName(applicationName.value)
+      isDuplicate <- isDuplicateName(applicationName, exclusions)
+      isDenyListed = isDenyListedName(applicationName)
     } yield (isDenyListed, isDuplicate) match {
       case (false, false) => ApplicationNameValidationResult.Valid
       case (true, _)      => ApplicationNameValidationResult.Invalid
@@ -81,8 +81,8 @@ abstract class AbstractApplicationNamingService(
 
   def auditDeniedDueToNaming(submittedAppName: String, accessType: AccessType, existingAppId: Option[ApplicationId])(implicit hc: HeaderCarrier): Future[AuditResult] =
     accessType match {
-      case AccessType.PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
-      case AccessType.ROPC       => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
+      case AccessType.Privileged => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
+      case AccessType.Ropc       => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
       case _                     => auditService.audit(
           ApplicationUpliftRequestDeniedDueToNonUniqueName,
           existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)
@@ -91,8 +91,8 @@ abstract class AbstractApplicationNamingService(
 
   def auditDeniedDueToDenyListed(submittedAppName: String, accessType: AccessType, existingAppId: Option[ApplicationId])(implicit hc: HeaderCarrier): Future[AuditResult] =
     accessType match {
-      case AccessType.PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToDenyListedName, Map("applicationName" -> submittedAppName))
-      case AccessType.ROPC       => auditService.audit(CreateRopcApplicationRequestDeniedDueToDenyListedName, Map("applicationName" -> submittedAppName))
+      case AccessType.Privileged => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToDenyListedName, Map("applicationName" -> submittedAppName))
+      case AccessType.Ropc       => auditService.audit(CreateRopcApplicationRequestDeniedDueToDenyListedName, Map("applicationName" -> submittedAppName))
       case _                     => auditService.audit(
           ApplicationUpliftRequestDeniedDueToDenyListedName,
           existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName)

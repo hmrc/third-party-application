@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -44,9 +44,9 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       with StoredApplicationFixtures
       with SubmissionsTestData {
 
-    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+    given ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
@@ -64,8 +64,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List(acceptance)
     )
 
@@ -83,13 +83,10 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val underTest =
       new GrantApprovalsService(
-        AuditServiceMock.aMock,
-        ApplicationRepoMock.aMock,
         StateHistoryRepoMock.aMock,
         TermsOfUseInvitationServiceMock.aMock,
         ResponsibleIndividualVerificationRepositoryMock.aMock,
         SubmissionsServiceMock.aMock,
-        EmailConnectorMock.aMock,
         clock
       )
   }
@@ -104,7 +101,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.grantWithWarningsForTouUplift(applicationProduction, warningsSubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
@@ -137,7 +134,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.declineForTouUplift(applicationProduction, failSubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
@@ -171,7 +168,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result  = await(underTest.resetForTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName, warning))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.Store.verifyCalledWith().status.isAnswering shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
@@ -194,10 +191,10 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.thenReturn()
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
 
-      val result = await(underTest.deleteTouUplift(applicationProduction, pendingRISubmission, gatekeeperUserName))
+      val result = await(underTest.deleteTouUplift(applicationProduction))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) =>
+        case GrantApprovalsService.Actioned(_) =>
       }
       SubmissionsServiceMock.DeleteAll.verifyCalledWith(applicationProduction.id)
       TermsOfUseInvitationServiceMock.UpdateResetBackToEmailSent.verifyCalledWith(applicationProduction.id)
@@ -205,7 +202,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to delete the specified submission if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.deleteTouUplift(applicationProduction.withState(appStateTesting), pendingRISubmission, gatekeeperUserName))
+      val result = await(underTest.deleteTouUplift(applicationProduction.withState(appStateTesting)))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

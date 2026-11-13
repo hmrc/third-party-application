@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.time.Instant
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 object MongoJavatimeHelper {
   def asJsValue(instant: Instant): JsValue = Json.obj("$date" -> Json.obj("$numberLong" -> JsString(instant.toEpochMilli().toString())))

@@ -19,13 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access.Standard
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveSandboxApplicationPrivacyPolicyUrl
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -33,25 +32,22 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class RemoveSandboxApplicationPrivacyPolicyUrlCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(
       app: StoredApplication,
       cmd: RemoveSandboxApplicationPrivacyPolicyUrl
     ): Validated[Failures, String] = {
-    val (isStd, privacyPolicyUrl) = app.access match {
-      case Standard(_, _, _, privacyPolicyUrl, _, _, _) => (true, privacyPolicyUrl)
-      case _                                            => (false, None)
-    }
-    Apply[Validated[Failures, *]].map4(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       ensureStandardAccess(app),
       isAppActorACollaboratorOnApp(cmd.actor, app)
-    ) { case (_, _, std, _) => std.privacyPolicyUrl }
+    )
+      .mapN((_, _, std, _) => std.privacyPolicyUrl)
       .andThen(privacyPolicyUrl =>
         mustBeDefined(privacyPolicyUrl, CommandFailures.GenericFailure("Cannot remove a Privacy Policy URL that is already empty"))
       )

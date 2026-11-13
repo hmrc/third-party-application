@@ -27,8 +27,8 @@ class CollaboratorCommandsProcessor @Inject() (
     addCollaboratorCmdHdlr: AddCollaboratorCommandHandler,
     removeCollaboratorCmdHdlr: RemoveCollaboratorCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: CollaboratorCommand): AppCmdResultT = command match {
     case cmd: AddCollaborator    => addCollaboratorCmdHdlr.process(app, cmd)

@@ -32,14 +32,14 @@ import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreateApplicationRequest,
   CreateApplicationRequestV1,
@@ -50,16 +50,16 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UpdateLoginRedirectUris
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.mocks.ApiSubscriptionFieldsConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.connector.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateExamples, Deleted}
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.mocks.*
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, *}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
 import uk.gov.hmrc.thirdpartyapplication.testutils.NoOpMetricsTimer
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -125,7 +125,7 @@ class ApplicationServiceSpec
       LOGGED_IN_USER_NAME_HEADER  -> "Bob Bentley"
     )
 
-    implicit val hc: HeaderCarrier = hcForLoggedInCollaborator
+    given hc: HeaderCarrier = hcForLoggedInCollaborator
 
     val mockNameValidationConfig = mock[ApplicationNamingService.Config]
 
@@ -134,7 +134,6 @@ class ApplicationServiceSpec
 
     val underTest = new ApplicationService(
       metrics,
-      QueryServiceMock.aMock,
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
       SubscriptionRepoMock.aMock,
@@ -142,7 +141,6 @@ class ApplicationServiceSpec
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       TermsOfUseInvitationRepositoryMock.aMock,
       AuditServiceMock.aMock,
-      mockApiPlatformEventService,
       mockEmailConnector,
       mockTotpConnector,
       actorSystem.get,
@@ -152,16 +150,15 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
-      ApplicationCommandDispatcherMock.aMock,
       clock
     ) with NoOpMetricsTimer
 
     StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedNotification(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedNotification(*[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(using *)).thenReturn(successful(HasSucceeded))
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
@@ -226,20 +223,20 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = CreationAccess.Standard, environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = CreationAccess.Standard, environment = Environment.Production)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication = storedApp.withId(createdApp.application.id).withState(appStateTesting).withCollaborators(adminTwo).copy(description = None)
 
       createdApp.totp shouldBe None
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Testing, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -253,9 +250,9 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(environment = Environment.Production)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication = storedApp.copy(
         id = createdApp.application.id,
@@ -267,12 +264,12 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Testing, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -283,9 +280,9 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.Production)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication =
         storedApp.copy(
@@ -297,12 +294,12 @@ class ApplicationServiceSpec
 
       createdApp.totp shouldBe None
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.TESTING, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Testing, Actors.AppCollaborator(adminTwo.emailAddress), changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -312,16 +309,16 @@ class ApplicationServiceSpec
     "create a new standard application in Mongo and the API gateway for the SUBORDINATE (SANDBOX) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = CreationAccess.Standard, environment = Environment.Sandbox)
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication =
         storedApp.copy(
           id = createdApp.application.id,
-          state = ApplicationState(State.PRODUCTION, updatedOn = instant),
+          state = ApplicationState(State.Production, updatedOn = instant),
           collaborators = Set(loggedInUserAdminCollaborator),
-          environment = Environment.SANDBOX
+          environment = Environment.Sandbox
         )
 
       createdApp.totp shouldBe None
@@ -329,7 +326,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(
         createdApp.application.id,
-        State.PRODUCTION,
+        State.Production,
         Actors.AppCollaborator(adminTwo.emailAddress),
         changedAt = instant
       ))
@@ -337,7 +334,7 @@ class ApplicationServiceSpec
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -355,11 +352,11 @@ class ApplicationServiceSpec
       val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP)
       when(mockTotpConnector.generateTotp()).thenAnswer(successful(totpQueue.dequeue()))
 
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(using hc))
 
       val expectedApplicationData: StoredApplication = storedApp.copy(
         id = createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
+        state = ApplicationState(name = State.Production, requestedByEmailAddress = Some(adminTwo.emailAddress.text), updatedOn = instant),
         collaborators = Set(loggedInUserAdminCollaborator),
         access = Access.Privileged(totpIds = Some(TotpId("prodTotpId"))),
         description = None
@@ -368,12 +365,12 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe Some(CreateApplicationResponse.TotpSecret(prodTOTP.secret))
 
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actors.Unknown, changedAt = instant))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.Production, Actors.Unknown, changedAt = instant))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
-          "newApplicationName"        -> applicationRequest.name.value,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> ""
         ),
         hc
@@ -386,7 +383,7 @@ class ApplicationServiceSpec
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
-        await(underTest.create(applicationRequest)(hc))
+        await(underTest.create(applicationRequest)(using hc))
       }
     }
 
@@ -422,7 +419,7 @@ class ApplicationServiceSpec
       val clientId      = applicationData.tokens.production.clientId
       val expectedToken = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
 
       val result = await(underTest.findAndRecordApplicationUsage(clientId))
 
@@ -446,11 +443,11 @@ class ApplicationServiceSpec
       verify(StateHistoryRepoMock.aMock).insert(stateHistoryCaptor.capture)
 
       applicationResponse.id shouldBe applicationId
-      applicationResponse.state.name shouldBe State.PRODUCTION
+      applicationResponse.state.name shouldBe State.Production
 
       val stateHistory = stateHistoryCaptor.value
-      stateHistory.state shouldBe State.PRODUCTION
-      stateHistory.previousState shouldBe Some(State.PRE_PRODUCTION)
+      stateHistory.state shouldBe State.Production
+      stateHistory.previousState shouldBe Some(State.PreProduction)
       stateHistory.applicationId shouldBe applicationId
       stateHistory.actor shouldBe Actors.AppCollaborator(requestedByEmail)
     }
@@ -461,7 +458,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.thenAnswer()
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.confirmSetupComplete(applicationId, requestedByEmail)))
-      ex.getMessage shouldBe "Transition to 'PRODUCTION' state requires the application to be in 'PRE_PRODUCTION' state, but it was in 'PENDING_GATEKEEPER_APPROVAL'"
+      ex.getMessage shouldBe "Transition to 'Production' state requires the application to be in 'PreProduction' state, but it was in 'PendingGatekeeperApproval'"
     }
   }
 
@@ -470,7 +467,7 @@ class ApplicationServiceSpec
       val subscriptions = Set("myContext".asIdentifier("myVersion"))
       val aServerToken  = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(aServerToken)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq: _*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
 
       val result = await(underTest.findAndRecordServerTokenUsage(aServerToken))
 
@@ -514,7 +511,7 @@ class ApplicationServiceSpec
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
-      val data: StoredApplication = storedApp.copy(rateLimitTier = Some(RateLimitTier.SILVER))
+      val data: StoredApplication = storedApp.copy(rateLimitTier = Some(RateLimitTier.Silver))
 
       ApplicationRepoMock.Fetch.thenReturn(data)
 
@@ -532,11 +529,11 @@ class ApplicationServiceSpec
           grantLength = GrantLength.EIGHTEEN_MONTHS,
           access = data.access,
           state = data.state,
-          rateLimitTier = RateLimitTier.SILVER,
+          rateLimitTier = RateLimitTier.Silver,
           checkInformation = None,
           blocked = false,
           ipAllowlist = IpAllowlist(),
-          lastActionActor = ActorType.UNKNOWN,
+          lastActionActor = ActorType.Unknown,
           deleteRestriction = DeleteRestriction.NoRestriction,
           organisationId = None
         ),
@@ -567,7 +564,7 @@ class ApplicationServiceSpec
       ResponsibleIndividualVerificationRepositoryMock.DeleteAllByApplicationId.succeeds()
       TermsOfUseInvitationRepositoryMock.Delete.thenReturn()
 
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(using *)).thenReturn(successful(HasSucceeded))
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
@@ -710,7 +707,7 @@ class ApplicationServiceSpec
     )
   }
 
-  private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.PRODUCTION) = {
+  private def aNewV1ApplicationRequest(access: CreationAccess = CreationAccess.Standard, environment: Environment = Environment.Production) = {
     CreateApplicationRequestV1(ApplicationName("MyApp"), access, Some(CoreApplicationData.appDescription), environment, Set(adminTwo), None, None)
   }
 

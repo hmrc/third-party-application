@@ -20,26 +20,25 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, OptionT, Validated}
-import cats.syntax.validated._
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitTermsOfUseApproval
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.{Failed, Granted, Warnings}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
@@ -49,11 +48,11 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     responsibleIndividualVerificationService: ResponsibleIndividualVerificationService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, Submission]] = {
     (
@@ -66,17 +65,17 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
         GenericFailure(s"No submission/termsOfUseInvitation found for application ${app.id.value}").invalidNel[(Submission)]
       ) {
         case (submission, _) => {
-          Apply[Validated[Failures, *]].map3(
+          (
             ensureStandardAccess(app),
             isInProduction(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely")
-          ) { case _ => submission }
+          ).mapN((_, _, _) => submission)
         }
       }
   }
 
   def process(app: StoredApplication, cmd: SubmitTermsOfUseApproval): AppCmdResultT = {
-    import SubmissionDataExtracter._
+    import SubmissionDataExtracter.*
 
     logStartingApprovalRequestProcessing(app.id)
 
@@ -184,9 +183,9 @@ class SubmitTermsOfUseApprovalCommandHandler @Inject() (
 
   def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission): Future[HasSucceeded] = {
     submission.status match {
-      case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2)
-      case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, WARNINGS)
-      case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, FAILED)
+      case Granted(_, _, _, _) => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2)
+      case Warnings(_, _)      => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.WARNINGS)
+      case Failed(_, _)        => termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.FAILED)
       case _                   => successful(HasSucceeded)
     }
   }

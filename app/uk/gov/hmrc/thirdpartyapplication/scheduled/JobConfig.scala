@@ -19,12 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
+import pureconfig.ConfigReader
+
 import uk.gov.hmrc.mongo.lock.LockService
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, ScheduledJob}
 
-case class JobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean) {
+case class JobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean) derives ConfigReader {
   override def toString = s"JobConfig{initialDelay=$initialDelay interval=$interval enabled=$enabled}"
 }
 
@@ -35,13 +37,13 @@ trait ScheduledMongoJob extends ExclusiveScheduledJob with ScheduledJobState wit
 
   def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful]
 
-  override def executeInMutex(implicit ec: ExecutionContext): Future[Result] = {
+  override def executeInMutex(implicit ec: ExecutionContext): Future[String] = {
 
     lockService.withLock {
       runJob
     } map {
-      case Some(_) => Result(s"$name Job ran successfully.")
-      case _       => Result(s"$name did not run because repository was locked by another instance of the scheduler.")
+      case Some(_) => s"$name Job ran successfully."
+      case _       => s"$name did not run because repository was locked by another instance of the scheduler."
     } recover {
       case failure: RunningOfJobFailed => {
         logger.error("The execution of the job failed.", failure.wrappedCause)
@@ -59,8 +61,8 @@ trait ScheduledJobState { e: ScheduledJob =>
   case class RunningOfJobFailed(jobName: String, wrappedCause: Throwable) extends RuntimeException {
 
     def asResult = {
-      Result(s"The execution of scheduled job $jobName failed with error '${wrappedCause.getMessage}'. " +
-        "The next execution of the job will do retry.")
+      s"The execution of scheduled job $jobName failed with error '${wrappedCause.getMessage}'. " +
+        "The next execution of the job will do retry."
     }
   }
 }

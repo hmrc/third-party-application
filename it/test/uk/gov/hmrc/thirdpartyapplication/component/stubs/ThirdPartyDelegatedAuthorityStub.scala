@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
 import play.api.http.Status.NO_CONTENT
 
@@ -26,7 +26,7 @@ object ThirdPartyDelegatedAuthorityStub extends Stub {
   override val stub = MockHost(19606)
 
   def willRevokeApplicationAuthorities() = {
-    stub.mock.register(delete(urlPathMatching("/authority/"))
+    stub.mock.register(delete(urlPathMatching("/authority/.*"))
       .willReturn(aResponse().withStatus(NO_CONTENT)))
   }
 }

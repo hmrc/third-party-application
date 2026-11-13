@@ -22,7 +22,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -31,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAdd
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteUnusedApplication
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
@@ -47,10 +46,10 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository,
     val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends AbstractDeleteApplicationCommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
 
@@ -58,8 +57,7 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
     cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this application")
 
   private def validate(app: StoredApplication, cmd: DeleteUnusedApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]]
-      .map(matchesAuthorisationKey(cmd)) { case _ => app }
+    matchesAuthorisationKey(cmd).map(_ => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteUnusedApplication, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
@@ -79,9 +77,9 @@ class DeleteUnusedApplicationCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: DeleteUnusedApplication)(implicit hc: HeaderCarrier): AppCmdResultT = {
     for {
-      valid       <- E.fromEither(validate(app, cmd).toEither)
-      savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, cmd.jobId, cmd.jobId))
-      stateHistory = StateHistory(app.id, State.DELETED, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
+      _           <- E.fromEither(validate(app, cmd).toEither)
+      savedApp    <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Deleted, cmd.timestamp, cmd.jobId, cmd.jobId))
+      stateHistory = StateHistory(app.id, State.Deleted, Actors.ScheduledJob(cmd.jobId), Some(app.state.name), changedAt = cmd.timestamp)
       events       = asEvents(savedApp, cmd, stateHistory)
       _           <- deleteApplication(app, stateHistory)
     } yield (savedApp, events)

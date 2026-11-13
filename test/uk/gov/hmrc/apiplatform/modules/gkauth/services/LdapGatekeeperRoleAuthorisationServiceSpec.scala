@@ -29,7 +29,7 @@ import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBeha
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
   val fakeRequest = FakeRequest()
@@ -40,7 +40,7 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   trait Setup {
     val mockStubBehaviour     = mock[StubBehaviour]
-    val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(cc, implicitly)
+    val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(using cc, implicitly)
 
     def authControlConfig: AuthControlConfig
     lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authControlConfig, backendAuthComponents)
@@ -65,24 +65,24 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   trait AuthHeaderPresent {
     self: Setup =>
-    val request                    = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    val request             = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
+    given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait NoAuthHeaderPresent {
     self: Setup =>
-    val request                    = fakeRequest
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    val request             = fakeRequest
+    given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait Authorised {
-    self: Setup with AuthHeaderPresent =>
+    self: Setup & AuthHeaderPresent =>
 
     stub(true)
   }
 
   trait Unauthorised {
-    self: Setup with AuthHeaderPresent =>
+    self: Setup & AuthHeaderPresent =>
 
     stub(false)
   }

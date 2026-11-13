@@ -21,19 +21,19 @@ import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{Json, Reads}
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.JsonUtils
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 private[controllers] case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersionNbr, partialEmailMatch: Option[String])
 
 private[controllers] object SearchCollaboratorsRequest {
-  implicit val readsSearchCollaboratorsRequest: Reads[SearchCollaboratorsRequest] = Json.reads[SearchCollaboratorsRequest]
+  given readsSearchCollaboratorsRequest: Reads[SearchCollaboratorsRequest] = Json.reads[SearchCollaboratorsRequest]
 }
 
 @Singleton
@@ -41,14 +41,14 @@ class CollaboratorController @Inject() (
     val applicationService: ApplicationService,
     subscriptionService: SubscriptionService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils {
 
   override implicit def hc(implicit request: RequestHeader): HeaderCarrier = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
     val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER)).flatten
-    super.hc.withExtraHeaders(extraHeaders: _*)
+    super.hc.withExtraHeaders(extraHeaders*)
   }
 
   def searchCollaborators() = Action.async(parse.json) { implicit request =>

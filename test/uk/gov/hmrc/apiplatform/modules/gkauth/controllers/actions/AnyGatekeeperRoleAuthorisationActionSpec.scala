@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 import play.api.mvc.ControllerComponents
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -32,15 +32,15 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.{
 }
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class AnyGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec {
 
-  abstract class TestController(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc)
+  abstract class TestController(val cc: ControllerComponents)(using executionContext: ExecutionContext) extends BackendController(cc)
       with AnyGatekeeperRoleAuthorisationAction {
     def applicationService: ApplicationService
     def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-    implicit val ec: ExecutionContext = executionContext
+    given ec: ExecutionContext = executionContext
 
     def testMethod = anyAuthenticatedUserAction { _ =>
       successful(Ok("Authenticated"))

@@ -21,14 +21,12 @@ import java.time.Instant
 import play.api.libs.json.{Json, OFormat}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, ApplicationId}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 
 case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: Actor, notes: Option[String], changedAt: Instant)
 
 object StateHistoryResponse {
-  def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)
-
-  import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters._
-
-  implicit val format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
+  import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters.*
+  import Actor.given
+  given format: OFormat[StateHistoryResponse] = Json.format[StateHistoryResponse]
 }

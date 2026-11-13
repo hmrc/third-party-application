@@ -20,12 +20,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.syntax.either._
+import cats.syntax.either.*
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.util.ByteString
 
-import play.api.libs.json._
-import play.api.mvc._
+import play.api.libs.json.*
+import play.api.mvc.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
@@ -41,7 +41,7 @@ class QueryController @Inject() (
     queryService: QueryService,
     cc: ControllerComponents,
     val metrics: Metrics
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationLogger
@@ -69,14 +69,14 @@ class QueryController @Inject() (
       )
   }
 
-  private def handleRequest(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit request: Request[_]): Future[Result] = {
+  private def handleRequest(params: Map[String, Seq[String]], headers: Map[String, Seq[String]])(implicit request: Request[?]): Future[Result] = {
     parseAndValidate(params, headers)
       .fold(
         errResult => successful(errResult),
         validQuery =>
           render.async {
             case Accepts.Json()                              => execute(validQuery)(false)
-            // These should never be in API Platform code... but ebrdige configurations cause both these to be possible.
+            // These should never be in API Platform code... but ebridge configurations cause both these to be possible.
             case AcceptsHmrcVndJson() | AcceptsVndHmrcJson() => execute(validQuery)(false)
             case AcceptsStreamedJson()                       => execute(validQuery)(true)
           }
@@ -110,7 +110,7 @@ class QueryController @Inject() (
 
         case q: GeneralOpenEndedApplicationQuery =>
           if (streamed) {
-            val wrappedSource: Source[ByteString, _] =
+            val wrappedSource: Source[ByteString, ?] =
               queryService.fetchApplicationsByQueryStream(q).map(qas => ByteString(Json.toJson(qas).toString))
             successful(Ok.chunked(wrappedSource, Some("application/stream+json")))
           } else {

@@ -25,21 +25,21 @@ import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 trait StrideAuthConnectorMockModule {
-  self: MockitoSugar with ArgumentMatchersSugar =>
+  self: MockitoSugar & ArgumentMatchersSugar =>
 
   protected trait BaseStrideAuthConnectorMock {
     def aMock: StrideAuthConnector
 
     object Authorise {
-      def succeeds = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(successful(()))
+      def succeeds = when(aMock.authorise[Unit](*, *)(using *, *)).thenReturn(successful(()))
 
-      def succeedsAndReturnsName(name: String) = when(aMock.authorise[Option[Name]](*, *)(*, *)).thenReturn(successful((Some(Name(Some(name), Some("Example"))))))
+      def succeedsAndReturnsName(name: String) = when(aMock.authorise[Option[Name]](*, *)(using *, *)).thenReturn(successful((Some(Name(Some(name), Some("Example"))))))
 
-      def fails = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(failed(new RuntimeException))
+      def fails = when(aMock.authorise[Unit](*, *)(using *, *)).thenReturn(failed(new RuntimeException))
 
-      def verifyNotCalled = verify(aMock, never).authorise[Unit](*, *)(*, *)
+      def verifyNotCalled = verify(aMock, never).authorise[Unit](*, *)(using *, *)
 
-      def verifyCalledOnce = verify(aMock, times(1)).authorise[Unit](*, *)(*, *)
+      def verifyCalledOnce = verify(aMock, times(1)).authorise[Unit](*, *)(using *, *)
     }
   }
 

@@ -21,7 +21,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.sequence
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -30,8 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, OverrideFlag}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationAccessOverrides
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved}
@@ -43,15 +42,15 @@ class ChangeApplicationAccessOverridesCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     auditService: AuditService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ApplicationLogger with ClockNow {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map(
+    (
       ensureStandardAccess(app)
-    ) { case _ => app }
+    ).map(_ => app)
   }
 
   private def asEvents(
@@ -78,13 +77,13 @@ class ChangeApplicationAccessOverridesCommandHandler @Inject() (
       applicationData.withAccess(getStandardAccess(applicationData).copy(overrides = newOverrides))
 
     for {
-      validateResult           <- E.fromValidated(validate(app))
-      oldOverrides              = getOverrides(app)
-      newOverrides              = cmd.overrides
-      persistedApplicationData <- E.liftF(applicationRepository.save(updateWithOverrides(app, newOverrides)))
-      _                         = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
-      _                         = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
-      events                    = asEvents(app, cmd, oldOverrides, newOverrides)
+      _           <- E.fromValidated(validate(app))
+      oldOverrides = getOverrides(app)
+      newOverrides = cmd.overrides
+      _           <- E.liftF(applicationRepository.save(updateWithOverrides(app, newOverrides)))
+      _            = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
+      _            = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
+      events       = asEvents(app, cmd, oldOverrides, newOverrides)
     } yield (app, events)
   }
 

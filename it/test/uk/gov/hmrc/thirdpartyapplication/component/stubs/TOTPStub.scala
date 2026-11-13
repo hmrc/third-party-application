@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.Scenario
 
 import play.api.http.Status.CREATED

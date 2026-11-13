@@ -21,17 +21,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, UpliftVerified}
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
+import uk.gov.hmrc.thirdpartyapplication.mocks.*
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
@@ -47,10 +47,10 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
     val mockAppNamingService: UpliftNamingService = mock[UpliftNamingService]
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val underTest: UpliftService =
-      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, clock)
+      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, clock)
   }
 
   "verifyUplift" should {
@@ -60,13 +60,13 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenReturn(mock[StoredApplication])
 
-      val upliftWasRequested             = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator(upliftRequestedBy), Some(State.TESTING), changedAt = instant)
+      val upliftWasRequested             = StateHistory(applicationId, State.PendingGatekeeperApproval, Actors.AppCollaborator(upliftRequestedBy), Some(State.Testing), changedAt = instant)
       val application: StoredApplication = storedApp.withState(appStatePendingRequesterVerification)
 
       val qry = ApplicationQueries.applicationsByVerifiableUplift(appStateVerificationCode)
       ApplicationRepoMock.FetchStoredApplications.thenReturnsFor(qry, application)
 
-      StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, State.PENDING_GATEKEEPER_APPROVAL)(upliftWasRequested)
+      StateHistoryRepoMock.FetchLatestByStateForApplication.thenReturnWhen(applicationId, State.PendingGatekeeperApproval)(upliftWasRequested)
       StateHistoryRepoMock.Insert.thenAnswer()
 
       val result: ApplicationStateChange = await(underTest.verifyUplift(appStateVerificationCode))
@@ -77,7 +77,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
       result shouldBe UpliftVerified
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, Actors.AppCollaborator(upliftRequestedBy), Some(State.PENDING_REQUESTER_VERIFICATION), changedAt = instant)
+        StateHistory(applicationId, State.PreProduction, Actors.AppCollaborator(upliftRequestedBy), Some(State.PendingRequesterVerification), changedAt = instant)
       StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
     }
 

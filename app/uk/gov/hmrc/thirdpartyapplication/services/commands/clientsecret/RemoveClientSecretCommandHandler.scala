@@ -19,24 +19,24 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveClientSecret
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class RemoveClientSecretCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: RemoveClientSecret): Validated[CommandHandler.Failures, StoredApplication] = {
     def clientSecretExists(clientSecretId: ClientSecret.Id, app: StoredApplication) =
@@ -45,10 +45,10 @@ class RemoveClientSecretCommandHandler @Inject() (
         CommandFailures.GenericFailure(s"Client Secret Id ${clientSecretId.value} not found in Application ${app.id.value}")
       )
 
-    Apply[Validated[CommandHandler.Failures, *]].map2(
+    (
       isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app)
-    ) { case _ => app }
+    ).mapN((_, _) => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: RemoveClientSecret): NonEmptyList[ApplicationEvent] = {
@@ -67,7 +67,7 @@ class RemoveClientSecretCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: RemoveClientSecret): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.deleteClientSecret(app.id, cmd.clientSecretId))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

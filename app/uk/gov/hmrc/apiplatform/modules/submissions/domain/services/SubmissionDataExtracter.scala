@@ -17,13 +17,13 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import cats.Apply
-import cats.syntax.option._
+import cats.syntax.option.*
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 
 object SubmissionDataExtracter extends ApplicationLogger {
 
@@ -97,9 +97,9 @@ object SubmissionDataExtracter extends ApplicationLogger {
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
 
     yesNoOrDesktop.flatMap(_ match {
-      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocations.Url(_))
-      case "No"                                               => TermsAndConditionsLocations.NoneProvided.some
-      case "The terms and conditions are in desktop software" => TermsAndConditionsLocations.InDesktopSoftware.some
+      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
+      case "No"                                               => TermsAndConditionsLocation.NoneProvided.some
+      case "The terms and conditions are in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
     })
   }
 
@@ -108,9 +108,9 @@ object SubmissionDataExtracter extends ApplicationLogger {
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
 
     yesNoOrDesktop.flatMap(_ match {
-      case "Yes"                                       => urlIfChosen.map(PrivacyPolicyLocations.Url(_))
-      case "No"                                        => PrivacyPolicyLocations.NoneProvided.some
-      case "The privacy policy is in desktop software" => PrivacyPolicyLocations.InDesktopSoftware.some
+      case "Yes"                                       => urlIfChosen.map(PrivacyPolicyLocation.Url(_))
+      case "No"                                        => PrivacyPolicyLocation.NoneProvided.some
+      case "The privacy policy is in desktop software" => PrivacyPolicyLocation.InDesktopSoftware.some
     })
   }
 

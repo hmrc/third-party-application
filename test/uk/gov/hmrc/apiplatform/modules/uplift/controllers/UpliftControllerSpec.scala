@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData}
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class UpliftControllerSpec
     extends ControllerSpec
@@ -40,13 +40,13 @@ class UpliftControllerSpec
     with ControllerTestData
     with FixedClock {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
   import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
   trait Setup {
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")

@@ -20,13 +20,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, TermsAndConditionsLocation}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToSelf
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
@@ -37,7 +37,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
   trait Setup extends SubmissionsServiceMockModule with ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission  = aSubmission
     val oldRiUserId = adminTwo.userId
@@ -48,8 +48,8 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       None,
       ResponsibleIndividual.build(oldRiName, oldRiEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -64,10 +64,10 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
 
     val changeResponsibleIndividualToSelfCommand = ChangeResponsibleIndividualToSelf(adminOne.userId, instant, riName, riEmail)
 
-    def checkSuccessResult(expectedActor: Actor, expectedPreviousEmail: LaxEmailAddress, expectedPreviousName: String)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResult(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (returnedApp, events) =>
+      inside(testThis) { case (_, events) =>
         events should have size 1
         val event = events.head
 
@@ -103,7 +103,7 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends CommandHandler
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       ApplicationRepoMock.UpdateApplicationChangeResponsibleIndividualToSelf.thenReturn(app) // Not modified
 
-      checkSuccessResult(otherAdminAsActor, oldRiEmail, oldRiName)(underTest.process(app, changeResponsibleIndividualToSelfCommand))
+      checkSuccessResult(underTest.process(app, changeResponsibleIndividualToSelfCommand))
     }
 
     "return an error if no submission is found for the application" in new Setup {

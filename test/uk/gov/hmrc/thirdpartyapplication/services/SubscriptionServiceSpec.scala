@@ -24,15 +24,15 @@ import org.mockito.Strictness
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, *}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandDispatcherMockModule, AuditServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData with CommonApplicationId with StoredApplicationFixtures {
 
@@ -78,7 +78,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
 
   trait Setup extends SetupWithoutHc {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> adminOne.emailAddress.text,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
@@ -88,7 +88,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
 
     val gkUserEmail = "john.smith@hmrc.co.uk"
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> gkUserEmail,
       LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
@@ -135,9 +135,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with CollaboratorTestData wi
     }
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
-      implicit val hc: HeaderCarrier = HeaderCarrier()
-      val applicationData            = storedApp
-      val actor                      = Actors.GatekeeperUser("Gatekeeper Admin")
+      given hc: HeaderCarrier = HeaderCarrier()
+      val applicationData     = storedApp
+      val actor               = Actors.GatekeeperUser("Gatekeeper Admin")
 
       ApplicationCommandDispatcherMock.Dispatch.thenReturnSuccess(applicationData)
 

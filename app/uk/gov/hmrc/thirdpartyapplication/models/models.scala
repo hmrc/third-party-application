@@ -18,9 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.time.Instant
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
@@ -40,15 +39,6 @@ case class ScopeResponse(scopes: Set[String])
 case class OverridesRequest(overrides: Set[OverrideFlag])
 
 case class OverridesResponse(overrides: Set[OverrideFlag])
-
-case class UpdateIpAllowlistRequest(required: Boolean, allowlist: Set[String])
-
-object UpdateIpAllowlistRequest {
-
-  def toIpAllowlist(updateIpAllowlistRequest: UpdateIpAllowlistRequest): IpAllowlist = {
-    IpAllowlist(updateIpAllowlistRequest.required, updateIpAllowlistRequest.allowlist)
-  }
-}
 
 case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: LaxEmailAddress)
 

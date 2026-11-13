@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.time.Instant
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -31,28 +31,27 @@ import play.api.mvc.{AnyContentAsEmpty, AnyContentAsJson, RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationServiceMockModule, StrideGatekeeperRoleAuthorisationServiceMockModule}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationDataServiceMockModule, ApplicationServiceMockModule, QueryServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
-import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, TermsOfUseInvitationState, *}
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     with ControllerTestData with StoredApplicationFixtures with FixedClock {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   val authTokenHeader                                            = "authorization" -> "authorizationToken"
   implicit lazy val materializer: Materializer                   = NoMaterializer
@@ -67,15 +66,14 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
       with ApplicationDataServiceMockModule
       with SubmissionsServiceMockModule
       with SubmissionsTestData {
-    val mockGatekeeperService           = mock[GatekeeperService]
-    implicit val headers: HeaderCarrier = HeaderCarrier()
+    val mockGatekeeperService    = mock[GatekeeperService]
+    given headers: HeaderCarrier = HeaderCarrier()
 
     val nowInstant = instant
-    val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, EMAIL_SENT)
+    val invite     = TermsOfUseInvitation(applicationId, nowInstant, nowInstant, nowInstant.plus(21, DAYS), None, TermsOfUseInvitationState.EMAIL_SENT)
 
     lazy val underTest =
       new GatekeeperController(
-        QueryServiceMock.aMock,
         ApplicationServiceMock.aMock,
         LdapGatekeeperRoleAuthorisationServiceMock.aMock,
         StrideGatekeeperRoleAuthorisationServiceMock.aMock,
@@ -94,16 +92,16 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
+      testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
+      testWithPrivilegedAndRopc(applicationId, testBlock)
     }
 
-    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
+    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
         .thenReturn(
           OptionT.pure[Future](privilegedApp),
@@ -129,9 +127,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
         "app 1",
         1,
         List(
-          ApplicationStateHistoryResponse.Item(State.TESTING, Instant.parse("2022-07-01T12:00:00Z")),
-          ApplicationStateHistoryResponse.Item(State.PENDING_GATEKEEPER_APPROVAL, Instant.parse("2022-07-01T13:00:00Z")),
-          ApplicationStateHistoryResponse.Item(State.PRODUCTION, Instant.parse("2022-07-01T14:00:00Z"))
+          ApplicationStateHistoryResponse.Item(State.Testing, Instant.parse("2022-07-01T12:00:00Z")),
+          ApplicationStateHistoryResponse.Item(State.PendingGatekeeperApproval, Instant.parse("2022-07-01T13:00:00Z")),
+          ApplicationStateHistoryResponse.Item(State.Production, Instant.parse("2022-07-01T14:00:00Z"))
         )
       ),
       ApplicationStateHistoryResponse(ApplicationId.random, "app 2", 2, List())
@@ -170,27 +168,27 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationLogger
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*)).thenReturn(successful(Deleted))
+      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(using *)).thenReturn(successful(Deleted))
 
       val result = underTest.deleteApplication(applicationId).apply(request
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
       status(result) shouldBe NO_CONTENT
-      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
+      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(using *)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
-      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*))
+      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(using *))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.deleteApplication(applicationId).apply(request
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
+      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(using *)
     }
   }
 }

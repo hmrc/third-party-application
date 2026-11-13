@@ -26,8 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class LinkToOrganisationCommandsProcessor @Inject() (
     linkToOrganisationCommandHandler: LinkToOrganisationCommandHandler
   ) {
-  import ApplicationCommands._
-  import CommandHandler._
+  import ApplicationCommands.*
+  import CommandHandler.*
 
   def process(app: StoredApplication, command: OrganisationCommand): AppCmdResultT = command match {
     case cmd: LinkToOrganisation => linkToOrganisationCommandHandler.process(app, cmd)

@@ -19,14 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -37,23 +37,23 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class ChangeProductionApplicationNameCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     namingService: UpliftNamingService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(
       app: StoredApplication,
       cmd: ChangeProductionApplicationName,
       nameValidationResult: ApplicationNameValidationResult
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map5(
+    (
       isAdminOnApp(cmd.instigator, app),
       isNotInProcessOfBeingApproved(app),
-      cond(app.name.value != cmd.newName.value, "App already has that name"),
+      cond(app.name != cmd.newName.value, "App already has that name"),
       cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, "New name is a duplicate"),
       cond(nameValidationResult != ApplicationNameValidationResult.Invalid, "New name is invalid")
-    ) { case _ => app }
+    ).mapN((_, _, _, _, _) => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeProductionApplicationName): NonEmptyList[ApplicationEvent] = {
@@ -73,7 +73,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeProductionApplicationName): AppCmdResultT = {
     for {
       nameValidationResult <- E.liftF(namingService.validateApplicationNameWithExclusions(cmd.newName, noExclusions))
-      valid                <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
+      _                    <- E.fromEither(validate(app, cmd, nameValidationResult).toEither)
       savedApp             <- E.liftF(applicationRepository.updateApplicationName(app.id, cmd.newName.value))
       events                = asEvents(app, cmd)
     } yield (savedApp, events)

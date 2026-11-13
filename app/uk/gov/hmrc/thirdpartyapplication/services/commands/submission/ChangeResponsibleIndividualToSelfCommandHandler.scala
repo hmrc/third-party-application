@@ -19,16 +19,16 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.validated._
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToSelf
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -39,11 +39,11 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     submissionService: SubmissionsService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(
@@ -64,14 +64,14 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     }
 
     submissionService.fetchLatest(app.id).map { maybeSubmission =>
-      Apply[Validated[Failures, *]].map6(
+      (
         isStandardNewJourneyApp(app),
         isApproved(app),
         isAdminOnApp(cmd.instigator, app),
         ensureResponsibleIndividualDefined(app),
         isNotCurrentRi(cmd.name, cmd.email, app),
         checkSubmission(maybeSubmission)
-      ) { case (_, _, _, _, _, submission) => submission }
+      ).mapN((_, _, _, _, _, submission) => submission)
     }
   }
 
@@ -92,7 +92,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
         actor = Actors.AppCollaborator(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress,
-        submissionId = SubmissionId(submission.id.value),
+        submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail

@@ -16,14 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import play.api.libs.json.Format
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
+enum ResponsibleIndividualVerificationState {
+  case INITIAL, REMINDERS_SENT
+}
 
-object ResponsibleIndividualVerificationState extends Enumeration {
-  type ResponsibleIndividualVerificationState = Value
+object ResponsibleIndividualVerificationState {
+  def apply(text: String): Option[ResponsibleIndividualVerificationState] = ResponsibleIndividualVerificationState.values.find(_.toString().equalsIgnoreCase(text))
 
-  val INITIAL, REMINDERS_SENT = Value
+  def unsafeApply(text: String): ResponsibleIndividualVerificationState =
+    apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Responsible Individual Verification State"))
 
-  implicit val format: Format[ResponsibleIndividualVerificationState] = EnumJson.enumFormat(ResponsibleIndividualVerificationState)
+  import play.api.libs.json.Format
+  given Format[ResponsibleIndividualVerificationState] = SimpleEnumJsonFormatting.createStringFormatFor("Responsible Individual Verification State", apply)
 }

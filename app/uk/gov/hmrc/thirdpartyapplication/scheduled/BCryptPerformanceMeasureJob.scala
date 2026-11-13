@@ -23,7 +23,6 @@ import javax.inject.Inject
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-import com.github.t3hnar.bcrypt._
 import com.google.inject.Singleton
 
 import play.api.LoggerLike
@@ -38,14 +37,17 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
   override def initialDelay: FiniteDuration = FiniteDuration(10, TimeUnit.MINUTES)
   override def interval: FiniteDuration     = FiniteDuration(4, TimeUnit.HOURS)
 
+  def isEnabled: Boolean = true
+
   val workFactorRangeToTest: Seq[Int] = 5 to 15
 
-  override def executeInMutex(implicit ec: ExecutionContext): Future[Result] = {
+  override def executeInMutex(implicit ec: ExecutionContext): Future[String] = {
     val stringToHash: String = UUID.randomUUID().toString
 
     logger.info("[bcrypt Performance] Starting performance measurement")
 
     val timings = workFactorRangeToTest.map(workFactor => {
+      import uk.gov.hmrc.apiplatform.modules.crypto.services.bcrypt.bcrypt
 
       val timedValue: TimedValue[String] = timeThis(() => stringToHash.bcrypt(workFactor))
 
@@ -55,6 +57,6 @@ class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike, val clock: Cloc
 
     logger.info(s"[bcrypt Performance] Performance measurement results:\n$timings")
 
-    Future.successful(Result("Done"))
+    Future.successful("Done")
   }
 }

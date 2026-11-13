@@ -19,23 +19,24 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object NotificationRepositoryISpecExample extends FixedClock {
   val appId        = ApplicationId.random
@@ -63,7 +64,7 @@ class NotificationRepositoryISpec
     with OptionValues
     with FixedClock {
 
-  import NotificationRepositoryISpecExample._
+  import NotificationRepositoryISpecExample.*
 
   "mongo formats" should {
     import NotificationRepository.MongoFormats.formatNotification
@@ -134,7 +135,7 @@ class NotificationRepositoryISpec
       val result = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 
       result shouldBe HasSucceeded
-      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
+      await(notificationRepository.collection.countDocuments().toFuture()) shouldBe 1L
     }
 
     "not fail when deleting a non-existing record" in {

@@ -20,6 +20,7 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration}
 
 import org.apache.pekko.stream.scaladsl.Sink
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.bson.collection.mutable.Document
 import org.scalatest.BeforeAndAfterEach
 
@@ -28,18 +29,18 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, GrantLength, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedApplicationWithOptionalToken, StoredApplication}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationQueriesISpec
     extends ServerBaseISpec
@@ -373,10 +374,10 @@ class ApplicationQueriesISpec
       await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
-      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.PRODUCTION)))
+      val result = await(applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByUserIdAndEnvironment(userIdOne, Environment.Production)))
 
       result.size shouldBe 1
-      result.head.environment shouldBe Environment.PRODUCTION
+      result.head.environment shouldBe Environment.Production
       result.map(
         _.collaborators.map(collaborator => collaborator.userId shouldBe userIdOne)
       )
@@ -609,76 +610,76 @@ class ApplicationQueriesISpec
 
     "retrieve the only application with PENDING_REQUESTER_VERIFICATION state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PENDING_GATEKEEPER_APPROVAL, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayBefore),
-        createAppWithStatusUpdatedOn(State.PRODUCTION, expiryOnTheDayBefore)
+        createAppWithStatusUpdatedOn(State.Testing, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.PendingGatekeeperApproval, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.PendingRequesterVerification, expiryOnTheDayBefore),
+        createAppWithStatusUpdatedOn(State.Production, expiryOnTheDayBefore)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
       )
 
       val applicationDetails = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         1
       )
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated before the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         expiryOnTheDayBefore
       )
       await(applicationRepository.save(application))
 
       val applicationDetails = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         1
       )
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated on the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         dayOfExpiry
       )
       await(applicationRepository.save(application))
 
       val applicationDetails = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetails,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         1
       )
     }
 
     "retrieve no application with PENDING_REQUESTER_VERIFICATION state that have been updated after the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         expiryOnTheDayAfter
       )
       await(applicationRepository.save(application))
 
       val applicationDetail = await(
-        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry))
+        applicationRepository.fetchStoredApplications(ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, dayOfExpiry))
       )
 
       verifyApplications(
         applicationDetail,
-        State.PENDING_REQUESTER_VERIFICATION,
+        State.PendingRequesterVerification,
         0
       )
     }
@@ -689,7 +690,7 @@ class ApplicationQueriesISpec
       val applicationId1   = ApplicationId.random
       val applicationId2   = ApplicationId.random
       val applicationId3   = ApplicationId.random
-      import cats.syntax.option._
+      import cats.syntax.option.*
       val testApplication1 = anApplicationDataForTest(applicationId1).some.map(a => a.copy(lastAccess = a.createdOn)).get
       val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).some.map(a => a.copy(lastAccess = a.createdOn)).get
       val testApplication3 =
@@ -753,7 +754,7 @@ class ApplicationQueriesISpec
   }
 
   "single app query with state history" in {
-    import LaxEmailAddress.StringSyntax
+    import LaxEmailAddress.StringSyntax.toLaxEmail
 
     val application      = anApplicationDataForTest(
       id = ApplicationId.random,
@@ -763,7 +764,7 @@ class ApplicationQueriesISpec
       aSubscriptionData("context", "version", application.id)
 
     val actor: Actor     = Actors.AppCollaborator("admin@example.com".toLaxEmail)
-    val stateHistoryData = StateHistory(application.id, State.TESTING, actor, changedAt = instant)
+    val stateHistoryData = StateHistory(application.id, State.Testing, actor, changedAt = instant)
 
     await(applicationRepository.save(application))
     await(subscriptionRepository.collection.insertOne(subscriptionData).toFuture())
@@ -890,7 +891,7 @@ class ApplicationQueriesISpec
   }
 
   "general query with state history" in {
-    import LaxEmailAddress.StringSyntax
+    import LaxEmailAddress.StringSyntax.toLaxEmail
 
     val application1     = anApplicationDataForTest(
       id = ApplicationId.random,
@@ -904,8 +905,8 @@ class ApplicationQueriesISpec
       aSubscriptionData("context", "version", application1.id)
 
     val actor: Actor      = Actors.AppCollaborator("admin@example.com".toLaxEmail)
-    val stateHistoryData1 = StateHistory(application1.id, State.TESTING, actor, changedAt = instant)
-    val stateHistoryData2 = StateHistory(application2.id, State.TESTING, actor, changedAt = instant)
+    val stateHistoryData1 = StateHistory(application1.id, State.Testing, actor, changedAt = instant)
+    val stateHistoryData2 = StateHistory(application2.id, State.Testing, actor, changedAt = instant)
 
     await(applicationRepository.save(application1))
     await(applicationRepository.save(application2))

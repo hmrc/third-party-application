@@ -18,16 +18,16 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.mvc.{BaseController, _}
+import play.api.mvc.{BaseController, *}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
-import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.*
 
 trait OnlyStrideGatekeeperRoleAuthoriseAction {
   self: BaseController =>
 
-  implicit val ec: ExecutionContext
+  given ec: ExecutionContext
 
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
 
@@ -35,7 +35,7 @@ trait OnlyStrideGatekeeperRoleAuthoriseAction {
     protected def executionContext: ExecutionContext = ec
 
     def filter[A](input: Request[A]): Future[Option[Result]] = {
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(input)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(input)
       strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
     }
   }

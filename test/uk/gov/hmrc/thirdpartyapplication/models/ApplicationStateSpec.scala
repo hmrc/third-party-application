@@ -33,7 +33,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move application to PENDING_GATEKEEPER_APPROVAL state" in {
       val resultState = startingState.toPendingGatekeeperApproval(upliftRequestedByEmail, upliftRequestedByName, instant)
 
-      resultState.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
+      resultState.name shouldBe State.PendingGatekeeperApproval
       resultState.requestedByEmailAddress shouldBe Some(upliftRequestedByEmail)
       resultState.requestedByName shouldBe Some(upliftRequestedByName)
       resultState.verificationCode shouldBe None
@@ -58,7 +58,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move application to PENDING_REQUESTER_VERIFICATION state" in {
       val resultState = startingState.toPendingRequesterVerification(instant)
 
-      resultState.name shouldBe State.PENDING_REQUESTER_VERIFICATION
+      resultState.name shouldBe State.PendingRequesterVerification
       resultState.requestedByEmailAddress shouldBe Some(upliftRequestedByEmail)
       resultState.verificationCode shouldBe defined
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
@@ -82,7 +82,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move application to PRE_PRODUCTION state" in {
       val resultState = startingState.toPreProduction(instant)
 
-      resultState.name shouldBe State.PRE_PRODUCTION
+      resultState.name shouldBe State.PreProduction
       resultState.requestedByEmailAddress shouldBe Some(upliftRequestedByEmail)
       resultState.verificationCode shouldBe defined
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
@@ -104,7 +104,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move back application to TESTING state" in {
       val resultState = startingState.toTesting(instant)
 
-      resultState.name shouldBe State.TESTING
+      resultState.name shouldBe State.Testing
       resultState.requestedByEmailAddress shouldBe None
       resultState.verificationCode shouldBe None
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
@@ -113,7 +113,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move application to PRODUCTION state" in {
       val resultState = startingState.toProduction(instant)
 
-      resultState.name shouldBe State.PRODUCTION
+      resultState.name shouldBe State.Production
       resultState.requestedByEmailAddress shouldBe Some(upliftRequestedByEmail)
       resultState.verificationCode shouldBe defined
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
@@ -136,7 +136,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move back application to TESTING state" in {
       val resultState = startingState.toTesting(instant.minus(Duration.ofHours(2L)))
 
-      resultState.name shouldBe State.TESTING
+      resultState.name shouldBe State.Testing
       resultState.requestedByEmailAddress shouldBe None
       resultState.verificationCode shouldBe None
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
@@ -145,7 +145,7 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateFixtures with B
     "move to DELETED state" in {
       val resultState = startingState.toDeleted(instant.minus(Duration.ofHours(2L)))
 
-      resultState.name shouldBe State.DELETED
+      resultState.name shouldBe State.Deleted
       resultState.isDeleted shouldBe true
       resultState.verificationCode shouldBe None
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true

@@ -22,12 +22,12 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.UserId
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class CommandHandlerSpec extends HmrcSpec with StoredApplicationFixtures with CollaboratorTestData with FixedClock with CommonApplicationId {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   // Application with two client secrets
   val applicationData: StoredApplication = storedApp
@@ -36,8 +36,8 @@ class CommandHandlerSpec extends HmrcSpec with StoredApplicationFixtures with Co
     fn shouldBe Validated.Valid(expected)
   }
 
-  def checkFailsWith(failure: CommandFailure, failures: CommandFailure*)(fn: => Validated[CommandHandler.Failures, _]) = {
-    fn shouldBe Validated.Invalid(NonEmptyList.of(failure, failures: _*))
+  def checkFailsWith(failure: CommandFailure, failures: CommandFailure*)(fn: => Validated[CommandHandler.Failures, ?]) = {
+    fn shouldBe Validated.Invalid(NonEmptyList.of(failure, failures*))
   }
 
   "appHasLessThanLimitOfSecrets" should {

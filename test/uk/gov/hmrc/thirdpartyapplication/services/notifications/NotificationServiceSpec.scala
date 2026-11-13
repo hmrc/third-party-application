@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.NonEmptyList
@@ -24,18 +24,18 @@ import org.scalatest.BeforeAndAfterAll
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, _}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{SubmissionId, *}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class NotificationServiceSpec
     extends AsyncHmrcSpec
@@ -47,7 +47,7 @@ class NotificationServiceSpec
 
   trait Setup extends EmailConnectorMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationIdData.one
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -56,8 +56,8 @@ class NotificationServiceSpec
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -97,8 +97,8 @@ class NotificationServiceSpec
 
     "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
-      val previousPrivacyPolicyUrl = PrivacyPolicyLocations.Url("https://example.com/old-privacy-policy")
-      val newPrivacyPolicyUrl      = PrivacyPolicyLocations.Url("https://example.com/new-privacy-policy")
+      val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
+      val newPrivacyPolicyUrl      = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
       val event                    = ApplicationEvents.ProductionAppPrivacyPolicyLocationChanged(
         EventId.random,
         applicationId,
@@ -143,8 +143,8 @@ class NotificationServiceSpec
 
     "when receive a ProductionAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetailsNoValue.thenReturnSuccess()
-      val previousTermsAndConditionsUrl = TermsAndConditionsLocations.Url("https://example.com/old-terms-conds")
-      val newTermsAndConditionsUrl      = TermsAndConditionsLocations.Url("https://example.com/new-terms-conds")
+      val previousTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/old-terms-conds")
+      val newTermsAndConditionsUrl      = TermsAndConditionsLocation.Url("https://example.com/new-terms-conds")
       val event                         = ApplicationEvents.ProductionAppTermsConditionsLocationChanged(
         EventId.random,
         applicationId,
@@ -209,7 +209,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.verifyCalledWith(
         event.responsibleIndividualName,
         event.responsibleIndividualEmail,
-        event.applicationName.value,
+        event.applicationName,
         event.requestingAdminName,
         event.verificationId
       )
@@ -237,7 +237,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendVerifyResponsibleIndividualNotification.verifyCalledWith(
         event.responsibleIndividualName,
         event.responsibleIndividualEmail,
-        event.applicationName.value,
+        event.applicationName,
         event.requestingAdminName,
         event.verificationId
       )
@@ -438,7 +438,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendAddedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         obfuscatedSecret,
-        applicationData.name.value,
+        applicationData.name,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }
@@ -456,7 +456,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendRemovedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail,
         clientSecretName,
-        applicationData.name.value,
+        applicationData.name,
         recipients = applicationData.admins.map(_.emailAddress)
       )
     }

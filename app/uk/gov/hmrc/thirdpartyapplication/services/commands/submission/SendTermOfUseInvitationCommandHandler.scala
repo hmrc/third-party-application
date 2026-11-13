@@ -17,22 +17,22 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
 import java.time.Clock
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SendTermsOfUseInvitation
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, TermsOfUseInvitation}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, TermsOfUseInvitationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationConfig
@@ -45,11 +45,11 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
     submissionService: SubmissionsService,
     config: TermsOfUseInvitationConfig,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger with ClockNow {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, StoredApplication]] = {
 
@@ -64,12 +64,12 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
 
     getExistingRecords(app.id).map {
       case (maybeSubmission, maybeInvitation) => {
-        Apply[Validated[Failures, *]].map4(
+        (
           ensureStandardAccess(app),
           isInProduction(app),
           cond(maybeSubmission.isEmpty, s"Submission already exists for application ${app.id.value}"),
           cond(maybeInvitation.isEmpty, s"Terms of Use Invitation already exists for application ${app.id.value}")
-        ) { case _ => app }
+        ).mapN((_, _, _, _) => app)
       }
     }
   }
@@ -100,15 +100,15 @@ class SendTermsOfUseInvitationCommandHandler @Inject() (
         now,
         now.plus(daysUntilDueWhenCreated.toMinutes, MINUTES),
         None,
-        EMAIL_SENT
+        TermsOfUseInvitationState.EMAIL_SENT
       )
     }
     lazy val noInvitation                                                    = NonEmptyList.one(GenericFailure(s"Failed to create terms of use invitation for application ${app.id}"))
 
     for {
-      validateResult <- E.fromValidatedF(validate(app))
-      newInvite      <- E.fromOptionF(termsOfUseInvitationRepository.create(createInvitation(app.id)), noInvitation)
-      events          = asEvents(app, cmd, newInvite)
+      _         <- E.fromValidatedF(validate(app))
+      newInvite <- E.fromOptionF(termsOfUseInvitationRepository.create(createInvitation(app.id)), noInvitation)
+      events     = asEvents(app, cmd, newInvite)
     } yield (app, events)
   }
 }

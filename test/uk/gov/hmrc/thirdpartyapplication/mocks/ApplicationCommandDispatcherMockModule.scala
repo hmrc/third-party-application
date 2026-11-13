@@ -22,7 +22,7 @@ import cats.data.{EitherT, NonEmptyList}
 import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
@@ -47,17 +47,17 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
 
       def succeedsWith(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnSuccessOn(cmd: ApplicationCommand)(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
-        when(aMock.dispatch(*[ApplicationId], eqTo(cmd), *)(*)).thenReturn(E.pure(success))
+        when(aMock.dispatch(*[ApplicationId], eqTo(cmd), *)(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnSuccess(applicationData: StoredApplication) = {
         val success: CommandHandler.Success = (applicationData, mockEvents)
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnCommandSuccess(applicationData: StoredApplication) = {
@@ -68,43 +68,43 @@ trait ApplicationCommandDispatcherMockModule extends MockitoSugar with ArgumentM
             FixedClock.instant,
             Actors.AppCollaborator("someuser".toLaxEmail),
             List.empty,
-            List(new LoginRedirectUri("new URI"))
+            List(LoginRedirectUri.unsafeApply("https://example.com/newURI"))
           ))
         val success: CommandHandler.Success = (applicationData, dummyEvents)
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnSuccess(applicationData: StoredApplication, event: ApplicationEvent, moreEvents: ApplicationEvent*) = {
-        val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents: _*))
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(E.pure(success))
+        val success: CommandHandler.Success = (applicationData, NonEmptyList.of(event, moreEvents*))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(E.pure(success))
       }
 
       def thenReturnFailed() =
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(mockErrors))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(EitherT.leftT(mockErrors))
 
       def thenReturnFailedFor(appId: ApplicationId) =
-        when(aMock.dispatch(eqTo(appId), *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(mockErrors))
+        when(aMock.dispatch(eqTo(appId), *[ApplicationCommand], *)(using *)).thenReturn(EitherT.leftT(mockErrors))
 
       def thenReturnFailed(fails: CommandFailure, otherFails: CommandFailure*) =
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails: _*)))
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(EitherT.leftT(NonEmptyList.of(fails, otherFails*)))
 
       def thenReturnFailed(msg: String, otherMsgs: String*) =
-        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)).thenReturn(EitherT.leftT(NonEmptyList.of(
+        when(aMock.dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)).thenReturn(EitherT.leftT(NonEmptyList.of(
           CommandFailures.GenericFailure(msg),
-          otherMsgs.map(CommandFailures.GenericFailure(_)): _*
+          otherMsgs.map(CommandFailures.GenericFailure(_))*
         )))
 
       def verifyNeverCalled =
-        verify(aMock, never).dispatch(*[ApplicationId], *[ApplicationCommand], *)(*)
+        verify(aMock, never).dispatch(*[ApplicationId], *[ApplicationCommand], *)(using *)
 
       def verifyCalledWith(applicationId: ApplicationId) = {
         val captor = ArgCaptor[ApplicationCommand]
-        verify(aMock).dispatch(eqTo(applicationId), captor.capture, *)(*)
+        verify(aMock).dispatch(eqTo(applicationId), captor.capture, *)(using *)
         captor.value
       }
 
       def verifyCalledWith(applicationId: ApplicationId, command: ApplicationCommand) = {
-        verify(aMock).dispatch(eqTo(applicationId), eqTo(command), *)(*)
+        verify(aMock).dispatch(eqTo(applicationId), eqTo(command), *)(using *)
       }
     }
   }

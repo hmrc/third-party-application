@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import java.{util => ju}
+import java.util as ju
 
 import play.api.libs.json.Format
 
@@ -27,5 +27,5 @@ object ResponsibleIndividualVerificationId {
 
   def random: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId(ju.UUID.randomUUID().toString)
 
-  implicit val JsonFormat: Format[ResponsibleIndividualVerificationId] = Json.valueFormat[ResponsibleIndividualVerificationId]
+  given JsonFormat: Format[ResponsibleIndividualVerificationId] = Json.valueFormat[ResponsibleIndividualVerificationId]
 }

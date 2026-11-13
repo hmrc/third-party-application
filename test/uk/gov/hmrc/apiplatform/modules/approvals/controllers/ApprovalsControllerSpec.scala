@@ -22,22 +22,22 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{Json, OWrites}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.approvals.services._
+import uk.gov.hmrc.apiplatform.modules.approvals.services.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtures with SubmissionsTestData {
-  implicit val mat: Materializer = NoMaterializer
-  val name                       = "bob example"
-  val emailAddress               = "test@example.com"
-  val appId                      = applicationId
+  given mat: Materializer = NoMaterializer
+  val name                = "bob example"
+  val emailAddress        = "test@example.com"
+  val appId               = applicationId
 
   trait Setup
       extends GrantApprovalsServiceMockModule
@@ -60,10 +60,10 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
   }
 
   "declineForTouUplift" should {
-    implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
-    val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
-    val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = storedApp // .copy(state = productionState("bob"))
+    given writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
+    val jsonBody                                                = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
+    val request                                                 = FakeRequest().withJsonBody(jsonBody)
+    val application                                             = storedApp // .copy(state = productionState("bob"))
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -76,10 +76,10 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
   }
 
   "grantWithWarningsForTouUplift" should {
-    implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
-    val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
-    val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = storedApp // , productionState("bob"))
+    given writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
+    val jsonBody                                                = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
+    val request                                                 = FakeRequest().withJsonBody(jsonBody)
+    val application                                             = storedApp // , productionState("bob"))
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -92,10 +92,10 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
   }
 
   "resetForTouUplift" should {
-    implicit val writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
-    val jsonBody                                                       = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
-    val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = storedApp
+    given writes: OWrites[ApprovalsController.TouUpliftRequest] = Json.writes[ApprovalsController.TouUpliftRequest]
+    val jsonBody                                                = Json.toJson(ApprovalsController.TouUpliftRequest("Bob from SDST", "This is a warning"))
+    val request                                                 = FakeRequest().withJsonBody(jsonBody)
+    val application                                             = storedApp
 
     "return 'OK' success response if successful" in new Setup {
       hasApp
@@ -108,10 +108,10 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with StoredApplicationFixtur
   }
 
   "deleteTouUplift" should {
-    implicit val writes: OWrites[ApprovalsController.TouDeleteRequest] = Json.writes[ApprovalsController.TouDeleteRequest]
-    val jsonBody                                                       = Json.toJson(ApprovalsController.TouDeleteRequest("Bob from SDST"))
-    val request                                                        = FakeRequest().withJsonBody(jsonBody)
-    val application                                                    = storedApp
+    given writes: OWrites[ApprovalsController.TouDeleteRequest] = Json.writes[ApprovalsController.TouDeleteRequest]
+    val jsonBody                                                = Json.toJson(ApprovalsController.TouDeleteRequest("Bob from SDST"))
+    val request                                                 = FakeRequest().withJsonBody(jsonBody)
+    val application                                             = storedApp
 
     "return 'OK' success response if successful" in new Setup {
       hasApp

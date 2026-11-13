@@ -26,7 +26,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 
 trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
   self: TestSuite =>

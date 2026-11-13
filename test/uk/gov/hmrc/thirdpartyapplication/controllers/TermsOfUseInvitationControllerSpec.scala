@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsJson, status, stubControllerComponents}
@@ -29,9 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.controllers.termsofuse.TermsOfUseInvitationController
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.services.TermsOfUseInvitationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.EMAIL_SENT
-import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationWithApplicationResponse}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationResponse, TermsOfUseInvitationState, TermsOfUseInvitationWithApplicationResponse}
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class TermsOfUseInvitationControllerSpec extends ControllerSpec with ApplicationDataServiceMockModule with SubmissionsServiceMockModule with StoredApplicationFixtures
     with SubmissionsTestData {
@@ -50,7 +49,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
 
   "fetch invitation" should {
     "return an OK with a terms of use invitation response" in new Setup {
-      val response = TermsOfUseInvitationResponse(applicationId, instant, instant, dueDate, None, EMAIL_SENT)
+      val response = TermsOfUseInvitationResponse(applicationId, instant, instant, dueDate, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       TermsOfUseInvitationServiceMock.FetchInvitation.thenReturn(response)
 
@@ -78,7 +77,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
           instant,
           dueDate,
           None,
-          EMAIL_SENT
+          TermsOfUseInvitationState.EMAIL_SENT
         )
       )
 
@@ -103,7 +102,7 @@ class TermsOfUseInvitationControllerSpec extends ControllerSpec with Application
           instant,
           dueDate,
           None,
-          EMAIL_SENT,
+          TermsOfUseInvitationState.EMAIL_SENT,
           "Petes App"
         )
       )

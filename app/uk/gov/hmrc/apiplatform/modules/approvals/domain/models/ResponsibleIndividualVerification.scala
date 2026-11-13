@@ -25,7 +25,7 @@ import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ResponsibleIndividual, SubmissionId}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId
@@ -38,16 +38,16 @@ sealed trait ResponsibleIndividualVerification {
 }
 
 object ResponsibleIndividualVerification {
-  implicit val dateFormat: Format[Instant]                                                        = MongoJavatimeFormats.instantFormat
-  implicit val riVerificationFormat: OFormat[ResponsibleIndividualToUVerification]                = Json.format[ResponsibleIndividualToUVerification]
-  implicit val riVerificationTouUpliftFormat: OFormat[ResponsibleIndividualTouUpliftVerification] = Json.format[ResponsibleIndividualTouUpliftVerification]
-  implicit val riUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification]       = Json.format[ResponsibleIndividualUpdateVerification]
+  given dateFormat: Format[Instant]                                                        = MongoJavatimeFormats.instantFormat
+  given riVerificationFormat: OFormat[ResponsibleIndividualToUVerification]                = Json.format[ResponsibleIndividualToUVerification]
+  given riVerificationTouUpliftFormat: OFormat[ResponsibleIndividualTouUpliftVerification] = Json.format[ResponsibleIndividualTouUpliftVerification]
+  given riUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification]       = Json.format[ResponsibleIndividualUpdateVerification]
 
   val VerificationTypeToU: String       = "termsOfUse"
   val VerificationTypeTouUplift: String = "termsOfUseUplift"
   val VerificationTypeUpdate: String    = "adminUpdate"
 
-  implicit val jsonFormatResponsibleIndividualVerification: OFormat[ResponsibleIndividualVerification] = Union.from[ResponsibleIndividualVerification]("verificationType")
+  given jsonFormatResponsibleIndividualVerification: OFormat[ResponsibleIndividualVerification] = Union.from[ResponsibleIndividualVerification]("verificationType")
     .and[ResponsibleIndividualToUVerification](VerificationTypeToU)
     .and[ResponsibleIndividualTouUpliftVerification](VerificationTypeTouUplift)
     .and[ResponsibleIndividualUpdateVerification](VerificationTypeUpdate)
@@ -61,7 +61,7 @@ case class ResponsibleIndividualToUVerification(
     submissionInstance: Int,
     applicationName: ApplicationName,
     createdOn: Instant,
-    state: ResponsibleIndividualVerificationState = INITIAL
+    state: ResponsibleIndividualVerificationState = ResponsibleIndividualVerificationState.INITIAL
   ) extends ResponsibleIndividualVerification
 
 case class ResponsibleIndividualTouUpliftVerification(
@@ -73,7 +73,7 @@ case class ResponsibleIndividualTouUpliftVerification(
     createdOn: Instant,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,
-    state: ResponsibleIndividualVerificationState = INITIAL
+    state: ResponsibleIndividualVerificationState = ResponsibleIndividualVerificationState.INITIAL
   ) extends ResponsibleIndividualVerification
 
 case class ResponsibleIndividualUpdateVerification(
@@ -86,5 +86,5 @@ case class ResponsibleIndividualUpdateVerification(
     responsibleIndividual: ResponsibleIndividual,
     requestingAdminName: String,
     requestingAdminEmail: LaxEmailAddress,
-    state: ResponsibleIndividualVerificationState = INITIAL
+    state: ResponsibleIndividualVerificationState = ResponsibleIndividualVerificationState.INITIAL
   ) extends ResponsibleIndividualVerification

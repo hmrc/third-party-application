@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -40,37 +40,37 @@ trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with Argumen
     object DeleteSubscriptions {
 
       def thenReturnHasSucceeded() = {
-        when(aMock.delete(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.delete(*[ClientId])(using *)).thenReturn(successful(HasSucceeded))
       }
 
       def thenReturnHasSucceededWhen(clientId: ClientId) = {
-        when(aMock.delete(eqTo(clientId))(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.delete(eqTo(clientId))(using *)).thenReturn(successful(HasSucceeded))
       }
 
       def thenFail(failsWith: Throwable) = {
-        when(aMock.delete(*[ClientId])(*)).thenReturn(failed(failsWith))
+        when(aMock.delete(*[ClientId])(using *)).thenReturn(failed(failsWith))
       }
 
       def verifyCalledWith(clientId: ClientId) = {
-        ApiSubscriptionFieldsConnectorMock.verify.delete(eqTo(clientId))(*)
+        ApiSubscriptionFieldsConnectorMock.verify.delete(eqTo(clientId))(using *)
       }
 
       def verifyCalled() = {
-        ApiSubscriptionFieldsConnectorMock.verify.delete(*[ClientId])(*)
+        ApiSubscriptionFieldsConnectorMock.verify.delete(*[ClientId])(using *)
       }
     }
 
     object BulkFetchFieldDefinitions {
 
       def willReturnDefinitions(defns: ApiFieldMap[FieldDefinition]) = {
-        when(aMock.fetchAllFieldDefinitions()(*)).thenReturn(successful(defns))
+        when(aMock.fetchAllFieldDefinitions()(using *)).thenReturn(successful(defns))
       }
     }
 
     object FetchFieldValues {
 
       def willReturnFields(values: ApiFieldMap[FieldValue]) = {
-        when(aMock.fetchFieldValues(*[ClientId])(*)).thenReturn(successful(values))
+        when(aMock.fetchFieldValues(*[ClientId])(using *)).thenReturn(successful(values))
       }
     }
   }

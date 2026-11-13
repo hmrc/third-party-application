@@ -22,17 +22,17 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 
 import uk.gov.hmrc.apiplatform.modules.submissions.controllers.questionnaires.QuestionnairesController
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionnaireDAOMockModule
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires._
-  implicit val mat: Materializer = NoMaterializer
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires.given
+  given mat: Materializer = NoMaterializer
 
   trait Setup extends QuestionnaireDAOMockModule with SubmissionsTestData {
     val underTest = new QuestionnairesController(QuestionnaireDAOMock.aMock, Helpers.stubControllerComponents())
@@ -46,7 +46,7 @@ class QuestionnairesControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[Questionnaire] match {
-        case JsSuccess(s, _) => succeed
+        case JsSuccess(_, _) => succeed
         case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
@@ -67,7 +67,7 @@ class QuestionnairesControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[List[GroupOfQuestionnaires]] match {
-        case JsSuccess(s, _) => succeed
+        case JsSuccess(_, _) => succeed
         case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }

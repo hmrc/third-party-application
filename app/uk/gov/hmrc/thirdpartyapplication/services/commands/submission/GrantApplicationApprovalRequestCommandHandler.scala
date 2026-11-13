@@ -21,20 +21,20 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, OptionT, Validated}
-import cats.syntax.validated._
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.GrantApplicationApprovalRequest
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
@@ -46,11 +46,11 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
     stateHistoryRepository: StateHistoryRepository,
     submissionService: SubmissionsService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger with ClockNow {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, (Submission, ImportantSubmissionData)]] = {
     (
@@ -63,13 +63,13 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission or important submission data found for application ${app.id.value}").invalidNel[(Submission, ImportantSubmissionData)]
       ) {
         case (submission, importantSubmissionData) => {
-          Apply[Validated[Failures, *]].map5(
+          (
             ensureStandardAccess(app),
             isInPendingGatekeeperApproval(app),
             cond(app.state.requestedByEmailAddress.nonEmpty, "No requestedBy email found"),
             cond(app.state.requestedByName.nonEmpty, "No requestedBy name found"),
             cond(submission.status.isSubmitted, "Submission has not been submitted")
-          ) { case _ => (submission, importantSubmissionData) }
+          ).mapN((_, _, _, _, _) => (submission, importantSubmissionData))
         }
       }
   }
@@ -111,16 +111,16 @@ class GrantApplicationApprovalRequestCommandHandler @Inject() (
     logStartingApprovalRequestProcessing(originalApp.id)
 
     for {
-      validateResult                       <- E.fromValidatedF(validate(originalApp))
-      (submission, importantSubmissionData) = validateResult
+      validateResult   <- E.fromValidatedF(validate(originalApp))
+      (submission, _)   = validateResult
       // Set application state to user verification
-      updatedApp                            = grantApp(originalApp)
-      savedApp                             <- E.liftF(applicationRepository.save(updatedApp))
-      _                                    <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PENDING_GATEKEEPER_APPROVAL, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
-      updatedSubmission                     = grantSubmission(cmd.gatekeeperUser, cmd.warnings, cmd.escalatedTo)(submission)
-      savedSubmission                      <- E.liftF(submissionService.store(updatedSubmission))
-      events                                = asEvents(savedApp, cmd, savedSubmission)
-      _                                     = logCompletedApprovalRequest(savedApp, savedSubmission)
+      updatedApp        = grantApp(originalApp)
+      savedApp         <- E.liftF(applicationRepository.save(updatedApp))
+      _                <- E.liftF(stateHistoryRepository.insert(createStateHistory(savedApp, State.PendingGatekeeperApproval, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
+      updatedSubmission = grantSubmission(cmd.gatekeeperUser, cmd.warnings, cmd.escalatedTo)(submission)
+      savedSubmission  <- E.liftF(submissionService.store(updatedSubmission))
+      events            = asEvents(savedApp, cmd, savedSubmission)
+      _                 = logCompletedApprovalRequest(savedApp, savedSubmission)
     } yield (updatedApp, events)
   }
 

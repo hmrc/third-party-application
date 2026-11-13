@@ -20,27 +20,28 @@ import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.{EitherValues, Inside}
-import sttp.client3._
+import sttp.client3.*
 import sttp.model.{Header, Method, StatusCode}
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, OWrites}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, ApplicationCommands, DispatchRequest}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationCommandController.*
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherValues with CollaboratorTestData with Inside with FixedClock {
 
@@ -145,7 +146,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       emailStub.willPostEmailNotification()
 
-      import com.github.t3hnar.bcrypt._
+      import uk.gov.hmrc.apiplatform.modules.crypto.services.bcrypt.bcrypt
       val secret       = UUID.randomUUID().toString
       val hashedSecret = secret.bcrypt(4)
       val cmd          = ApplicationCommands.AddClientSecret(Actors.AppCollaborator("admin@example.com".toLaxEmail), "name", ClientSecret.Id.random, hashedSecret, instant)
@@ -208,7 +209,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       Given("No applications exist")
       emptyApplicationRepository()
 
-      awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
+      awsApiGatewayStub.willCreateOrUpdateApplication(RateLimitTier.Bronze)
       val appName = "privileged-app-name"
 
       Given("The gatekeeper is logged in")
@@ -551,14 +552,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
 
       Given("A third party application")
       val application: ApplicationWithCollaborators = createApplication()
-      application.details.rateLimitTier shouldBe RateLimitTier.BRONZE
+      application.details.rateLimitTier shouldBe RateLimitTier.Bronze
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole("admin@example.com")
 
       Given("I have updated the rate limit to GOLD")
       apiPlatformEventsStub.willReceiveChangeRateLimitEvent()
-      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.GOLD)
+      val subcmd   = ApplicationCommands.ChangeRateLimitTier("admin@example.com", instant, RateLimitTier.Gold)
       val response = sendApplicationCommand(subcmd, application, Seq(Header.authorization("Bearer", UUID.randomUUID.toString)))
       response.body.value.contains("\"rateLimitTier\":\"GOLD\"") shouldBe true
 
@@ -599,7 +600,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationWithCollaborators = {
-    awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
+    awsApiGatewayStub.willCreateOrUpdateApplication(RateLimitTier.Bronze)
     val createdResponse = sendJsonRequest("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe StatusCode.Created
     Json.parse(createdResponse.body.value).as[ApplicationWithCollaborators]
@@ -615,14 +616,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec with EitherVal
       basicRequest
         .method(method, uri"$uri")
         .contentType("application/json")
-        .headers(extraHeaders: _*)
+        .headers(extraHeaders*)
         .body(data)
     )
   }
 
   def sendApplicationCommand(cmd: ApplicationCommand, application: ApplicationWithCollaborators, extraHeaders: Seq[Header] = Seq()): Response[Either[String, String]] = {
-    val request                                   = DispatchRequest(cmd, Set.empty)
-    implicit val writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
+    val request                            = DispatchRequest(cmd, Set.empty)
+    given writer: OWrites[DispatchRequest] = Json.writes[DispatchRequest]
     sendJsonRequest(s"/application/${application.id}/dispatch", Json.toJson(request).toString(), extraHeaders, Method.PATCH)
   }
 

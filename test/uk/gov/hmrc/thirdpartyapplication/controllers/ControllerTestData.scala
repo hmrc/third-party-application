@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait ControllerTestData extends ApplicationWithCollaboratorsFixtures with CollaboratorTestData with FixedClock {
 

@@ -30,8 +30,8 @@ object ApplicationStateHistoryResponse {
   import play.api.libs.json.OFormat
 
   object Item {
-    implicit val format: OFormat[Item] = Json.format[Item]
+    given format: OFormat[Item] = Json.format[Item]
   }
 
-  implicit val formatApplicationStateHistory: OFormat[ApplicationStateHistoryResponse] = Json.format[ApplicationStateHistoryResponse]
+  given formatApplicationStateHistory: OFormat[ApplicationStateHistoryResponse] = Json.format[ApplicationStateHistoryResponse]
 }

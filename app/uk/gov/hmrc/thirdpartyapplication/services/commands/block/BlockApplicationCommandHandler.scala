@@ -25,8 +25,8 @@ import cats.data.{NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.BlockApplication
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -35,10 +35,10 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class BlockApplicationCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ApplicationLogger with ClockNow {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
     Validated.validNel(app)
@@ -63,7 +63,7 @@ class BlockApplicationCommandHandler @Inject() (
     }
 
     for {
-      valid <- E.fromEither(validate(app).toEither)
+      _     <- E.fromEither(validate(app).toEither)
       _     <- E.liftF(applicationRepository.save(block(app)))
       events = asEvents(app, cmd)
       _      = logBlocked(app)

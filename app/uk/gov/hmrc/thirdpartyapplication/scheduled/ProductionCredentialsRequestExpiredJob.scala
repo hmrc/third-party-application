@@ -42,7 +42,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     commandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock,
     jobConfig: ProductionCredentialsRequestExpiredJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   val productionCredentialsRequestDeleteInterval: FiniteDuration = jobConfig.deleteInterval
@@ -51,7 +51,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
   override def initialDelay: FiniteDuration                      = jobConfig.initialDelay
   override val isEnabled: Boolean                                = jobConfig.enabled
   override val lockService: LockService                          = productionCredentialsRequestExpiredLockService
-  implicit val hc: HeaderCarrier                                 = HeaderCarrier()
+  given hc: HeaderCarrier                                        = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val deleteTime: Instant = instant.minus(Period.ofDays(productionCredentialsRequestDeleteInterval.toDays.toInt))
@@ -59,7 +59,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       deleteApps <-
-        applicationRepository.fetchByStatusDetailsAndEnvironmentForDeleteJob(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
+        applicationRepository.fetchByStatusDetailsAndEnvironmentForDeleteJob(state = State.Testing, updatedBefore = deleteTime, environment = Environment.Production)
       _           = logger.info(s"Scheduled job $name found ${deleteApps.size} applications")
       _          <- Future.sequence(deleteApps.map(deleteExpiredApplication(_)))
     } yield RunningOfJobSuccessful
@@ -77,7 +77,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     val request = ApplicationCommands.DeleteProductionCredentialsApplication(name, reasons, instant)
 
     (for {
-      savedApp <- commandDispatcher.dispatch(app.id, request, Set.empty)
+      _ <- commandDispatcher.dispatch(app.id, request, Set.empty)
     } yield HasSucceeded).value
   }
 }

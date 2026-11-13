@@ -22,7 +22,7 @@ import scala.util.Failure
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
@@ -38,7 +38,7 @@ abstract class BaseService(stateHistoryRepository: StateHistoryRepository, val c
     val stateHistory = StateHistory(snapshotApp.id, newState, actor, oldState, changedAt = instant)
     stateHistoryRepository.insert(stateHistory)
       .andThen {
-        case e: Failure[_] =>
+        case _: Failure[?] =>
           rollback(snapshotApp)
       }
   }

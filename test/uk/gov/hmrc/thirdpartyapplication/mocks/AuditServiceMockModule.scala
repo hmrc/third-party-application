@@ -42,27 +42,27 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object Audit {
 
       def thenReturnSuccessWhen(action: AuditAction, data: Map[String, String]) =
-        when(aMock.audit(eqTo(action), eqTo(data))(*)).thenReturn(successful(AuditResult.Success))
+        when(aMock.audit(eqTo(action), eqTo(data))(using *)).thenReturn(successful(AuditResult.Success))
 
       def thenReturnSuccess() = {
-        when(aMock.audit(*, *)(*)).thenReturn(successful(AuditResult.Success))
+        when(aMock.audit(*, *)(using *)).thenReturn(successful(AuditResult.Success))
       }
 
       def verifyNeverCalled() =
-        AuditServiceMock.verify(never).audit(*, *)(*)
+        AuditServiceMock.verify(never).audit(*, *)(using *)
 
       def verifyCalled() =
-        AuditServiceMock.verify.audit(*, *)(*)
+        AuditServiceMock.verify.audit(*, *)(using *)
 
       def verifyCalledWith(auditAction: AuditAction, data: Map[String, String], hc: HeaderCarrier) =
-        AuditServiceMock.verify.audit(refEq(auditAction), eqTo(data))(eqTo(hc))
+        AuditServiceMock.verify.audit(refEq(auditAction), eqTo(data))(using eqTo(hc))
 
       def verify(verificationMode: VerificationMode)(auditAction: AuditAction, data: Map[String, String], hc: HeaderCarrier) =
-        AuditServiceMock.verify(verificationMode).audit(refEq(auditAction), eqTo(data))(eqTo(hc))
+        AuditServiceMock.verify(verificationMode).audit(refEq(auditAction), eqTo(data))(using eqTo(hc))
 
       def verifyData(auditAction: AuditAction) = {
         val capture: Captor[Map[String, String]] = ArgCaptor[Map[String, String]]
-        AuditServiceMock.verify.audit(refEq(auditAction), capture)(*)
+        AuditServiceMock.verify.audit(refEq(auditAction), capture)(using *)
         capture.value
       }
     }
@@ -70,31 +70,31 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object AuditWithTags {
 
       def thenReturnSuccess() = {
-        when(aMock.audit(*, *, *)(*)).thenReturn(successful(AuditResult.Success))
+        when(aMock.audit(*, *, *)(using *)).thenReturn(successful(AuditResult.Success))
       }
     }
 
     object AuditGatekeeperAction {
 
       def thenReturnSuccess() =
-        when(aMock.auditGatekeeperAction(*, *, *, *)(*)).thenReturn(successful(AuditResult.Success))
+        when(aMock.auditGatekeeperAction(*, *, *, *)(using *)).thenReturn(successful(AuditResult.Success))
 
       def verifyUserName() = {
         val captureGatekeeperUser: Captor[String] = ArgCaptor[String]
-        verify.auditGatekeeperAction(captureGatekeeperUser, *, *, *)(*)
+        verify.auditGatekeeperAction(captureGatekeeperUser, *, *, *)(using *)
         captureGatekeeperUser.value
       }
 
       def verifyAction() = {
         val captureAction: Captor[AuditAction] = ArgCaptor[AuditAction]
 
-        verify.auditGatekeeperAction(*, *, captureAction, *)(*)
+        verify.auditGatekeeperAction(*, *, captureAction, *)(using *)
         captureAction.value
       }
 
       def verifyExtras() = {
         val captureExtras: Captor[Map[String, String]] = ArgCaptor[Map[String, String]]
-        verify.auditGatekeeperAction(*, *, *, captureExtras)(*)
+        verify.auditGatekeeperAction(*, *, *, captureExtras)(using *)
         captureExtras.value
       }
     }
@@ -102,11 +102,11 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     object ApplyEvents {
 
       def succeeds() = {
-        when(aMock.applyEvents(*, *)(*)).thenReturn(successful(None))
+        when(aMock.applyEvents(*, *)(using *)).thenReturn(successful(None))
       }
 
       def verifyCalledWith(app: StoredApplication, events: NonEmptyList[ApplicationEvent]) = {
-        verify.applyEvents(eqTo(app), eqTo(events))(*)
+        verify.applyEvents(eqTo(app), eqTo(events))(using *)
       }
     }
   }

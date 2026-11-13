@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.common.connectors
 
 import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 abstract class ConnectorSpec
     extends AsyncHmrcSpec

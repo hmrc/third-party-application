@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.time.Clock
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.{apply => _, _}
+import scala.concurrent.Future.{apply as _, *}
 import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -32,30 +32,28 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, *}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.*
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscriptionFieldsConnector
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.connector.*
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationStateChange, Deleted}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, FixCollaboratorRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
-import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.models.{DeleteApplicationRequest, FixCollaboratorRequest, *}
+import uk.gov.hmrc.thirdpartyapplication.repository.*
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, MetricsTimer}
 
 @Singleton
 class ApplicationService @Inject() (
     val metrics: Metrics,
-    queryService: QueryService,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     subscriptionRepository: SubscriptionRepository,
@@ -63,7 +61,6 @@ class ApplicationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     auditService: AuditService,
-    apiPlatformEventService: ApiPlatformEventService,
     emailConnector: EmailConnector,
     totpConnector: TotpConnector,
     system: ActorSystem,
@@ -73,9 +70,8 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
-    applicationCommandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends MetricsTimer with ApplicationLogger with ActorHelper with ClockNow {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -220,8 +216,8 @@ class ApplicationService @Inject() (
 
     for {
       _       <- createApplicationRequest.accessType match {
-                   case AccessType.PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.PRIVILEGED)
-                   case AccessType.ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name.value, AccessType.ROPC)
+                   case AccessType.Privileged => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.Privileged)
+                   case AccessType.Ropc       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, AccessType.Ropc)
                    case _                     => successful(())
                  }
       basicApp = StoredApplication.create(createApplicationRequest, tokenService.createEnvironmentToken(), instant)
@@ -235,7 +231,7 @@ class ApplicationService @Inject() (
 
   private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
-      case AccessType.PRIVILEGED => totpConnector.generateTotp().map(Some(_))
+      case AccessType.Privileged => totpConnector.generateTotp().map(Some(_))
       case _                     => Future(None)
     }
   }
@@ -250,7 +246,7 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: StoredApplication)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case AccessType.PRIVILEGED | AccessType.ROPC => Actors.Unknown
+      case AccessType.Privileged | AccessType.Ropc => Actors.Unknown
       case _                                       => loggedInActor
     }
     insertStateHistory(appData, appData.state.name, None, actor, (a: StoredApplication) => applicationRepository.hardDelete(a.id))
@@ -261,7 +257,7 @@ class ApplicationService @Inject() (
       AppCreated,
       Map(
         "applicationId"             -> app.id.toString,
-        "newApplicationName"        -> app.name.value,
+        "newApplicationName"        -> app.name,
         "newApplicationDescription" -> app.description.getOrElse("")
       )
     )
@@ -288,7 +284,7 @@ class ApplicationService @Inject() (
     }
   }
 
-  val recoverAll: Future[_] => Future[_] = {
+  val recoverAll: Future[?] => Future[?] = {
     _ recover {
       case e: Throwable => logger.error(e.getMessage); (): Unit
     }

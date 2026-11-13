@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, State}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec, DeleteApplicationCommandHandlers}
 
@@ -32,7 +32,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
 
   trait Setup extends DeleteApplicationCommandHandlers {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val reasons = "reasons description text"
     val actor   = Actors.AppCollaborator(adminOne.emailAddress)
@@ -54,7 +54,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
     )
 
     def checkSuccessResult()(result: CommandHandler.Success) = {
-      inside(result) { case (returnedApp, events) =>
+      inside(result) { case (_, events) =>
         val filteredEvents = events.toList.filter(evt =>
           evt match {
             case _: ApplicationEvents.ApplicationStateChanged | _: ApplicationEvents.ApplicationDeletedV2 => true
@@ -76,8 +76,8 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends CommandHandlerBa
               appId shouldBe app.id
               evtActor shouldBe actor
               eventDateTime shouldBe instant
-              oldAppState shouldBe app.state.name.toString()
-              newAppState shouldBe State.DELETED.toString()
+              oldAppState shouldBe app.state.name
+              newAppState shouldBe State.Deleted
               requestingAdminEmail shouldBe actor.email
               requestingAdminName shouldBe actor.email.text
           }

@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApiIdentifier}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.UnsubscribeFromRetiredApi
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.ApiUnsubscribedV2
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
@@ -32,7 +32,7 @@ class UnsubscribeFromRetiredApiCommandHandlerSpec extends CommandHandlerBaseSpec
 
   trait Setup extends SubscriptionRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new UnsubscribeFromRetiredApiCommandHandler(SubscriptionRepoMock.aMock)
 
@@ -45,7 +45,7 @@ class UnsubscribeFromRetiredApiCommandHandlerSpec extends CommandHandlerBaseSpec
     def checkSuccessResult(expectedActor: Actors.Process)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (returnedApp, events) =>
+      inside(testThis) { case (_, events) =>
         events should have size 1
         val event = events.head
 

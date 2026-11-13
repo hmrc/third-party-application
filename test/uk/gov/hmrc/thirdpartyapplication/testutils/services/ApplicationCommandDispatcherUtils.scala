@@ -37,20 +37,20 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{
 }
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 import uk.gov.hmrc.thirdpartyapplication.services.commands.block.{BlockApplicationCommandHandler, BlockCommandsProcessor, UnblockApplicationCommandHandler}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ipallowlist.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.organisation.{LinkToOrganisationCommandHandler, LinkToOrganisationCommandsProcessor}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler, ScopesCommandsProcessor}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
     with StoredApplicationFixtures
@@ -67,7 +67,7 @@ abstract class ApplicationCommandDispatcherUtils extends AsyncHmrcSpec
       with SubmissionsServiceMockModule
       with ThirdPartyDelegatedAuthorityServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val response = mock[HttpResponse]
 

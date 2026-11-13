@@ -36,13 +36,15 @@ object StateHistoryRepository {
 
   object MongoFormats {
     import play.api.libs.json.{Format, Json, OFormat}
-    implicit val formatInstant: Format[Instant]            = MongoJavatimeFormats.instantFormat
-    implicit val formatStateHistory: OFormat[StateHistory] = Json.format[StateHistory]
+    import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor.given
+
+    given formatInstant: Format[Instant]            = MongoJavatimeFormats.instantFormat
+    given formatStateHistory: OFormat[StateHistory] = Json.format[StateHistory]
   }
 }
 
 @Singleton
-class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+class StateHistoryRepository @Inject() (mongo: MongoComponent)(using val ec: ExecutionContext)
     extends PlayMongoRepository[StateHistory](
       collectionName = "stateHistory",
       mongoComponent = mongo,
@@ -78,8 +80,8 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   def fetchDeletedByApplicationIds(applicationIds: List[ApplicationId]): Future[List[StateHistory]] = {
     collection.find(and(
-      in("applicationId", applicationIds.map(i => Codecs.toBson(i)): _*),
-      equal("state", Codecs.toBson(State.DELETED.toString))
+      in("applicationId", applicationIds.map(i => Codecs.toBson(i))*),
+      equal("state", Codecs.toBson(State.Deleted))
     ))
       .toFuture()
       .map(x => x.toList)

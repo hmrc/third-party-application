@@ -39,10 +39,10 @@ object DeriveContext {
 
   def deriveFor(application: StoredApplication, subscriptions: Set[ApiIdentifier]): Context = {
 
-    val resell    = application.sellResellOrDistribute.fold("No")(s => s.answer)
+    val resell    = application.sellResellOrDistribute.getOrElse("No")
     val inHouse   = if (resell == "Yes") "No" else "Yes"
     val newUplift = application.state.name match {
-      case State.PRODUCTION => "Yes"
+      case State.Production => "Yes"
       case _                => "No"
     }
 

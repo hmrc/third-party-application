@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationState, State, ValidatedApplicationName}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationName
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
@@ -35,7 +35,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftNamingServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldName        = app.name
     val newName        = ApplicationName("New app name")
@@ -44,16 +44,16 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     val userId = adminOne.userId
 
-    val newApp = app.copy(name = newName, normalisedName = newName.value.toLowerCase())
+    val newApp = app.copy(name = newName, normalisedName = newName.toLowerCase())
 
-    val update = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName.value).get)
+    val update = ChangeProductionApplicationName(gatekeeperUser, userId, instant, ValidatedApplicationName(newName).get)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(ApplicationRepoMock.aMock, UpliftNamingServiceMock.aMock)
 
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
         val event = events.head
 
@@ -111,7 +111,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends CommandHandlerBa
 
     "return an error if application is still in the process of being approved" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val appPendingApproval = app.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant))
+      val appPendingApproval = app.withState(ApplicationState(State.PendingGatekeeperApproval, updatedOn = instant))
 
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
         underTest.process(appPendingApproval, update)
