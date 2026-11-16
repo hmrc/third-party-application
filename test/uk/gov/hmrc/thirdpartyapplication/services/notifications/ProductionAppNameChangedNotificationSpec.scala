@@ -21,17 +21,17 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CollaboratorTestData {
 
   trait Setup extends EmailConnectorMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val applicationId         = ApplicationId.random
     val devEmail              = developerOne.emailAddress
@@ -44,8 +44,8 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Stored
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InEEA),
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -67,8 +67,8 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Stored
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(
         adminOne.emailAddress.text,
-        oldName.value,
-        newName.value,
+        oldName,
+        newName,
         app.collaborators.map(_.emailAddress) + responsibleIndividual.emailAddress
       )
     }

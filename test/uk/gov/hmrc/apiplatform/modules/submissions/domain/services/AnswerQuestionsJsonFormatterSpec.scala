@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 
 class AnswerQuestionsJsonFormatterSpec extends HmrcSpec {
 

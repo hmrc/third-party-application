@@ -54,7 +54,7 @@ class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)
   }
 
   private def applicationsByRateLimitKey(rateLimit: Option[RateLimitTier]): String = {
-    val rateLimitString = if (rateLimit.isDefined) rateLimit.get.toString else "UNKNOWN"
+    val rateLimitString = if (rateLimit.isDefined) rateLimit.get.toString.toUpperCase() else "UNKNOWN"
     s"applicationsByRateLimit.$rateLimitString"
   }
 }

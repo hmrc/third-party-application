@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import cats.syntax.either._
+import cats.syntax.either.*
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 
 object ValidateAnswers {
 
@@ -31,7 +31,7 @@ object ValidateAnswers {
       case (_, Nil)                                        => "Question requires an answer".asLeft
 //
       case (q: Question.MultiChoiceQuestion, answers)      => validateAgainstPossibleAnswers(q, answers.toSet)
-      case (_, a :: b :: Nil)                              => "Question only accepts one answer".asLeft
+      case (_, _ :: _ :: Nil)                              => "Question only accepts one answer".asLeft
 //
       case (q: Question.TextQuestion, head :: Nil)         => validateAgainstPossibleTextValidationRule(q, head)
       case (q: Question.SingleChoiceQuestion, head :: Nil) => validateAgainstPossibleAnswers(q, head)

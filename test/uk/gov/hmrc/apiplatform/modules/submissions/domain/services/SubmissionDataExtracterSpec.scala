@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 class SubmissionDataExtracterSpec extends HmrcSpec {
 
   trait Setup extends SubmissionsTestData {
-    import Submission._
     val appName                                           = "expected app name"
     val answersWithAppName: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> ActualAnswer.TextAnswer(appName))
     val submissionWithAnswers                             = updateLatestAnswersTo(answersWithAppName)(answeringSubmission)

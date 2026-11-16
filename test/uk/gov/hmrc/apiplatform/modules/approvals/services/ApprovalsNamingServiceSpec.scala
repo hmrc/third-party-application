@@ -26,8 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Applicat
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationNameValidationConfigMockModule, AuditServiceMockModule, QueryServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.*
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.*
 
 class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
@@ -37,10 +37,10 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
       with ApplicationNameValidationConfigMockModule
       with ApplicationWithCollaboratorsFixtures {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    given hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationId: ApplicationId = ApplicationId.random
-    val accessType: AccessType       = AccessType.STANDARD
+    val accessType: AccessType       = AccessType.Standard
     val underTest                    = new ApprovalsNamingService(AuditServiceMock.aMock, QueryServiceMock.aMock, ApplicationNameValidationConfigMock.aMock)
   }
 

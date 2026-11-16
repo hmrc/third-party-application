@@ -19,9 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.Apply
 import cats.data.{NonEmptyList, OptionT, Validated}
-import cats.syntax.validated._
+import cats.syntax.apply.*
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -30,11 +30,11 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.Applic
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.services.{ApprovalsNamingService, ResponsibleIndividualVerificationService}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubmitApplicationApprovalRequest
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -49,11 +49,11 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
     val termsOfUseInvitationRepository: TermsOfUseInvitationRepository,
     approvalsNamingService: ApprovalsNamingService,
     responsibleIndividualVerificationService: ResponsibleIndividualVerificationService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends SubmissionApprovalCommandsHandler with ApplicationLogger {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def validate(app: StoredApplication): Future[Validated[Failures, (Submission, String)]] = {
     (
@@ -67,13 +67,13 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
         GenericFailure(s"No submission found for application ${app.id.value}").invalidNel[(Submission, String)]
       ) {
         case (submission, nameFromSubmission, nameValidationResult) => {
-          Apply[Validated[Failures, *]].map5(
+          (
             ensureStandardAccess(app),
             isInTesting(app),
             cond(submission.status.isAnsweredCompletely, "Submission has not been answered completely"),
             cond(nameValidationResult != ApplicationNameValidationResult.Duplicate, CommandFailures.DuplicateApplicationName(nameFromSubmission)),
             cond(nameValidationResult != ApplicationNameValidationResult.Invalid, CommandFailures.InvalidApplicationName(nameFromSubmission))
-          ) { case _ => (submission, nameFromSubmission) }
+          ).mapN((_, _, _, _, _) => (submission, nameFromSubmission))
         }
       }
   }
@@ -118,7 +118,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   }
 
   def process(app: StoredApplication, cmd: SubmitApplicationApprovalRequest): AppCmdResultT = {
-    import SubmissionDataExtracter._
+    import SubmissionDataExtracter.*
 
     logStartingApprovalRequestProcessing(app.id)
 
@@ -130,10 +130,10 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       newAppState                         = determineNewApplicationState(isRequesterTheResponsibleIndividual, app, cmd)
       savedApp                           <- E.liftF(applicationRepository.save(deriveNewAppDetails(app, ApplicationName(newAppName), importantSubmissionData, newAppState)))
       updatedApp                         <- E.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, cmd.timestamp, cmd.requesterName, cmd.requesterEmail))
-      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.TESTING, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
+      _                                  <- E.liftF(stateHistoryRepository.insert(createStateHistory(updatedApp, State.Testing, Actors.AppCollaborator(cmd.requesterEmail), cmd.timestamp)))
       updatedSubmission                   = Submission.submit(cmd.timestamp, cmd.requesterEmail.text)(submission)
       savedSubmission                    <- E.liftF(submissionService.store(updatedSubmission))
-      createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission, cmd)
+      createTouUpliftResult               = createResponsibleIndividualVerificationRecordIfNeeded(isRequesterTheResponsibleIndividual, savedApp, savedSubmission)
 
       verificationId <- E.liftF(createTouUpliftResult)
       _               = logCompletedApprovalRequest(savedApp)
@@ -170,7 +170,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
       newState: ApplicationState
     ): StoredApplication = existing.copy(
     name = applicationName,
-    normalisedName = applicationName.value.toLowerCase,
+    normalisedName = applicationName.toLowerCase,
     access = updateStandardData(existing.access, importantSubmissionData),
     state = newState
   )
@@ -178,8 +178,7 @@ class SubmitApplicationApprovalRequestCommandHandler @Inject() (
   private def createResponsibleIndividualVerificationRecordIfNeeded(
       isRequesterTheResponsibleIndividual: Boolean,
       application: StoredApplication,
-      submission: Submission,
-      cmd: SubmitApplicationApprovalRequest
+      submission: Submission
     ): Future[Option[ResponsibleIndividualVerificationId]] = {
     if (!isRequesterTheResponsibleIndividual) {
       for {

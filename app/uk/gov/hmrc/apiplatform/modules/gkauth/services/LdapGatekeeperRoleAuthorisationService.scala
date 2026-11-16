@@ -19,9 +19,9 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, *}
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
@@ -33,14 +33,14 @@ class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthC
     hc.authorization.fold[Future[Option[Result]]]({
       logger.warn("No Header Carrier Authorisation")
       UNAUTHORIZED_RESPONSE
-    })(authorization => {
+    })(_ => {
       auth.authConnector.authenticate(predicate = None, Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission))
         .flatMap {
-          case (name ~ true)  => OK_RESPONSE
-          case (name ~ false) =>
+          case (_ ~ true)  => OK_RESPONSE
+          case (_ ~ false) =>
             logger.warn("No LDAP predicate matched")
             UNAUTHORIZED_RESPONSE
-          case _              =>
+          case _           =>
             logger.warn("LDAP Authenticate failed to find user")
             UNAUTHORIZED_RESPONSE
         }

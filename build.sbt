@@ -5,7 +5,7 @@ lazy val appName = "third-party-application"
 Global / bloopAggregateSourceDependencies := true
 Global / bloopExportJarClassifiers := Some(Set("sources"))
 
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / scalaVersion := "3.7.4"
 ThisBuild / majorVersion := 0
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
@@ -21,13 +21,12 @@ lazy val microservice = Project(appName, file("."))
     scalacOptions   += "-Wconf:src=routes/.*:s",
     routesImport ++= Seq(
       "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.common.controllers.binders.RouteModels.*",
+      "uk.gov.hmrc.apiplatform.modules.common.controllers.binders.RouteModels.Conversions.given",
       "uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._",
       "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"
     )
-  )
-  .settings(
-    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full)
   )
   .settings(
     Test / parallelExecution := false,
@@ -35,10 +34,6 @@ lazy val microservice = Project(appName, file("."))
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "shared-test"),
   )
-  // .settings(
-  //   target := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / "coverage" else target.value},
-  //   coverageDataDir := { if (scoverage.ScoverageKeys.coverageEnabled.value) target.value / ".." else target.value},
-  // )
 
 val it = (project in file("it"))
   .enablePlugins(PlayScala)

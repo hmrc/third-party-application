@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.util
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import com.codahale.metrics._
+import com.codahale.metrics.*
 
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 

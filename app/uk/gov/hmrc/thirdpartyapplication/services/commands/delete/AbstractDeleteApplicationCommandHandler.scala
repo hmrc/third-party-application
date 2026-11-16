@@ -22,8 +22,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.StateHist
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
+import uk.gov.hmrc.thirdpartyapplication.services.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 trait AbstractDeleteApplicationCommandHandler extends CommandHandler {

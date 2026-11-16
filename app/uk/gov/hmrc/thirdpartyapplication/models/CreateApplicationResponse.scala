@@ -27,6 +27,6 @@ object CreateApplicationResponse {
 
   object TotpSecret {
     import play.api.libs.json.Json
-    implicit val format: Format[TotpSecret] = Json.valueFormat[TotpSecret]
+    given format: Format[TotpSecret] = Json.valueFormat[TotpSecret]
   }
 }

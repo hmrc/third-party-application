@@ -20,13 +20,13 @@ import java.time.{Clock, Instant}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborator
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RemoveCollaborator
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -36,25 +36,25 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class RemoveCollaboratorCommandHandler @Inject() (
     applicationRepository: ApplicationRepository,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case actor: Actors.AppCollaborator => Apply[Validated[Failures, *]]
-          .map3(
-            isAppActorACollaboratorOnApp(actor, app),
-            isCollaboratorOnApp(cmd.collaborator, app),
-            applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
-          ) { case _ => app }
-      case _                             => Apply[Validated[Failures, *]]
-          .map2(
-            isCollaboratorOnApp(cmd.collaborator, app),
-            applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
-          ) { case _ => app }
+      case actor: Actors.AppCollaborator =>
+        (
+          isAppActorACollaboratorOnApp(actor, app),
+          isCollaboratorOnApp(cmd.collaborator, app),
+          applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
+        ).mapN((_, _, _) => app)
+      case _                             =>
+        (
+          isCollaboratorOnApp(cmd.collaborator, app),
+          applicationWillStillHaveAnAdmin(cmd.collaborator.emailAddress, app)
+        ).mapN((_, _) => app)
     }
 
   }
@@ -77,7 +77,7 @@ class RemoveCollaboratorCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: RemoveCollaborator): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.removeCollaborator(app.id, cmd.collaborator.userId))
       events    = asEvents(savedApp, cmd)
     } yield (savedApp, events)

@@ -21,6 +21,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import play.api.libs.json.Json
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actor$package.Actor.given
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress}
 
 class EventJsonFormatSpec extends AnyWordSpec with Matchers {

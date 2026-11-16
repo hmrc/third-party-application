@@ -16,22 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands.submission
 
-import java.time.temporal.ChronoUnit._
+import java.time.temporal.ChronoUnit.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SendTermsOfUseInvitation
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.TermsOfUseInvitationSent
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, TermsOfUseInvitationRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 import uk.gov.hmrc.thirdpartyapplication.models.db.TermsOfUseInvitation
 import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationConfig
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandlerBaseSpec
@@ -43,7 +43,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
       with StateHistoryRepositoryMockModule
       with TermsOfUseInvitationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val appAdminUserId = UserId.random
     val appAdminEmail  = "bob@example.com".toLaxEmail
@@ -56,7 +56,7 @@ class SendTermsOfUseInvitationCommandHandlerSpec extends CommandHandlerBaseSpec 
     val daysUntilDueWhenCreated = FiniteDuration(21, java.util.concurrent.TimeUnit.DAYS)
     val ts                      = FixedClock.instant
     val dueBy                   = ts.plus(daysUntilDueWhenCreated.toMinutes, MINUTES)
-    val invite                  = TermsOfUseInvitation(app.id, ts, ts, dueBy, None, EMAIL_SENT)
+    val invite                  = TermsOfUseInvitation(app.id, ts, ts, dueBy, None, TermsOfUseInvitationState.EMAIL_SENT)
 
     val underTest = new SendTermsOfUseInvitationCommandHandler(
       ApplicationRepoMock.aMock,

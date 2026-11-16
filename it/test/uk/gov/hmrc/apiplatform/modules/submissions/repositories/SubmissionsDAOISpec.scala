@@ -21,6 +21,7 @@ import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.mongodb.MongoException
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
@@ -32,8 +33,8 @@ import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.Su
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ActualAnswer.TextAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Submission}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubmissionsDAOISpec
     extends ServerBaseISpec
@@ -77,12 +78,12 @@ class SubmissionsDAOISpec
         await(submissionsDao.save(aSubmission))
       }
 
+      import org.mongodb.scala.SingleObservableFuture
       await(
         submissionsRepository.collection
           .countDocuments()
           .toFuture()
-          .map(x => x.toInt)
-      ) shouldBe 1
+      ) shouldBe 1L
     }
   }
 

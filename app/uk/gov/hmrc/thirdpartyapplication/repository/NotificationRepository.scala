@@ -36,13 +36,13 @@ object NotificationRepository {
 
   object MongoFormats {
     import play.api.libs.json.{Format, Json, OFormat}
-    implicit val dateFormat: Format[Instant]               = MongoJavatimeFormats.instantFormat
-    implicit val formatNotification: OFormat[Notification] = Json.format[Notification]
+    given dateFormat: Format[Instant]               = MongoJavatimeFormats.instantFormat
+    given formatNotification: OFormat[Notification] = Json.format[Notification]
   }
 }
 
 @Singleton
-class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+class NotificationRepository @Inject() (mongo: MongoComponent)(using val ec: ExecutionContext)
     extends PlayMongoRepository[Notification](
       collectionName = "notifications",
       mongoComponent = mongo,

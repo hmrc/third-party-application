@@ -25,14 +25,12 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow, EitherTHelper}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.Status.*
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, TermsOfUseInvitationService}
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, TermsOfUseInvitationState}
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
+import uk.gov.hmrc.thirdpartyapplication.services.TermsOfUseInvitationService
 
 object GrantApprovalsService {
   sealed trait Result
@@ -47,27 +45,24 @@ object GrantApprovalsService {
 
 @Singleton
 class GrantApprovalsService @Inject() (
-    auditService: AuditService,
-    applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     termsOfUseInvitationService: TermsOfUseInvitationService,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     submissionService: SubmissionsService,
-    emailConnector: EmailConnector,
     clock: Clock
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock)
     with ApplicationLogger
     with ClockNow {
 
-  import GrantApprovalsService._
+  import GrantApprovalsService.*
 
   private def setTermsOfUseInvitationStatus(applicationId: ApplicationId, submission: Submission) = {
     submission.status match {
-      case Granted(_, _, _, _)             => termsOfUseInvitationService.updateStatus(applicationId, TERMS_OF_USE_V2)
-      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationService.updateStatus(applicationId, TERMS_OF_USE_V2_WITH_WARNINGS)
-      case Warnings(_, _)                  => termsOfUseInvitationService.updateStatus(applicationId, WARNINGS)
-      case Failed(_, _)                    => termsOfUseInvitationService.updateStatus(applicationId, FAILED)
+      case Granted(_, _, _, _)             => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2)
+      case GrantedWithWarnings(_, _, _, _) => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2_WITH_WARNINGS)
+      case Warnings(_, _)                  => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.WARNINGS)
+      case Failed(_, _)                    => termsOfUseInvitationService.updateStatus(applicationId, TermsOfUseInvitationState.FAILED)
       case Answering(_, _)                 => termsOfUseInvitationService.updateResetBackToEmailSent(applicationId)
       case _                               => successful(HasSucceeded)
     }
@@ -140,19 +135,17 @@ class GrantApprovalsService @Inject() (
   }
 
   def deleteTouUplift(
-      originalApp: StoredApplication,
-      submission: Submission,
-      gatekeeperUserName: String
+      originalApp: StoredApplication
     ): Future[GrantApprovalsService.Result] = {
     import cats.instances.future.catsStdInstancesForFuture
 
     val ET = EitherTHelper.make[Result]
     (
       for {
-        _     <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
-        count <- ET.liftF(submissionService.deleteAllAnswersForApplication(originalApp.id))
-        _     <- ET.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(originalApp.id))
-        _     <- ET.liftF(termsOfUseInvitationService.updateResetBackToEmailSent(originalApp.id))
+        _ <- ET.cond(originalApp.isInProduction, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.liftF(submissionService.deleteAllAnswersForApplication(originalApp.id))
+        _ <- ET.liftF(responsibleIndividualVerificationRepository.deleteAllByApplicationId(originalApp.id))
+        _ <- ET.liftF(termsOfUseInvitationService.updateResetBackToEmailSent(originalApp.id))
       } yield Actioned(originalApp)
     )
       .fold[Result](identity, identity)

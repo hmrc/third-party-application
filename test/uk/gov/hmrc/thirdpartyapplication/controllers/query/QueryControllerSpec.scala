@@ -21,17 +21,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
-import play.api.libs.json._
-import play.api.test.Helpers._
+import play.api.libs.json.*
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.apiplatformmicroservice.thirdpartyapplication.services.SubscriptionFieldsData
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifierFixtures
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationWithCollaboratorsFixtures, PaginatedApplications, StateHistoryFixtures}
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.{NoSubscriptionsQP, UserIdQP, UserIdsQP}
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.QueryParamsToQueryStringMap
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.query.QueryController
@@ -220,12 +220,13 @@ class QueryControllerSpec
 
     "work for post query with applicationIdQP" in new Setup {
       val qry                               = ApplicationQuery.ById(applicationIdOne, Nil, wantSubscriptions = true)
-      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry)
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry).map { case (k, v) => k.text -> v }
 
       QueryServiceMock.FetchSingleApplicationByQuery.thenReturnsFor(qry, appWithSubs)
       QueryServiceMock.FetchApplicationsByQuery.thenReturnsSubs(appWithSubs)
 
-      val result = underTest.queryPost()(FakeRequest("POST", "/").withBody[JsValue](Json.toJson(payload)))
+      val request = FakeRequest("POST", "/").withBody[JsValue](Json.toJson(payload))
+      val result  = underTest.queryPost()(request)
 
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(appWithSubs)
@@ -234,7 +235,7 @@ class QueryControllerSpec
     "work for post query with userIdsQP" in new Setup {
       val postFilterQPs                     = List(UserIdsQP(List(userIdOne, userIdTwo, userIdThree)))
       val qry                               = GeneralOpenEndedApplicationQuery(postFilterQPs, sorting = Sorting.NameAscending)
-      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry) // NOT !!! Map(ParamNames.UserIds -> Seq(userIdOne.toString, userIdTwo.toString, userIdThree.toString))
+      val payload: Map[String, Seq[String]] = QueryParamsToQueryStringMap.toQuery(qry).map { case (k, v) => k.text -> v }
 
       QueryServiceMock.FetchApplicationsByQuery.thenReturns(appWithCollaborators)
 
@@ -250,7 +251,7 @@ class QueryControllerSpec
       status(result) shouldBe BAD_REQUEST
       contentAsJson(result) shouldBe JsObject(Map(
         "code"    -> JsString("INVALID_QUERY"),
-        "message" -> JsArray(Seq(JsString("ABC is not a valid user id"), JsString("STAGING is not a valid environment")))
+        "message" -> JsArray(Seq(JsString("ABC is not a valid userId"), JsString("STAGING is not a valid environment")))
       ))
     }
   }

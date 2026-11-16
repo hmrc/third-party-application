@@ -27,5 +27,5 @@ trait ResponseUtils {
     case Right(r)  => fn(r)
   }
 
-  def statusOrThrow = mapOrThrow(_.status) _
+  def statusOrThrow = mapOrThrow(_.status)
 }

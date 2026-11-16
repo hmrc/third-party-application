@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Applicat
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.{ApplicationQuery, SingleApplicationQuery}
 import uk.gov.hmrc.thirdpartyapplication.models.db.QueriedApplicationWithOptionalToken
 import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
@@ -43,31 +43,31 @@ trait QueryServiceMockModule extends MockitoSugar with ArgumentMatchersSugar wit
     object FetchSingleApplicationByQuery {
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedApplicationWithOptionalToken) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(Some(app)))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(using *)).thenReturn(successful(Some(app)))
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(using *)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
 
       def thenReturns(app: ApplicationWithCollaborators) =
-        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
+        when(aMock.fetchSingleApplicationByQuery(*)(using *)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
 
       def thenReturnsFor(qry: SingleApplicationQuery, app: ApplicationWithSubscriptions) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(using *)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
 
       def thenReturns(app: ApplicationWithSubscriptions) =
-        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
+        when(aMock.fetchSingleApplicationByQuery(*)(using *)).thenReturn(successful(Some(QueriedApplicationWithOptionalToken(app))))
 
       def thenReturnsNone() =
-        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(successful(None))
+        when(aMock.fetchSingleApplicationByQuery(*)(using *)).thenReturn(successful(None))
 
       def thenReturnsNoneFor(qry: SingleApplicationQuery) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(successful(None))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(using *)).thenReturn(successful(None))
 
       def thenFails(exc: Exception) =
-        when(aMock.fetchSingleApplicationByQuery(*)(*)).thenReturn(failed(exc))
+        when(aMock.fetchSingleApplicationByQuery(*)(using *)).thenReturn(failed(exc))
 
       def thenFailsFor(qry: SingleApplicationQuery, exc: Exception) =
-        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(*)).thenReturn(failed(exc))
+        when(aMock.fetchSingleApplicationByQuery(eqTo(qry))(using *)).thenReturn(failed(exc))
     }
 
     object FetchApplicationsByQuery {

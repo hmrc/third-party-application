@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 class StrideConfigurationModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[?]] = {
     List(
       bind[StrideAuthConnector.Config].toProvider[StrideAuthConnectorConfigProvider],
       bind[StrideAuthRoles].toProvider[StrideAuthRolesProvider]

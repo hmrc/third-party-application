@@ -20,12 +20,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocations, ResponsibleIndividual, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, TermsAndConditionsLocation}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualTouUpliftVerification,
@@ -34,7 +34,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeclineResponsibleIndividualDidNotVerify
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
@@ -55,7 +55,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       with SubmissionsServiceMockModule
       with ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission               = aSubmission
     val riName                   = "Mr Responsible"
@@ -69,8 +69,8 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       None,
       ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -127,10 +127,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.aMock
     )
 
-    def checkSuccessResultToU(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResultToU(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 3
 
         events.collect {
@@ -165,16 +165,16 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
             stateEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
-            stateEvent.newAppState shouldBe State.TESTING.toString()
-            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString()
+            stateEvent.newAppState shouldBe State.Testing
+            stateEvent.oldAppState shouldBe State.PendingResponsibleIndividualVerification
         }
       }
     }
 
-    def checkSuccessResultUpdate(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResultUpdate(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
 
         events.collect {
@@ -192,10 +192,10 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       }
     }
 
-    def checkSuccessResultTouUplift(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
+    def checkSuccessResultTouUplift(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
 
         events.collect {
@@ -222,7 +222,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
       SubmissionsServiceMock.DeclineApprovalRequest.succeeds()
       StateHistoryRepoMock.Insert.succeeds()
 
-      checkSuccessResultToU(Actors.AppCollaborator(adminOne.emailAddress)) {
+      checkSuccessResultToU {
         underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
@@ -233,7 +233,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
 
       val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
-      checkSuccessResultUpdate(Actors.AppCollaborator(adminOne.emailAddress)) {
+      checkSuccessResultUpdate {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }
@@ -247,7 +247,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends Command
 
       val prodApp = app.withState(ApplicationStateExamples.production(requesterEmail.text, requesterName))
 
-      checkSuccessResultTouUplift(Actors.AppCollaborator(adminOne.emailAddress)) {
+      checkSuccessResultTouUplift {
         underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, instant))
       }
     }

@@ -38,8 +38,8 @@ class SubmissionCommandsProcessor @Inject() (
     sendTermsOfUseInvitationCommandHandler: SendTermsOfUseInvitationCommandHandler,
     changeApplicationSellResellOrDistributeCommandHandler: ChangeApplicationSellResellOrDistributeCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: SubmissionCommand): AppCmdResultT = command match {
     case cmd: ChangeResponsibleIndividualToSelf        => changeResponsibleIndividualToSelfCmdHdlr.process(app, cmd)

@@ -30,7 +30,7 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandDispatcher
 
@@ -41,14 +41,14 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     commandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock,
     jobConfig: ResponsibleIndividualUpdateVerificationRemovalJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "ResponsibleIndividualUpdateVerificationRemovalJob"
   override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  given hc: HeaderCarrier                   = HeaderCarrier()
   override val lockService: LockService     = responsibleIndividualUpdateVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
@@ -77,7 +77,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
 
     logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {
-      savedApp <- commandDispatcher.dispatch(verificationDueForRemoval.applicationId, request, Set.empty)
+      _ <- commandDispatcher.dispatch(verificationDueForRemoval.applicationId, request, Set.empty)
     } yield HasSucceeded).value
   }
 }

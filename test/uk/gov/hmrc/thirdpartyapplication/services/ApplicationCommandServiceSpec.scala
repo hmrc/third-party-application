@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.Appli
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationCommandAuthenticatorMockModule, ApplicationCommandDispatcherMockModule}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationCommandService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationCommandServiceSpec
     extends AsyncHmrcSpec
@@ -41,7 +41,7 @@ class ApplicationCommandServiceSpec
   trait Setup
       extends ApplicationCommandDispatcherMockModule with ApplicationCommandAuthenticatorMockModule {
 
-    implicit val headers: HeaderCarrier = HeaderCarrier()
+    given headers: HeaderCarrier = HeaderCarrier()
 
     val command = UnsubscribeFromRetiredApi(Actors.Process("Api Publisher"), apiIdentifierOne, instant)
 

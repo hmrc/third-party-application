@@ -25,16 +25,16 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationStateFixtures
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.connector.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with ApplicationStateFixtures {
 
-  implicit val actorSystem: ActorSystem = ActorSystem("test")
+  given actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
-    implicit val hc: HeaderCarrier                                                       = HeaderCarrier()
+    given hc: HeaderCarrier                                                              = HeaderCarrier()
     val mockThirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val underTest                                                                        = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
   }
@@ -43,12 +43,12 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
     "handle an ApplicationDeleted event by calling the connector" in new Setup {
       val clientId = ClientId.random
 
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(using hc)).thenReturn(successful(HasSucceeded))
 
       val result = await(underTest.revokeApplicationAuthorities(clientId))
 
       result shouldBe Some(HasSucceeded)
-      verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(hc)
+      verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(using hc)
     }
   }
 }

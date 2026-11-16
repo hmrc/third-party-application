@@ -30,16 +30,16 @@ class PostLogoutRedirectUriCommandsProcessor @Inject() (
     updatePostLogoutRedirectUrisCmdHdlr: UpdatePostLogoutRedirectUrisCommandHandler
   )(implicit ec: ExecutionContext
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
-  import Implicits._
+  import CommandHandler.*
+  import ApplicationCommands.*
+  import Implicits.*
 
   val NotYetSupported: AppCmdResultT = EitherT(CommandFailures.GenericFailure(s"Command not yet supported").asFailure)
 
   def process(app: StoredApplication, command: PostLogoutRedirectCommand): AppCmdResultT = command match {
-    case cmd: AddPostLogoutRedirectUri     => NotYetSupported
-    case cmd: ChangePostLogoutRedirectUri  => NotYetSupported
-    case cmd: DeletePostLogoutRedirectUri  => NotYetSupported
+    case _: AddPostLogoutRedirectUri       => NotYetSupported
+    case _: ChangePostLogoutRedirectUri    => NotYetSupported
+    case _: DeletePostLogoutRedirectUri    => NotYetSupported
     case cmd: UpdatePostLogoutRedirectUris => updatePostLogoutRedirectUrisCmdHdlr.process(app, cmd)
   }
 }

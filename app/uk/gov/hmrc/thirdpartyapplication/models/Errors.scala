@@ -19,22 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 
-class UserAlreadyExists extends RuntimeException
-
-class ApplicationNeedsAdmin extends RuntimeException
-
-class ClientSecretsLimitExceeded extends RuntimeException
-
 class InconsistentDataState(message: String) extends RuntimeException(message)
 
 case class ApplicationAlreadyExists(applicationName: String) extends RuntimeException
 
-case class SubscriptionAlreadyExistsException(name: ApplicationName, api: ApiIdentifier)
-    extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
-
 case class FailedToSubscribeException(applicationName: ApplicationName, api: ApiIdentifier)
     extends RuntimeException(s"""Failed to Subscribe API: ${api.asText(": ")} to Application: '$applicationName'""")
-
-case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
-
-case class InvalidIpAllowlistException(message: String) extends RuntimeException(message)

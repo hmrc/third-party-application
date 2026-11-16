@@ -24,8 +24,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import org.bson.BsonValue
 import org.mongodb.scala.bson.Document
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.Aggregates.*
+import org.mongodb.scala.model.Filters.*
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 
@@ -36,22 +36,21 @@ import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{TermsOfUseInvitationState, _}
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{TermsOfUseInvitation, TermsOfUseInvitationWithApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationState, *}
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 
 object TermsOfUseInvitationRepository {
 
   object MongoFormats extends MongoJavatimeFormats.Implicits {
     import play.api.libs.json.{Format, Json}
-    implicit val formatInstant: Format[Instant]                           = MongoJavatimeFormats.instantFormat
-    implicit val formatTermsOfUseInvitation: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
+    given formatInstant: Format[Instant]                           = MongoJavatimeFormats.instantFormat
+    given formatTermsOfUseInvitation: Format[TermsOfUseInvitation] = Json.format[TermsOfUseInvitation]
   }
 }
 
 @Singleton
-class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock: Clock, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock: Clock, val metrics: Metrics)(using val ec: ExecutionContext)
     extends PlayMongoRepository[TermsOfUseInvitation](
       collectionName = "termsOfUseInvitation",
       mongoComponent = mongo,
@@ -116,7 +115,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
     val bsonStates = states.map(s => Codecs.toBson(s))
     collection.aggregate(
       Seq(
-        filter(in("status", bsonStates: _*)),
+        filter(in("status", bsonStates*)),
         filter(lte("dueBy", dueByBefore))
       )
     ).toFuture()
@@ -136,7 +135,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
   def updateReminderSent(applicationId: ApplicationId): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
-      Updates.set("status", Codecs.toBson(REMINDER_EMAIL_SENT)),
+      Updates.set("status", Codecs.toBson(TermsOfUseInvitationState.REMINDER_EMAIL_SENT)),
       Updates.set("reminderSent", instant),
       Updates.set("lastUpdated", instant)
     )
@@ -148,7 +147,7 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
   def updateResetBackToEmailSent(applicationId: ApplicationId, newDueBy: Instant): Future[HasSucceeded] = {
     val filter = equal("applicationId", Codecs.toBson(applicationId))
     val update = Updates.combine(
-      Updates.set("status", Codecs.toBson(EMAIL_SENT)),
+      Updates.set("status", Codecs.toBson(TermsOfUseInvitationState.EMAIL_SENT)),
       Updates.set("dueBy", newDueBy),
       Updates.set("lastUpdated", instant)
     )
@@ -178,24 +177,24 @@ class TermsOfUseInvitationRepository @Inject() (mongo: MongoComponent, val clock
         Document()
       } else {
         val bsonStates = states.map(s => Codecs.toBson(s))
-        in("status", bsonStates: _*)
+        in("status", bsonStates*)
       }
     }
 
     def getFilterState(filter: TermsOfUseStatusFilter): TermsOfUseInvitationState = {
       filter match {
-        case EmailSent                => EMAIL_SENT
-        case ReminderEmailSent        => REMINDER_EMAIL_SENT
-        case Overdue                  => OVERDUE
-        case Warnings                 => WARNINGS
-        case Failed                   => FAILED
-        case TermsOfUseV2WithWarnings => TERMS_OF_USE_V2_WITH_WARNINGS
-        case TermsOfUseV2             => TERMS_OF_USE_V2
+        case EmailSent                => TermsOfUseInvitationState.EMAIL_SENT
+        case ReminderEmailSent        => TermsOfUseInvitationState.REMINDER_EMAIL_SENT
+        case Overdue                  => TermsOfUseInvitationState.OVERDUE
+        case Warnings                 => TermsOfUseInvitationState.WARNINGS
+        case Failed                   => TermsOfUseInvitationState.FAILED
+        case TermsOfUseV2WithWarnings => TermsOfUseInvitationState.TERMS_OF_USE_V2_WITH_WARNINGS
+        case TermsOfUseV2             => TermsOfUseInvitationState.TERMS_OF_USE_V2
       }
     }
 
     val statusFilters = filters.collect { case sf: TermsOfUseStatusFilter => sf }
-    statusMatch(statusFilters.map(sf => getFilterState(sf)): _*)
+    statusMatch(statusFilters.map(sf => getFilterState(sf))*)
   }
 
   private def convertFilterToTextQueryClause(filters: List[TermsOfUseSearchFilter], searchCriteria: TermsOfUseSearch): Bson = {

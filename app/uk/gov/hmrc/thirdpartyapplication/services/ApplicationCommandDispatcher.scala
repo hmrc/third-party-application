@@ -25,10 +25,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{OrganisationCommand, _}
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{OrganisationCommand, *}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.block.BlockCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.ClientSecretCommandsProcessor
 import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.CollaboratorCommandsProcessor
@@ -66,10 +66,10 @@ class ApplicationCommandDispatcher @Inject() (
     blockCommandsProcessor: BlockCommandsProcessor,
     scopesCommandsProcessor: ScopesCommandsProcessor,
     linkToOrganisationCommandsProcessor: LinkToOrganisationCommandsProcessor
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   val E = EitherTHelper.make[CommandHandler.Failures]
 

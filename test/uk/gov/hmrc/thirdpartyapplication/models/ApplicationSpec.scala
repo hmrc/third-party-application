@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, ApplicationStateFixtures, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
@@ -28,27 +28,27 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   StandardAccessDataToCopy
 }
 import uk.gov.hmrc.thirdpartyapplication.models.db.{StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with UpliftRequestSamples with CollaboratorTestData with StoredApplicationFixtures
     with utils.FixedClock {
 
   "Application with Uplift request" should {
     val app     = storedApp
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actors.AppCollaborator("1".toLaxEmail), changedAt = instant)
+    val history = StateHistory(app.id, State.PendingGatekeeperApproval, Actors.AppCollaborator("1".toLaxEmail), changedAt = instant)
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app.asAppWithCollaborators, history)
 
-      result shouldBe ApplicationWithUpliftRequest(app.id, app.name, history.changedAt, State.PRODUCTION)
+      result shouldBe ApplicationWithUpliftRequest(app.id, app.name, history.changedAt, State.Production)
     }
 
     "Fail to create when invalid state is sent" in {
       val ex = intercept[InconsistentDataState] {
-        ApplicationWithUpliftRequest.create(app.asAppWithCollaborators, history.copy(state = State.PENDING_REQUESTER_VERIFICATION))
+        ApplicationWithUpliftRequest.create(app.asAppWithCollaborators, history.copy(state = State.PendingRequesterVerification))
       }
 
-      ex.getMessage shouldBe "cannot create with invalid state: PENDING_REQUESTER_VERIFICATION"
+      ex.getMessage shouldBe "cannot create with invalid state: PendingRequesterVerification"
     }
   }
 
@@ -93,23 +93,23 @@ class ApplicationSpec extends utils.HmrcSpec with ApplicationStateFixtures with 
       )
     }
 
-    "be automatically uplifted to PRODUCTION state when the app is for the sandbox environment" in {
-      val actual = createRequestV1(CreationAccess.Standard, Environment.SANDBOX)
-      actual.state.name shouldBe State.PRODUCTION
+    "be automatically uplifted to Production state when the app is for the sandbox environment" in {
+      val actual = createRequestV1(CreationAccess.Standard, Environment.Sandbox)
+      actual.state.name shouldBe State.Production
     }
 
     "defer to STANDARD accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequestV2(StandardAccessDataToCopy(), Environment.PRODUCTION)
-      actual.state.name shouldBe State.TESTING
+      val actual = createRequestV2(StandardAccessDataToCopy(), Environment.Production)
+      actual.state.name shouldBe State.Testing
     }
 
     "defer to PRIVILEGED accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequestV1(CreationAccess.Privileged, Environment.PRODUCTION)
-      actual.state.name shouldBe State.PRODUCTION
+      val actual = createRequestV1(CreationAccess.Privileged, Environment.Production)
+      actual.state.name shouldBe State.Production
     }
 
     "use the same value for createdOn and lastAccess fields" in {
-      val actual = createRequestV1(CreationAccess.Standard, Environment.PRODUCTION)
+      val actual = createRequestV1(CreationAccess.Standard, Environment.Production)
       actual.createdOn shouldBe actual.lastAccess
     }
   }

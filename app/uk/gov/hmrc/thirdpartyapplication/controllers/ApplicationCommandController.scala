@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 import play.api.libs.json.{Json, OFormat}
-import play.api.mvc._
+import play.api.mvc.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
@@ -28,16 +28,16 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Applicati
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{ApplicationCommand, CommandFailures, DispatchRequest}
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{ExtraHeadersController, JsonUtils}
-import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.services.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 object ApplicationCommandController {
   case class DispatchResult(applicationResponse: ApplicationWithCollaborators, events: List[ApplicationEvent])
 
   object DispatchResult {
-    import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+    import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters.given
 
-    implicit val format: OFormat[DispatchResult] = Json.format[DispatchResult]
+    given format: OFormat[DispatchResult] = Json.format[DispatchResult]
   }
 }
 
@@ -46,12 +46,12 @@ class ApplicationCommandController @Inject() (
     val applicationCommandService: ApplicationCommandService,
     val applicationService: ApplicationService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationLogger {
 
-  import ApplicationCommandController._
+  import ApplicationCommandController.*
 
   val E = EitherTHelper.make[CommandHandler.Failures]
 
@@ -61,7 +61,7 @@ class ApplicationCommandController @Inject() (
 
     val hasAuthErrors = e.filter(failure =>
       failure match {
-        case e: CommandFailures.InsufficientPrivileges => true
+        case _: CommandFailures.InsufficientPrivileges => true
         case _                                         => false
       }
     )

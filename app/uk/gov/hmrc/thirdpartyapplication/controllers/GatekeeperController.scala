@@ -23,20 +23,17 @@ import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions.*
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.controllers.actions.TermsOfUseInvitationActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.controllers.common.{JsonUtils, WarnStillInUse}
 import uk.gov.hmrc.thirdpartyapplication.models.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.thirdpartyapplication.services.query.QueryService
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.given
+import uk.gov.hmrc.thirdpartyapplication.services.*
 
 @Singleton
 class GatekeeperController @Inject() (
-    queryService: QueryService,
     val applicationService: ApplicationService,
     val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
@@ -45,12 +42,11 @@ class GatekeeperController @Inject() (
     val applicationDataService: ApplicationDataService,
     val submissionsService: SubmissionsService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc)
     with JsonUtils
     with AnyGatekeeperRoleAuthorisationAction
     with OnlyStrideGatekeeperRoleAuthoriseAction
-    with TermsOfUseInvitationActionBuilders
     with WarnStillInUse {
 
   def fetchAppStateHistories() = anyAuthenticatedUserAction { _ =>

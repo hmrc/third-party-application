@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.metrix.{MetricOrchestrator, MetricRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.metrics._
+import uk.gov.hmrc.thirdpartyapplication.metrics.*
 
 class MetricsScheduler @Inject() (
     actorSystem: ActorSystem,
@@ -41,12 +41,12 @@ class MetricsScheduler @Inject() (
     rateLimitMetrics: RateLimitMetrics,
     lockRepository: LockRepository,
     metricRepository: MetricRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger {
 
-  lazy val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
-  lazy val initialDelay: FiniteDuration    = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
-  lazy val isEnabled: Boolean              = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
+  val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
+  val initialDelay: FiniteDuration    = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
+  val isEnabled: Boolean              = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
 
   val lockService: LockService = LockService(lockRepository = lockRepository, lockId = "queue", ttl = refreshInterval)
 

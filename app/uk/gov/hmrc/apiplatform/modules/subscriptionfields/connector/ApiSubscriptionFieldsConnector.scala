@@ -20,15 +20,16 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
-import play.api.http.Status._
-import play.api.libs.json._
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import play.api.http.Status.*
+import play.api.libs.json.*
+import play.api.libs.ws.JsonBodyWritables
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps, UpstreamErrorResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.connectors.ResponseUtils
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, _}
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ClientId, *}
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object ApiSubscriptionFieldsConnector {
@@ -43,12 +44,13 @@ object ApiSubscriptionFieldsConnector {
       fields: Map[FieldName, FieldValue]
     )
 
-  implicit val writeSubscriptionFieldsPutRequest: Writes[SubscriptionFieldsPutRequest] = Json.writes[SubscriptionFieldsPutRequest]
+  given writeSubscriptionFieldsPutRequest: Writes[SubscriptionFieldsPutRequest] = Json.writes[SubscriptionFieldsPutRequest]
 }
 
 @Singleton
-class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
-  import ApiSubscriptionFieldsConnector._
+class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config: ApiSubscriptionFieldsConnector.Config)(using val ec: ExecutionContext) extends ResponseUtils
+    with JsonBodyWritables {
+  import ApiSubscriptionFieldsConnector.*
 
   def delete(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     httpClient.delete(url"${config.baseUrl}/field/application/$clientId")
@@ -61,13 +63,13 @@ class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClientV2, config
   }
 
   def fetchAllFieldDefinitions()(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldDefinition]] = {
-    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse._
+    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse.given
     httpClient.get(url"${config.baseUrl}/definition")
       .execute[ApiFieldMap[FieldDefinition]]
   }
 
   def fetchFieldValues(clientId: ClientId)(implicit hc: HeaderCarrier): Future[ApiFieldMap[FieldValue]] = {
-    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse._
+    import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.Implicits.OverrideForBulkResponse.given
 
     httpClient.get(url"${config.baseUrl}/field/application/$clientId")
       .execute[Option[ApiFieldMap[FieldValue]]]

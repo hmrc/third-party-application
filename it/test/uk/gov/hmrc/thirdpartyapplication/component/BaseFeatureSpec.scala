@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.language.postfixOps
 
@@ -24,7 +24,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.apache.pekko.stream.Materializer
-import org.scalatest._
+import org.scalatest.*
 import org.scalatest.featurespec.AnyFeatureSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
@@ -32,7 +32,7 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.test.RunningServer
 
 import uk.gov.hmrc.thirdpartyapplication.MyTestServerFactory
-import uk.gov.hmrc.thirdpartyapplication.component.stubs._
+import uk.gov.hmrc.thirdpartyapplication.component.stubs.*
 
 abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Matchers
     with BeforeAndAfterEach with BeforeAndAfterAll with GuiceOneServerPerSuite {

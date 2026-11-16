@@ -23,9 +23,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationState, State}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocations
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.PrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationPrivacyPolicyLocation
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
@@ -33,11 +33,11 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldUrl      = "http://example.com/old"
     val newUrl      = "http://example.com/new"
-    val newLocation = PrivacyPolicyLocations.Url(newUrl)
+    val newLocation = PrivacyPolicyLocation.Url(newUrl)
 
     val newJourneyApp = storedApp.copy(
       collaborators = Set(
@@ -65,7 +65,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     def checkSuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (returnedApp, events) =>
+      inside(testThis) { case (_, events) =>
         events should have size 1
         val event = events.head
 
@@ -83,7 +83,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     def checkLegacySuccessResult(expectedActor: Actor)(fn: => CommandHandler.AppCmdResultT) = {
       val testThis = await(fn.value).value
 
-      inside(testThis) { case (returnedApp, events) =>
+      inside(testThis) { case (_, events) =>
         events should have size 1
         val event = events.head
 
@@ -121,7 +121,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(newJourneyApp.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
+        underTest.process(newJourneyApp.withState(ApplicationState(State.PendingGatekeeperApproval, updatedOn = instant)), update)
       }
     }
 
@@ -153,7 +153,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
 
     "return an error if application is still in the process of being approved" in new Setup {
       checkFailsWith("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION") {
-        underTest.process(oldJourneyApp.withState(ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, updatedOn = instant)), update)
+        underTest.process(oldJourneyApp.withState(ApplicationState(State.PendingGatekeeperApproval, updatedOn = instant)), update)
       }
     }
 

@@ -22,27 +22,29 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.testkit.NoMaterializer
 
 import play.api.libs.json.{JsError, JsSuccess, Json, OWrites, Reads}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.given
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ExtendedSubmission, MarkedSubmission, Submission}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.{ApplicationsByAnswerTestData, SubmissionsTestData}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission._
-  implicit val mat: Materializer = NoMaterializer
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.*
+  given mat: Materializer = NoMaterializer
 
-  implicit val readsExtendedSubmission: Reads[Submission] = Json.reads[Submission]
+  given readsExtendedSubmission: Reads[Submission] = Json.reads[Submission]
 
   trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData with ApplicationsByAnswerTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
   }
 
   "create new submission" should {
-    implicit val writer: OWrites[SubmissionsController.CreateSubmissionRequest] = Json.writes[SubmissionsController.CreateSubmissionRequest]
-    val fakeRequest                                                             = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
+    given writer: OWrites[SubmissionsController.CreateSubmissionRequest] = Json.writes[SubmissionsController.CreateSubmissionRequest]
+    val fakeRequest                                                      = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
 
     "return an ok response" in new Setup {
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
@@ -98,8 +100,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) => succeed
-        case JsError(e)                       => fail(s"Not parsed as a response $e")
+        case JsSuccess(_, _) => succeed
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -121,8 +123,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) => succeed
-        case JsError(e)                       => fail(s"Not parsed as a response $e")
+        case JsSuccess(_, _) => succeed
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -188,7 +190,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   "recordAnswers" should {
     "return an OK response" in new Setup {
-      implicit val writes: OWrites[SubmissionsController.RecordAnswersRequest] = Json.writes[SubmissionsController.RecordAnswersRequest]
+      given writes: OWrites[SubmissionsController.RecordAnswersRequest] = Json.writes[SubmissionsController.RecordAnswersRequest]
 
       SubmissionsServiceMock.RecordAnswers.thenReturn(ExtendedSubmission(answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress))
 
@@ -200,7 +202,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
 
     "return an bad request response when something goes wrong" in new Setup {
-      implicit val writes: OWrites[SubmissionsController.RecordAnswersRequest] = Json.writes[SubmissionsController.RecordAnswersRequest]
+      given writes: OWrites[SubmissionsController.RecordAnswersRequest] = Json.writes[SubmissionsController.RecordAnswersRequest]
 
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 

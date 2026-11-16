@@ -21,7 +21,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper._
+import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper.*
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
 
 class HeaderCarrierHelperSpec extends AnyWordSpec with Matchers {

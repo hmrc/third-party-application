@@ -18,9 +18,9 @@ package uk.gov.hmrc.apiplatform.modules.subscriptionfields.connectors
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
-import play.api.http.Status._
+import play.api.http.Status.*
 import uk.gov.hmrc.http.test.HttpClientV2Support
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -30,7 +30,7 @@ import uk.gov.hmrc.apiplatform.modules.subscriptionfields.connector.ApiSubscript
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   val clientId = ClientId.random
 

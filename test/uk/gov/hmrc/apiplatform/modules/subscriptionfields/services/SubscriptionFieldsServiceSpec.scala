@@ -20,14 +20,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.mocks.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.services.SubscriptionFieldsService
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFieldsConnectorMockModule with SubscriptionFieldsData {
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   case class Setup(defns: ApiFieldMap[FieldDefinition], values: ApiFieldMap[FieldValue]) {
     ApiSubscriptionFieldsConnectorMock.FetchFieldValues.willReturnFields(values)
@@ -40,7 +40,7 @@ class SubscriptionFieldsServiceSpec extends AsyncHmrcSpec with ApiSubscriptionFi
     in.flatMap(tupleXY =>
       tupleXY._2.flatMap(tupleYZ =>
         tupleYZ._2.map {
-          case (z, v) => (tupleXY._1, tupleYZ._1, z)
+          case (z, _) => (tupleXY._1, tupleYZ._1, z)
         }
       )
     )

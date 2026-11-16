@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 class ClientSecretService @Inject() (config: ClientSecretsHashingConfig, applicationRepository: ApplicationRepository, val clock: Clock)(implicit ec: ExecutionContext)
     extends SecretsHashingService with ApplicationLogger with SimpleTimer with ClockNow {
 
-  // API-7200 // implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
+  // API-7200 // given ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
   override val workFactor = config.workFactor
 
   def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[StoredClientSecret]): Future[Option[StoredClientSecret]] = {

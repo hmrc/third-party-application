@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger

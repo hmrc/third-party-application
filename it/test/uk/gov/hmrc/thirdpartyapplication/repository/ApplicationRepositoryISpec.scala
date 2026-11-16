@@ -20,32 +20,33 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Duration, Instant}
 import scala.util.Random.nextString
 
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
+import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.common.domain.models.FullName
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.Collaborators.{Administrator, Developer}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats.given
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock with CommonApplicationId with CollaboratorTestData {
   val clientId       = ClientId.random
@@ -62,22 +63,22 @@ object ApplicationRepositoryISpecExample extends ServerBaseISpec with FixedClock
     Set(Collaborators.Administrator(userId, LaxEmailAddress("bob@example.com"))),
     None,
     ApplicationTokens(StoredToken(clientId, "accessABC", List(StoredClientSecret("a", instant, None, clientSecretId, "hashme")))),
-    ApplicationState(State.TESTING, None, None, None, instant),
+    ApplicationState(State.Testing, None, None, None, instant),
     Access.Standard(
       importantSubmissionData = Some(ImportantSubmissionData(
         organisationUrl = None,
         responsibleIndividual = aResponsibleIndividual,
         serverLocations = Set(ServerLocation.InUK),
-        termsAndConditionsLocation = TermsAndConditionsLocations.InDesktopSoftware,
-        privacyPolicyLocation = PrivacyPolicyLocations.NoneProvided,
+        termsAndConditionsLocation = TermsAndConditionsLocation.InDesktopSoftware,
+        privacyPolicyLocation = PrivacyPolicyLocation.NoneProvided,
         termsOfUseAcceptances = List(TermsOfUseAcceptance(aResponsibleIndividual, instant, submissionId))
       ))
     ),
     instant,
     instant,
     GrantLength.EIGHTEEN_MONTHS.period,
-    Some(RateLimitTier.BRONZE),
-    Environment.PRODUCTION,
+    Some(RateLimitTier.Bronze),
+    Environment.Production,
     Some(CheckInformation(
       Some(ContactDetails(FullName("Contact"), LaxEmailAddress("contact@example.com"), "123456789")),
       termsOfUseAgreements = List(
@@ -192,7 +193,7 @@ class ApplicationRepositoryISpec
 
   val adminName = "Admin Example"
 
-  import ApplicationRepositoryISpecExample._
+  import ApplicationRepositoryISpecExample.*
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -253,6 +254,7 @@ class ApplicationRepositoryISpec
     import org.mongodb.scala.result.InsertOneResult
 
     def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      import org.mongodb.scala.SingleObservableFuture
       await(mongoDatabase.getCollection("application").insertOne(Document(rawJson.toString())).toFuture())
     }
 
@@ -301,7 +303,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      savedApplication.deleteRestriction.deleteRestrictionType shouldBe NO_RESTRICTION
+      savedApplication.deleteRestriction.deleteRestrictionType shouldBe DeleteRestrictionType.NoRestriction
 
       val updatedApplication = await(
         applicationRepository.updateDeleteRestriction(
@@ -325,13 +327,13 @@ class ApplicationRepositoryISpec
           )
             .withState(appStateProduction)
             .copy(
-              rateLimitTier = Some(RateLimitTier.BRONZE),
+              rateLimitTier = Some(RateLimitTier.Bronze),
               lastAccess = instant
             )
         )
       )
 
-      val updatedRateLimit   = RateLimitTier.GOLD
+      val updatedRateLimit   = RateLimitTier.Gold
       val updatedApplication = await(
         applicationRepository.updateApplicationRateLimit(
           applicationId,
@@ -371,7 +373,7 @@ class ApplicationRepositoryISpec
         )
       )
 
-      val updatedRateLimit   = RateLimitTier.GOLD
+      val updatedRateLimit   = RateLimitTier.Gold
       val updatedApplication = await(
         applicationRepository.updateApplicationRateLimit(
           applicationId,
@@ -642,11 +644,11 @@ class ApplicationRepositoryISpec
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek).copy(deleteRestriction = doNotDelete),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+        createAppWithStatusUpdatedOn(State.Testing, currentDate),
+        createAppWithStatusUpdatedOn(State.PendingRequesterVerification, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.Testing, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.Testing, lastWeek).copy(deleteRestriction = doNotDelete),
+        createAppWithStatusUpdatedOn(State.Testing, lastWeek)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
@@ -654,15 +656,15 @@ class ApplicationRepositoryISpec
 
       val applicationDetails = await(
         applicationRepository.fetchByStatusDetailsAndEnvironmentForDeleteJob(
-          State.TESTING,
+          State.Testing,
           yesterday,
-          Environment.PRODUCTION
+          Environment.Production
         )
       )
 
       verifyApplications(
         applicationDetails,
-        State.TESTING,
+        State.Testing,
         2
       )
     }
@@ -691,11 +693,11 @@ class ApplicationRepositoryISpec
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
-        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+        createAppWithStatusUpdatedOn(State.Testing, currentDate),
+        createAppWithStatusUpdatedOn(State.PendingRequesterVerification, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.Testing, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.Testing, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
+        createAppWithStatusUpdatedOn(State.Testing, lastWeek)
       )
       applications.foreach(application =>
         await(applicationRepository.save(application))
@@ -703,27 +705,27 @@ class ApplicationRepositoryISpec
 
       val applicationDetails = await(
         applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
-          State.TESTING,
+          State.Testing,
           yesterday,
-          Environment.PRODUCTION
+          Environment.Production
         )
       )
 
       verifyApplications(
         applicationDetails,
-        State.TESTING,
+        State.Testing,
         2
       )
     }
 
     "retrieve the only application with TESTING state that have been updated before the expiryDay and don't return already notified ones" in {
-      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+      val app4 = createAppWithStatusUpdatedOn(State.Testing, lastWeek)
 
       val applications = Seq(
-        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
-        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
-        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.Testing, currentDate),
+        createAppWithStatusUpdatedOn(State.PendingRequesterVerification, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.Testing, dayBeforeYesterday).copy(deleteRestriction = doNotDelete),
+        createAppWithStatusUpdatedOn(State.Testing, dayBeforeYesterday),
         app4
       )
       applications.foreach(application =>
@@ -733,15 +735,15 @@ class ApplicationRepositoryISpec
 
       val applicationDetails = await(
         applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotifiedForDeleteJob(
-          State.TESTING,
+          State.Testing,
           yesterday,
-          Environment.PRODUCTION
+          Environment.Production
         )
       )
 
       verifyApplications(
         applicationDetails,
-        State.TESTING,
+        State.Testing,
         1
       )
     }
@@ -810,7 +812,7 @@ class ApplicationRepositoryISpec
       val result = await(applicationRepository.fetch(application.id))
 
       result.isDefined shouldBe true
-      result.get.state.name shouldBe State.DELETED
+      result.get.state.name shouldBe State.Deleted
     }
   }
 
@@ -871,7 +873,7 @@ class ApplicationRepositoryISpec
       prodClientId = generateClientId
     )
     val application3 = createAppWithStatusUpdatedOn(
-      state = State.DELETED
+      state = State.Deleted
     )
 
     "fetch all existing applications - except DELETED apps" in {
@@ -978,9 +980,9 @@ class ApplicationRepositoryISpec
           .toFuture()
       )
 
-      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name.value)
-      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name.value)
-      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name.value)
+      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name)
+      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name)
+      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name)
 
       val result =
         await(applicationRepository.getApplicationWithSubscriptionCount())
@@ -1197,8 +1199,8 @@ class ApplicationRepositoryISpec
         None,
         responsibleIndividual,
         Set.empty,
-        TermsAndConditionsLocations.InDesktopSoftware,
-        PrivacyPolicyLocations.InDesktopSoftware,
+        TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware,
         termsOfUseAcceptances = List()
       )
       val application             = anApplicationDataForTest(applicationId).withAccess(
@@ -1241,8 +1243,8 @@ class ApplicationRepositoryISpec
         Some(organisationUrl),
         responsibleIndividual,
         Set.empty,
-        TermsAndConditionsLocations.InDesktopSoftware,
-        PrivacyPolicyLocations.InDesktopSoftware,
+        TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware,
         termsOfUseAcceptances = List()
       )
       val application             = anApplicationDataForTest(applicationId)
@@ -1423,7 +1425,7 @@ class ApplicationRepositoryISpec
     val existingCollaborators = app.collaborators
 
     val appWithNewCollaborator = await(applicationRepository.addCollaborator(applicationId, collaborator))
-    appWithNewCollaborator.collaborators should contain only (existingCollaborators.toList ++ List(collaborator): _*)
+    appWithNewCollaborator.collaborators shouldBe (existingCollaborators.toList ++ List(collaborator)).toSet
   }
 
   "handle removeCollaborator correctly" in {
@@ -1438,14 +1440,14 @@ class ApplicationRepositoryISpec
     val userIdToDelete        = existingCollaborators.head.userId
 
     val appWithOutDeletedCollaborator = await(applicationRepository.removeCollaborator(applicationId, userIdToDelete))
-    appWithOutDeletedCollaborator.collaborators should contain only (existingCollaborators.toList.filterNot(_.userId == userIdToDelete): _*)
+    appWithOutDeletedCollaborator.collaborators shouldBe (existingCollaborators.toList.filterNot(_.userId == userIdToDelete)).toSet
   }
 
   "handle ProductionAppPrivacyPolicyLocationChanged correctly" in {
     val applicationId = ApplicationIdData.one
 
-    val oldLocation = PrivacyPolicyLocations.InDesktopSoftware
-    val newLocation = PrivacyPolicyLocations.Url("http://example.com")
+    val oldLocation = PrivacyPolicyLocation.InDesktopSoftware
+    val newLocation = PrivacyPolicyLocation.Url("http://example.com")
     val access      = Access.Standard(
       List.empty,
       List.empty,
@@ -1458,7 +1460,7 @@ class ApplicationRepositoryISpec
           None,
           ResponsibleIndividual.build("bob example", "bob@example.com"),
           Set.empty,
-          TermsAndConditionsLocations.InDesktopSoftware,
+          TermsAndConditionsLocation.InDesktopSoftware,
           oldLocation,
           List.empty
         )
@@ -1492,8 +1494,8 @@ class ApplicationRepositoryISpec
 
   "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
 
-    val oldLocation = TermsAndConditionsLocations.InDesktopSoftware
-    val newLocation = TermsAndConditionsLocations.Url("http://example.com")
+    val oldLocation = TermsAndConditionsLocation.InDesktopSoftware
+    val newLocation = TermsAndConditionsLocation.Url("http://example.com")
     val access      = Access.Standard(
       List.empty,
       List.empty,
@@ -1502,7 +1504,7 @@ class ApplicationRepositoryISpec
       Set.empty,
       None,
       Some(
-        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty, oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
       )
     )
     val app         = storedApp.withAccess(access)
@@ -1533,14 +1535,14 @@ class ApplicationRepositoryISpec
   "handle updateApplicationState correctly" in {
     val oldRi                   = ResponsibleIndividual.build("old ri name", "old@example.com")
     val importantSubmissionData =
-      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocations.InDesktopSoftware, PrivacyPolicyLocations.InDesktopSoftware, List.empty)
+      ImportantSubmissionData(None, oldRi, Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
     val access                  = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     val app                     = storedApp.withAccess(access)
-    app.state.name shouldBe State.PRODUCTION
+    app.state.name shouldBe State.Production
 
     await(applicationRepository.save(app))
-    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PENDING_GATEKEEPER_APPROVAL, instant, adminOne.emailAddress.text, adminName))
-    appWithUpdatedState.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
+    val appWithUpdatedState = await(applicationRepository.updateApplicationState(applicationId, State.PendingGatekeeperApproval, instant, adminOne.emailAddress.text, adminName))
+    appWithUpdatedState.state.name shouldBe State.PendingGatekeeperApproval
     appWithUpdatedState.state.updatedOn shouldBe instant
     appWithUpdatedState.state.requestedByEmailAddress shouldBe Some(adminOne.emailAddress.text)
     appWithUpdatedState.state.requestedByName shouldBe Some(adminName)
@@ -1555,8 +1557,8 @@ class ApplicationRepositoryISpec
       None,
       oldRi,
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
@@ -1587,7 +1589,7 @@ class ApplicationRepositoryISpec
     await(applicationRepository.save(app))
 
     val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
-    appWithUpdatedName.name.value shouldBe newName
+    appWithUpdatedName.name shouldBe newName
     appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
 
     await(applicationRepository.hardDelete(applicationId))
@@ -1603,8 +1605,8 @@ class ApplicationRepositoryISpec
       None,
       oldRi,
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List(TermsOfUseAcceptance(oldRi, instant, submissionId, submissionIndex))
     )
     val access                  = Access.Standard(List.empty, List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
@@ -1627,7 +1629,7 @@ class ApplicationRepositoryISpec
   }
 
   "fetchProdAppStateHistories" should {
-    def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
+    def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.Production) = {
       val app = storedApp.copy(
         id = ApplicationId.random,
         state = ApplicationState(name = state, updatedOn = instant),
@@ -1636,8 +1638,8 @@ class ApplicationRepositoryISpec
               None,
               ResponsibleIndividual.build("ri name", "ri@example.com"),
               Set.empty,
-              TermsAndConditionsLocations.InDesktopSoftware,
-              PrivacyPolicyLocations.InDesktopSoftware,
+              TermsAndConditionsLocation.InDesktopSoftware,
+              PrivacyPolicyLocation.InDesktopSoftware,
               List.empty
             ))
           case false => None
@@ -1659,59 +1661,59 @@ class ApplicationRepositoryISpec
     }
 
     "return app state history correctly for new journey app" in {
-      val app           = saveApp(State.PRODUCTION, Duration.ZERO, true)
-      val stateHistory1 = saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
-      val stateHistory2 = saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(2))
-      val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
+      val app           = saveApp(State.Production, Duration.ZERO, true)
+      val stateHistory1 = saveHistoryStatePair(app.id, State.Testing, State.PendingRequesterVerification, Duration.ofHours(1))
+      val stateHistory2 = saveHistoryStatePair(app.id, State.PendingRequesterVerification, State.PendingGatekeeperApproval, Duration.ofHours(2))
+      val stateHistory3 = saveHistoryStatePair(app.id, State.PendingGatekeeperApproval, State.Production, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results shouldBe List(ApplicationWithStateHistory(app.id, app.name.value, 2, List(stateHistory1, stateHistory2, stateHistory3)))
+      results shouldBe List(ApplicationWithStateHistory(app.id, app.name, 2, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state history correctly for old journey app" in {
-      val app           = saveApp(State.PRODUCTION, Duration.ZERO, false)
-      val stateHistory1 = saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
-      val stateHistory2 = saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(2))
-      val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
+      val app           = saveApp(State.Production, Duration.ZERO, false)
+      val stateHistory1 = saveHistoryStatePair(app.id, State.Testing, State.PendingRequesterVerification, Duration.ofHours(1))
+      val stateHistory2 = saveHistoryStatePair(app.id, State.PendingRequesterVerification, State.PendingGatekeeperApproval, Duration.ofHours(2))
+      val stateHistory3 = saveHistoryStatePair(app.id, State.PendingGatekeeperApproval, State.Production, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results shouldBe List(ApplicationWithStateHistory(app.id, app.name.value, 1, List(stateHistory1, stateHistory2, stateHistory3)))
+      results shouldBe List(ApplicationWithStateHistory(app.id, app.name, 1, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state histories sorted correctly" in {
-      val app1        = saveApp(State.PRODUCTION, Duration.ofHours(1))
-      val app1History = saveHistory(app1.id, None, State.TESTING, Duration.ofHours(1))
+      val app1        = saveApp(State.Production, Duration.ofHours(1))
+      val app1History = saveHistory(app1.id, None, State.Testing, Duration.ofHours(1))
 
-      val app2        = saveApp(State.PRODUCTION, Duration.ofHours(3))
-      val app2History = saveHistory(app2.id, None, State.TESTING, Duration.ofHours(3))
+      val app2        = saveApp(State.Production, Duration.ofHours(3))
+      val app2History = saveHistory(app2.id, None, State.Testing, Duration.ofHours(3))
 
-      val app3        = saveApp(State.PRODUCTION, Duration.ofHours(2))
-      val app3History = saveHistory(app3.id, None, State.TESTING, Duration.ofHours(2))
+      val app3        = saveApp(State.Production, Duration.ofHours(2))
+      val app3History = saveHistory(app3.id, None, State.Testing, Duration.ofHours(2))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results shouldBe List(
-        ApplicationWithStateHistory(app1.id, app1.name.value, 2, List(app1History)),
-        ApplicationWithStateHistory(app3.id, app2.name.value, 2, List(app3History)),
-        ApplicationWithStateHistory(app2.id, app3.name.value, 2, List(app2History))
+        ApplicationWithStateHistory(app1.id, app1.name, 2, List(app1History)),
+        ApplicationWithStateHistory(app3.id, app2.name, 2, List(app3History)),
+        ApplicationWithStateHistory(app2.id, app3.name, 2, List(app2History))
       )
     }
 
     "return only prod app state histories and not sandbox" in {
-      val prodApp       = saveApp(State.PRODUCTION, Duration.ofHours(1))
-      val stateHistory1 = saveHistoryStatePair(prodApp.id, State.TESTING, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(1))
-      val stateHistory2 = saveHistoryStatePair(prodApp.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(2))
+      val prodApp       = saveApp(State.Production, Duration.ofHours(1))
+      val stateHistory1 = saveHistoryStatePair(prodApp.id, State.Testing, State.PendingGatekeeperApproval, Duration.ofHours(1))
+      val stateHistory2 = saveHistoryStatePair(prodApp.id, State.PendingGatekeeperApproval, State.Production, Duration.ofHours(2))
 
-      val sandboxApp = saveApp(State.PRODUCTION, Duration.ofHours(1), true, Environment.SANDBOX)
-      saveHistory(sandboxApp.id, None, State.PRODUCTION, Duration.ofHours(1))
+      val sandboxApp = saveApp(State.Production, Duration.ofHours(1), true, Environment.Sandbox)
+      saveHistory(sandboxApp.id, None, State.Production, Duration.ofHours(1))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results shouldBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name.value, 2, List(stateHistory1, stateHistory2)))
+      results shouldBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name, 2, List(stateHistory1, stateHistory2)))
     }
 
     "do not return app state history for a deleted app" in {
-      val app = saveApp(State.DELETED, Duration.ZERO, true)
-      saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
-      saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.DELETED, Duration.ofHours(2))
+      val app = saveApp(State.Deleted, Duration.ZERO, true)
+      saveHistoryStatePair(app.id, State.Testing, State.PendingRequesterVerification, Duration.ofHours(1))
+      saveHistoryStatePair(app.id, State.PendingRequesterVerification, State.Deleted, Duration.ofHours(2))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results shouldBe List.empty

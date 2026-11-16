@@ -35,7 +35,7 @@ class ChangeApplicationAccessOverridesCommandHandlerSpec extends CommandHandlerB
   trait Setup extends ApplicationRepositoryMockModule
       with AuditServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val oldOverrides: Set[OverrideFlag] = Set(OverrideFlag.PersistLogin, OverrideFlag.OriginOverride("origin01"))
     val stdAccess                       = Access.Standard(overrides = oldOverrides)

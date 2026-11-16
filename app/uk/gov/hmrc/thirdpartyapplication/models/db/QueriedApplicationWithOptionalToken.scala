@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiIdentifier
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.subscriptionfields.domain.models.{ApiFieldMap, FieldValue}
 
 final case class QueriedApplicationWithOptionalToken(
@@ -33,7 +33,7 @@ object QueriedApplicationWithOptionalToken {
   import play.api.libs.json.Format
   import play.api.libs.json.Json
 
-  implicit val format: Format[QueriedApplicationWithOptionalToken] = Json.format[QueriedApplicationWithOptionalToken]
+  given format: Format[QueriedApplicationWithOptionalToken] = Json.format[QueriedApplicationWithOptionalToken]
 
   // These are just moving from one shape to another
   // $COVERAGE-OFF$

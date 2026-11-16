@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
 import play.api.http.Status.NO_CONTENT
 
@@ -26,7 +26,7 @@ object ApiSubscriptionFieldsStub extends Stub {
   override val stub = MockHost(19650)
 
   def willDeleteTheSubscriptionFields() = {
-    stub.mock.register(get(urlPathMatching("/field/application/*"))
+    stub.mock.register(get(urlPathMatching("/field/application/.*"))
       .willReturn(aResponse().withStatus(NO_CONTENT)))
   }
 }

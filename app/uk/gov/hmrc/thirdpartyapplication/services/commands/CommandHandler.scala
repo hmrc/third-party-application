@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import scala.concurrent.ExecutionContext
 
 import cats.data.{NonEmptyList, Validated}
-import cats.syntax.validated._
+import cats.syntax.validated.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors.GatekeeperUser
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actor, Actors, LaxEmailAddress, UserId}
@@ -29,7 +29,7 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collabor
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.{CommandFailure, CommandFailures}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.services.BaseCommandHandler
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, _}
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, *}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 
 trait CommandHandler {
@@ -41,7 +41,7 @@ trait CommandHandler {
 object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyList[ApplicationEvent])] {
   import scala.language.implicitConversions
 
-  import CommandFailures._
+  import CommandFailures.*
 
   def fromStateHistory(stateHistory: StateHistory, requestingAdminName: String, requestingAdminEmail: LaxEmailAddress) =
     ApplicationEvents.ApplicationStateChanged(
@@ -49,8 +49,8 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
       applicationId = stateHistory.applicationId,
       eventDateTime = stateHistory.changedAt,
       actor = stateHistory.actor,
-      stateHistory.previousState.fold("")(_.toString),
-      stateHistory.state.toString,
+      stateHistory.previousState.getOrElse(stateHistory.state),
+      stateHistory.state,
       requestingAdminName,
       requestingAdminEmail
     )
@@ -103,13 +103,13 @@ object CommandHandler extends BaseCommandHandler[(StoredApplication, NonEmptyLis
 
   def isNotInProcessOfBeingApproved(app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
+      app.state.name == State.Production || app.state.name == State.PreProduction || app.state.name == State.Testing,
       GenericFailure("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION")
     )
 
   def isApproved(app: StoredApplication): Validated[Failures, Unit] =
     cond(
-      app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
+      app.state.name == State.Production || app.state.name == State.PreProduction,
       GenericFailure("App is not in PRE_PRODUCTION or in PRODUCTION state")
     )
 

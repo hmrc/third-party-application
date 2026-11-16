@@ -23,12 +23,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, *}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, Collaborator}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 
@@ -38,7 +38,7 @@ class SubscriptionService @Inject() (
     subscriptionRepository: SubscriptionRepository,
     applicationCommandDispatcher: ApplicationCommandDispatcher,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger with ActorHelper with ClockNow {
 
   def searchCollaborators(context: ApiContext, version: ApiVersionNbr, partialEmailMatch: Option[String]): Future[List[String]] = {

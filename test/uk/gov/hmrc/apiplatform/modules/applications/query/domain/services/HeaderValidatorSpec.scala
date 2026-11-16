@@ -23,7 +23,7 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorMessage
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.HeaderValidator.InternalUserAgentValidator.ApiGatewayUserAgent
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders
 
@@ -32,7 +32,7 @@ class HeaderValidatorSpec extends HmrcSpec with EitherValues {
   val userAgent   = HttpHeaders.INTERNAL_USER_AGENT -> Seq(ApiGatewayUserAgent)
 
   "parseParams" should {
-    val test = HeaderValidator.parseHeaders _ andThen (_.toEither)
+    val test = HeaderValidator.parseHeaders andThen (_.toEither)
 
     "extract valid header - server token" in {
       test(Map(serverToken)).value shouldBe List(ServerTokenQP("ABC"))

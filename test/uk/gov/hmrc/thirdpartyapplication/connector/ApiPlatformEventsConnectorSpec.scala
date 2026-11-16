@@ -18,23 +18,23 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
-import play.api.http.Status._
+import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.test.HttpClientV2Support
 
 import uk.gov.hmrc.apiplatform.modules.common.connectors.ConnectorSpec
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicationId {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  given hc: HeaderCarrier = HeaderCarrier()
 
   val eventCollaborator = Actors.AppCollaborator("bob@bob.com".toLaxEmail)
 
@@ -49,7 +49,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicatio
   )
 
   abstract class Setup(enabled: Boolean = true) extends HttpClientV2Support {
-    import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters._
+    import uk.gov.hmrc.apiplatform.modules.events.applications.domain.services.EventsInterServiceCallJsonFormatters.given
 
     val config: ApiPlatformEventsConnector.Config = ApiPlatformEventsConnector.Config(wireMockUrl, enabled)
 
@@ -78,20 +78,20 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with CommonApplicatio
   "ApiPlatformEventsConnector" should {
     "return true when httpclient receives CREATED status" in new Setup() {
       apiApplicationEventWillReturnCreated(exampleEvent)
-      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(using hc))
 
       result shouldBe true
     }
 
     "return true when connector is disabled" in new Setup(false) {
-      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(using hc))
 
       result shouldBe true
     }
 
     "return false when httpclient receives internal server error status" in new Setup() {
       apiApplicationEventWillFailWith(INTERNAL_SERVER_ERROR)
-      val result = await(underTest.sendApplicationEvent(exampleEvent)(hc))
+      val result = await(underTest.sendApplicationEvent(exampleEvent)(using hc))
 
       result shouldBe false
     }

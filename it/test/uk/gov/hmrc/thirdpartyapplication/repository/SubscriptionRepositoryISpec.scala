@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.time.Clock
 import scala.util.Random.nextString
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -28,17 +29,17 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, *}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.thirdpartyapplication.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationTokens, StoredApplication, StoredToken}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubscriptionRepositoryISpec
     extends ServerBaseISpec
@@ -225,7 +226,7 @@ class SubscriptionRepositoryISpec
 
       forAll(scenarios) { (apiIdentifier, expectedApplications) =>
         val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers(apiIdentifier))
-        applications should contain only (expectedApplications: _*)
+        applications shouldBe expectedApplications.toSet
       }
     }
   }
@@ -345,12 +346,12 @@ class SubscriptionRepositoryISpec
   def subscriptionData(apiContext: ApiContext, version: ApiVersionNbr, applicationIds: ApplicationId*): SubscriptionData = {
     SubscriptionData(
       ApiIdentifier(apiContext, version),
-      Set(applicationIds: _*)
+      Set(applicationIds*)
     )
   }
 
   def aSubscriptionData(apiContext: String, version: String, applicationIds: ApplicationId*): SubscriptionData = {
-    subscriptionData(ApiContext(apiContext), ApiVersionNbr(version), applicationIds: _*)
+    subscriptionData(ApiContext(apiContext), ApiVersionNbr(version), applicationIds*)
   }
 
   def anApplicationData(

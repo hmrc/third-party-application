@@ -35,14 +35,14 @@ class ResponsibleIndividualVerificationSetDefaultTypeJob @Inject() (
     repository: ResponsibleIndividualVerificationRepository,
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationSetDefaultTypeJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger {
 
   override def name: String                 = "ResponsibleIndividualVerificationSetDefaultTypeJob"
   override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  given hc: HeaderCarrier                   = HeaderCarrier()
   override val lockService: LockService     = responsibleIndividualVerificationSetDefaultTypeJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {

@@ -25,7 +25,7 @@ import cats.data.OptionT
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationName
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
@@ -59,20 +59,20 @@ class CloneApplicationService @Inject() (
       }
     }
 
-    def cloneNotifications(): Future[_] = {
+    def cloneNotifications(): Future[?] = {
       notificationRepository.find(appId).flatMap { notificationsToCopy =>
         Future.sequence(notificationsToCopy.map(n => notificationRepository.createEntity(n.copy(applicationId = newId))))
       }
     }
 
-    def cloneTermsOfUseInvitation(): Future[_] = {
+    def cloneTermsOfUseInvitation(): Future[?] = {
       OptionT(termsOfUseInvitationRepository.fetch(appId)).flatMap { t =>
         OptionT(termsOfUseInvitationRepository.create(t.copy(applicationId = newId)))
       }
         .value
     }
 
-    def cloneSubmissions(): Future[_] = {
+    def cloneSubmissions(): Future[?] = {
       submissionsDAO.fetchAllForApplication(appId).flatMap { submissionsToCopy =>
         Future.sequence(submissionsToCopy.map { s =>
           submissionsDAO.save(s.copy(id = SubmissionId.random, applicationId = newId))
@@ -80,7 +80,7 @@ class CloneApplicationService @Inject() (
       }
     }
 
-    def cloneSubsFields(oldClientId: ClientId, subs: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[_] = {
+    def cloneSubsFields(oldClientId: ClientId, subs: Set[ApiIdentifier])(implicit hc: HeaderCarrier): Future[?] = {
       subsFieldsConnector.fetchFieldValues(oldClientId).flatMap { subsFields =>
         Future.sequence(
           subsFields.flatMap {
@@ -103,7 +103,7 @@ class CloneApplicationService @Inject() (
         oldApp           <- E.fromOptionF(applicationRepository.fetch(appId), newId)
         suffix            = Instant.now().toEpochMilli().toHexString
         newName           = ApplicationName(s"${oldApp.name} clone $suffix")
-        newNormalisedName = newName.value.toLowerCase
+        newNormalisedName = newName.toLowerCase
         newApp            =
           oldApp.copy(
             id = newId,

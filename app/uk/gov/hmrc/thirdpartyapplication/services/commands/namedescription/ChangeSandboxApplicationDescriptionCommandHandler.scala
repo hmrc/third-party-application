@@ -19,11 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeSandboxApplicationDescription
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
@@ -31,22 +31,22 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class ChangeSandboxApplicationDescriptionCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(
       app: StoredApplication,
       cmd: ChangeSandboxApplicationDescription
     ): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map5(
+    (
       isInSandboxEnvironment(app),
       isApproved(app),
       isAppActorACollaboratorOnApp(cmd.actor, app),
       cond(cmd.description.isBlank() == false, "Description cannot be blank when changing the description"),
       cond(app.description != Some(cmd.description).filterNot(_.isBlank()), "App already has that description")
-    ) { case _ => app }
+    ).mapN((_, _, _, _, _) => app)
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeSandboxApplicationDescription): NonEmptyList[ApplicationEvent] = {
@@ -64,7 +64,7 @@ class ChangeSandboxApplicationDescriptionCommandHandler @Inject() (
 
   def process(app: StoredApplication, cmd: ChangeSandboxApplicationDescription): AppCmdResultT = {
     for {
-      valid    <- E.fromEither(validate(app, cmd).toEither)
+      _        <- E.fromEither(validate(app, cmd).toEither)
       savedApp <- E.liftF(applicationRepository.updateDescription(app.id, Some(cmd.description)))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)

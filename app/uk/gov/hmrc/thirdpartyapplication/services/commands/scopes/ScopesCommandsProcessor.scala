@@ -29,8 +29,8 @@ class ScopesCommandsProcessor @Inject() (
     changeApplicationScopesCommandHandler: ChangeApplicationScopesCommandHandler,
     changeApplicationAccessOverridesCommandHandler: ChangeApplicationAccessOverridesCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: ScopesCommand)(implicit hc: HeaderCarrier): AppCmdResultT = command match {
     case cmd: ChangeApplicationScopes          => changeApplicationScopesCommandHandler.process(app, cmd)

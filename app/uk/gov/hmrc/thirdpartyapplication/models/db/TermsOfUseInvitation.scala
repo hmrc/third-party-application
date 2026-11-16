@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 import java.time.Instant
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState.{EMAIL_SENT, TermsOfUseInvitationState}
+import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState
 
 final case class TermsOfUseInvitation(
     applicationId: ApplicationId,
@@ -27,5 +27,5 @@ final case class TermsOfUseInvitation(
     lastUpdated: Instant,
     dueBy: Instant,
     reminderSent: Option[Instant] = None,
-    status: TermsOfUseInvitationState = EMAIL_SENT
+    status: TermsOfUseInvitationState = TermsOfUseInvitationState.EMAIL_SENT
   )

@@ -21,9 +21,9 @@ import java.util.Base64
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-import cats.syntax.all._
+import cats.syntax.all.*
 
-import play.api.mvc._
+import play.api.mvc.*
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.MaybeMatchesAuthorisationKeyRequest

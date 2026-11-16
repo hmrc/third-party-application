@@ -19,8 +19,8 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import play.api.mvc.ControllerComponents
-import play.api.test.Helpers._
+import play.api.mvc.{ControllerComponents, Request}
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -28,17 +28,17 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.{StrideGatekeeperRoleAuth
 import uk.gov.hmrc.thirdpartyapplication.controllers.OnlyStrideGatekeeperRoleAuthoriseAction
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class OnlyStrideGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
 
-  abstract class TestController(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc)
+  abstract class TestController(val cc: ControllerComponents)(using executionContext: ExecutionContext) extends BackendController(cc)
       with OnlyStrideGatekeeperRoleAuthoriseAction {
     def applicationService: ApplicationService
     def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-    implicit val ec: ExecutionContext = executionContext
+    given ec: ExecutionContext = executionContext
 
-    def testMethod = requiresAuthentication() { _ =>
+    def testMethod = requiresAuthentication() { (_: Request[?]) =>
       Ok("Authenticated")
     }
   }

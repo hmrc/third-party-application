@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.delete
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{Collaborator, DeleteRestriction, State, StateHistory}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.DeleteApplicationByCollaborator
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository, StateHistoryRepository, TermsOfUseInvitationRepository}
@@ -44,10 +44,10 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     val thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
     val stateHistoryRepository: StateHistoryRepository,
     val termsOfUseInvitationRepository: TermsOfUseInvitationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends AbstractDeleteApplicationCommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def canDeleteApplicationsOrNotProductionApp(app: StoredApplication) =
     cond(authControlConfig.canDeleteApplications || !app.isInPreProductionOrProduction, "Cannot delete this applicaton")
@@ -56,12 +56,12 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     cond(app.deleteRestriction == DeleteRestriction.NoRestriction, "This application is delete restricted")
 
   private def validate(app: StoredApplication, cmd: DeleteApplicationByCollaborator): Validated[Failures, Collaborator] = {
-    Apply[Validated[Failures, *]].map4(
+    (
       isAdminOnApp(cmd.instigator, app),
       ensureStandardAccess(app),
       canDeleteApplicationsOrNotProductionApp(app),
       canDeleteApplication(app)
-    ) { case (admin, _, _, _) => admin }
+    ).mapN((admin, _, _, _) => admin)
   }
 
   private def asEvents(app: StoredApplication, cmd: DeleteApplicationByCollaborator, instigator: Collaborator, stateHistory: StateHistory): NonEmptyList[ApplicationEvent] = {
@@ -84,8 +84,8 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     for {
       instigator          <- E.fromEither(validate(app, cmd).toEither)
       kindOfRequesterEmail = instigator.emailAddress.text
-      savedApp            <- E.liftF(applicationRepository.updateApplicationState(app.id, State.DELETED, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
-      stateHistory         = StateHistory(app.id, State.DELETED, Actors.AppCollaborator(instigator.emailAddress), Some(app.state.name), changedAt = cmd.timestamp)
+      savedApp            <- E.liftF(applicationRepository.updateApplicationState(app.id, State.Deleted, cmd.timestamp, kindOfRequesterEmail, kindOfRequesterEmail))
+      stateHistory         = StateHistory(app.id, State.Deleted, Actors.AppCollaborator(instigator.emailAddress), Some(app.state.name), changedAt = cmd.timestamp)
       _                   <- deleteApplication(app, stateHistory)
       events               = asEvents(savedApp, cmd, instigator, stateHistory)
     } yield (savedApp, events)

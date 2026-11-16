@@ -24,8 +24,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -38,7 +37,7 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     object FetchByTypeStateAndAge {
 
       def thenReturn(verifications: ResponsibleIndividualVerification*) =
-        when(aMock.fetchByTypeStateAndAge(*, *[ResponsibleIndividualVerificationState], *[Instant])).thenReturn(Future.successful(List(verifications: _*)))
+        when(aMock.fetchByTypeStateAndAge(*, *[ResponsibleIndividualVerificationState], *[Instant])).thenReturn(Future.successful(List(verifications*)))
 
       def verifyCalledWith(verificationType: String, state: ResponsibleIndividualVerificationState, dateTime: Instant) =
         verify(aMock).fetchByTypeStateAndAge(verificationType, state, dateTime)
@@ -47,7 +46,7 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     object FetchByStateAgeAndTypes {
 
       def thenReturn(verifications: ResponsibleIndividualVerification*) =
-        when(aMock.fetchByStateAgeAndTypes(*[ResponsibleIndividualVerificationState], *[Instant], *, *)).thenReturn(Future.successful(List(verifications: _*)))
+        when(aMock.fetchByStateAgeAndTypes(*[ResponsibleIndividualVerificationState], *[Instant], *, *)).thenReturn(Future.successful(List(verifications*)))
 
       def verifyCalledWith(state: ResponsibleIndividualVerificationState, dateTime: Instant, verificationType1: String, verificationType2: String) =
         verify(aMock).fetchByStateAgeAndTypes(state, dateTime, verificationType1, verificationType2)

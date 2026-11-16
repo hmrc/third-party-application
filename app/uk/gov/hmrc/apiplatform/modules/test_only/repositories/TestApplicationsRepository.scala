@@ -21,9 +21,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.bson.conversions.Bson
-import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.*
+import org.mongodb.scala.model.Filters.*
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model._
 
 import play.api.libs.json.{Format, Json}
 import uk.gov.hmrc.mongo.MongoComponent
@@ -31,7 +31,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.play.bootstrap.metrics.Metrics
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.test_only.repository.TestApplicationsRepository.TestApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
@@ -39,13 +39,13 @@ import uk.gov.hmrc.thirdpartyapplication.util.MetricsTimer
 object TestApplicationsRepository {
   case class TestApplicationData(id: ApplicationId, createdOn: Instant = Instant.now)
 
-  implicit val formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
+  given formatInstant: Format[Instant] = MongoJavatimeFormats.instantFormat
 
-  implicit val format: Format[TestApplicationData] = Json.format[TestApplicationData]
+  given format: Format[TestApplicationData] = Json.format[TestApplicationData]
 }
 
 @Singleton
-class TestApplicationsRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(implicit val ec: ExecutionContext)
+class TestApplicationsRepository @Inject() (mongo: MongoComponent, val metrics: Metrics)(using val ec: ExecutionContext)
     extends PlayMongoRepository[TestApplicationsRepository.TestApplicationData](
       collectionName = "testApplications",
       mongoComponent = mongo,

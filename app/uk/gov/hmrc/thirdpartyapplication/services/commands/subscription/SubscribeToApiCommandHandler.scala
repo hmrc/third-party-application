@@ -19,36 +19,36 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.subscription
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.SubscribeToApi
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, EventId}
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class SubscribeToApiCommandHandler @Inject() (
     subscriptionRepository: SubscriptionRepository,
     strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: SubscribeToApi, rolePassed: Boolean, alreadySubcribed: Boolean): Validated[Failures, Unit] = {
     def isAuthorisedUser       = cond(rolePassed, s"Unauthorized to subscribe any API to app ${app.name}")
     def notAlreadySubscribedTo = cond(!alreadySubcribed, s"Application ${app.name} is already subscribed to API ${cmd.apiIdentifier.asText(" v")}")
 
-    Apply[Validated[Failures, *]].map2(
+    (
       isAuthorisedUser,
       notAlreadySubscribedTo
-    ) { case _ => () }
+    ).mapN((_, _) => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: SubscribeToApi): NonEmptyList[ApplicationEvent] = {
@@ -75,7 +75,7 @@ class SubscribeToApiCommandHandler @Inject() (
     for {
       rolePassed       <- E.liftF(performRoleCheckAsRequired(app))
       alreadySubcribed <- E.liftF(subscriptionRepository.isSubscribed(app.id, cmd.apiIdentifier))
-      valid            <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
+      _                <- E.fromEither(validate(app, cmd, rolePassed, alreadySubcribed).toEither)
       _                <- E.liftF(subscriptionRepository.add(app.id, cmd.apiIdentifier))
     } yield (app, asEvents(app, cmd))
   }

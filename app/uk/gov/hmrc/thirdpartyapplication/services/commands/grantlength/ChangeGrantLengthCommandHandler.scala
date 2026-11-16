@@ -20,24 +20,23 @@ import java.time.Period
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeGrantLength
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class ChangeGrantLengthCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: ChangeGrantLength): Validated[Failures, Unit] = {
     def printRefreshTokensAvailableFor(refreshTokensAvailableFor: Period): String = {
@@ -46,12 +45,12 @@ class ChangeGrantLengthCommandHandler @Inject() (
       s"Grant length is already $grantLength"
     }
 
-    Apply[Validated[Failures, *]].map(
+    (
       cond(
         (cmd.grantLength.period != app.refreshTokensAvailableFor),
         CommandFailures.GenericFailure(printRefreshTokensAvailableFor(app.refreshTokensAvailableFor))
       )
-    ) { case _ => () }
+    ).map(_ => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: ChangeGrantLength): NonEmptyList[ApplicationEvent] = {
@@ -70,8 +69,8 @@ class ChangeGrantLengthCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: ChangeGrantLength): AppCmdResultT = {
 
     for {
-      valid                <- E.fromEither(validate(app, cmd).toEither)
-      savedApp             <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period))
+      _                    <- E.fromEither(validate(app, cmd).toEither)
+      _                    <- E.liftF(applicationRepository.updateApplicationGrantLength(app.id, cmd.grantLength.period))
       savedAppAfterCleanUp <- E.liftF(applicationRepository.removeOldGrantLength(app.id))
       events                = asEvents(app, cmd)
     } yield (savedAppAfterCleanUp, events)

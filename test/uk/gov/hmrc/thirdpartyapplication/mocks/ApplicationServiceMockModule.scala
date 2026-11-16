@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.models.{CreateApplicationResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
@@ -66,15 +66,15 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object Create {
 
       def onRequestReturn(request: CreateApplicationRequest)(response: CreateApplicationResponse) = {
-        when(aMock.create(eqTo(request))(*)).thenReturn(successful(response))
+        when(aMock.create(eqTo(request))(using *)).thenReturn(successful(response))
       }
     }
 
     object DeleteApplication {
-      def thenSucceeds() = when(aMock.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+      def thenSucceeds() = when(aMock.deleteApplication(*[ApplicationId], *, *)(using *)).thenReturn(successful(Deleted))
 
       def verifyCalledWith(applicationId: ApplicationId, request: Option[DeleteApplicationRequest]) = {
-        verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(*)
+        verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(using *)
       }
     }
 

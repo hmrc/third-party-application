@@ -26,8 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 class GrantLengthCommandsProcessor @Inject() (
     changeGrantLengthCmdHdlr: ChangeGrantLengthCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: GrantLengthCommand): AppCmdResultT = command match {
     case cmd: ChangeGrantLength => changeGrantLengthCmdHdlr.process(app, cmd)

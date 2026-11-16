@@ -20,37 +20,37 @@ import scala.collection.immutable.Set
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect.ClassTag
 
-import cats.data._
+import cats.data.*
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, UserId, *}
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.OverrideFlag
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, SubmissionId, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommand
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.block.{BlockApplicationCommandHandler, UnblockApplicationCommandHandler}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.delete._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.clientsecret.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.collaborator.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.delete.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.grantlength.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.namedescription.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.organisation.LinkToOrganisationCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.commands.policy._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.policy.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.ratelimit.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi.UpdateLoginRedirectUrisCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.services.commands.scopes.{ChangeApplicationAccessOverridesCommandHandler, ChangeApplicationScopesCommandHandler}
-import uk.gov.hmrc.thirdpartyapplication.services.commands.submission._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription._
+import uk.gov.hmrc.thirdpartyapplication.services.commands.submission.*
+import uk.gov.hmrc.thirdpartyapplication.services.commands.subscription.*
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationCommandDispatcherUtils
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationCommandDispatcherSpec
     extends ApplicationCommandDispatcherUtils
@@ -80,13 +80,13 @@ class ApplicationCommandDispatcherSpec
     def verifyServicesCalledWithEvent(expectedEvent: ApplicationEvent) = {
 
       verify(ApiPlatformEventServiceMock.aMock)
-        .applyEvents(*[NonEmptyList[ApplicationEvent]])(*[HeaderCarrier])
+        .applyEvents(*[NonEmptyList[ApplicationEvent]])(using *[HeaderCarrier])
 
       verify(AuditServiceMock.aMock)
-        .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(*[HeaderCarrier])
+        .applyEvents(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)))(using *[HeaderCarrier])
 
       verify(NotificationServiceMock.aMock)
-        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)), *)(*[HeaderCarrier])
+        .sendNotifications(eqTo(applicationData), eqTo(NonEmptyList.one(expectedEvent)), *)(using *[HeaderCarrier])
     }
 
     val allCommandHandlers = Set(
@@ -134,7 +134,7 @@ class ApplicationCommandDispatcherSpec
 
     def verifyNoneButGivenCmmandHandlerCalled[A <: CommandHandler]()(implicit ct: ClassTag[A]) = {
       allCommandHandlers.filter {
-        case a: A => false
+        case _: A => false
         case _    => true
       }
         .foreach(handler => verifyZeroInteractions(handler))
@@ -301,7 +301,7 @@ class ApplicationCommandDispatcherSpec
     "ChangeProductionApplicationPrivacyPolicyLocation is received" should {
 
       val newUrl      = "http://example.com/new"
-      val newLocation = PrivacyPolicyLocations.Url(newUrl)
+      val newLocation = PrivacyPolicyLocation.Url(newUrl)
       val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
@@ -340,7 +340,7 @@ class ApplicationCommandDispatcherSpec
     "ChangeProductionApplicationTermsAndConditionsLocation is received" should {
 
       val newUrl      = "http://example.com/new"
-      val newLocation = TermsAndConditionsLocations.Url(newUrl)
+      val newLocation = TermsAndConditionsLocation.Url(newUrl)
       val userId      = adminOne.userId
       val timestamp   = instant
       val actor       = otherAdminAsActor
@@ -382,7 +382,7 @@ class ApplicationCommandDispatcherSpec
         otherAdminAsActor,
         "previousRIName",
         "previousRIEmail".toLaxEmail,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         requestedByName,
         requestedByEmail
@@ -417,7 +417,7 @@ class ApplicationCommandDispatcherSpec
         "previousRIEmail".toLaxEmail,
         "newRIName",
         "newRIEmail".toLaxEmail,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         code,
         requestedByName,
@@ -453,7 +453,7 @@ class ApplicationCommandDispatcherSpec
         actor,
         "someUserName",
         "someUserEmail".toLaxEmail,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         "some reason or other",
         "adminName",
@@ -489,7 +489,7 @@ class ApplicationCommandDispatcherSpec
         applicationId,
         instant,
         actor,
-        SubmissionId(SubmissionId.random.value),
+        SubmissionId.random,
         1,
         "adminName",
         "anAdminEmail".toLaxEmail
@@ -529,7 +529,7 @@ class ApplicationCommandDispatcherSpec
       "call DeleteApplicationByCollaborator Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[StoredApplication], *[DeleteApplicationByCollaborator])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[StoredApplication], *[DeleteApplicationByCollaborator])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -562,7 +562,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[StoredApplication], *[DeleteApplicationByGatekeeper])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[StoredApplication], *[DeleteApplicationByGatekeeper])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -652,7 +652,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeApplicationScopes Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeApplicationScopesCommandHandler.process(*[StoredApplication], *[ChangeApplicationScopes])(*)).thenReturn(E.pure((
+        when(mockChangeApplicationScopesCommandHandler.process(*[StoredApplication], *[ChangeApplicationScopes])(using *)).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -685,7 +685,7 @@ class ApplicationCommandDispatcherSpec
       "call ChangeApplicationAccessOverrides Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockChangeApplicationAccessOverridesCommandHandler.process(*[StoredApplication], *[ChangeApplicationAccessOverrides])(*)).thenReturn(E.pure((
+        when(mockChangeApplicationAccessOverridesCommandHandler.process(*[StoredApplication], *[ChangeApplicationAccessOverrides])(using *)).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -717,7 +717,7 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteUnusedApplicationCommandHandler.process(*[StoredApplication], *[DeleteUnusedApplication])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockDeleteUnusedApplicationCommandHandler.process(*[StoredApplication], *[DeleteUnusedApplication])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -748,10 +748,12 @@ class ApplicationCommandDispatcherSpec
       "call  DeleteApplicationByGatekeeper Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[StoredApplication], *[DeleteProductionCredentialsApplication])(*[HeaderCarrier])).thenReturn(E.pure((
-          applicationData,
-          NonEmptyList.one(evt)
-        )))
+        when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[StoredApplication], *[DeleteProductionCredentialsApplication])(using *[HeaderCarrier])).thenReturn(
+          E.pure((
+            applicationData,
+            NonEmptyList.one(evt)
+          ))
+        )
 
         await(underTest.dispatch(applicationId, cmd, Set.empty).value)
         verifyServicesCalledWithEvent(evt)
@@ -781,7 +783,7 @@ class ApplicationCommandDispatcherSpec
       "call SubscribeToApi Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockSubscribeToApiCommandHandler.process(*[StoredApplication], *[SubscribeToApi])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockSubscribeToApiCommandHandler.process(*[StoredApplication], *[SubscribeToApi])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -814,7 +816,7 @@ class ApplicationCommandDispatcherSpec
       "call UnsubscribeFromApi Handler and relevant common services if application exists" in new Setup {
         primeCommonServiceSuccess()
 
-        when(mockUnsubscribeFromApiCommandHandler.process(*[StoredApplication], *[UnsubscribeFromApi])(*[HeaderCarrier])).thenReturn(E.pure((
+        when(mockUnsubscribeFromApiCommandHandler.process(*[StoredApplication], *[UnsubscribeFromApi])(using *[HeaderCarrier])).thenReturn(E.pure((
           applicationData,
           NonEmptyList.one(evt)
         )))
@@ -889,8 +891,8 @@ class ApplicationCommandDispatcherSpec
     }
 
     "ChangeRateLimitTier is received" should {
-      val oldRateLimitTier = RateLimitTier.BRONZE
-      val newRateLimitTier = RateLimitTier.GOLD
+      val oldRateLimitTier = RateLimitTier.Bronze
+      val newRateLimitTier = RateLimitTier.Gold
       val cmd              = ChangeRateLimitTier(gatekeeperUser, timestamp, newRateLimitTier)
       val evt              = ApplicationEvents.RateLimitChanged(
         EventId.random,

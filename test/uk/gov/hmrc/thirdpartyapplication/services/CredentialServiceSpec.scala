@@ -24,20 +24,20 @@ import org.mockito.captor.ArgCaptor
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.thirdpartyapplication.mocks.ClientSecretServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.ValidationRequest
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures with CommonApplicationId {
 
   trait Setup extends ApplicationRepositoryMockModule
       with ClientSecretServiceMockModule {
 
-    implicit val hc: HeaderCarrier                           = HeaderCarrier()
+    given hc: HeaderCarrier                                  = HeaderCarrier()
     val mockLogger: Logger                                   = mock[Logger]
     val clientSecretLimit                                    = 5
     val credentialConfig: CredentialConfig                   = CredentialConfig(clientSecretLimit)
@@ -120,7 +120,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, secret)).value)
 
       val exceptionCaptor = ArgCaptor[Throwable]
-      verify(mockLogger).warn(any[String], exceptionCaptor)(*)
+      verify(mockLogger).warn(any[String], exceptionCaptor)(using *)
 
       exceptionCaptor hasCaptured thrownException
       result shouldBe Some(expectedApplicationResponse)

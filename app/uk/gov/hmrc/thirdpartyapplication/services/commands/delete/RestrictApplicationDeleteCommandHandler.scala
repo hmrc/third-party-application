@@ -19,31 +19,29 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.delete
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestrictionType.NO_RESTRICTION
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, DeleteRestrictionType}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RestrictApplicationDelete
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
-import uk.gov.hmrc.thirdpartyapplication.repository._
+import uk.gov.hmrc.thirdpartyapplication.repository.*
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
 class RestrictApplicationDeleteCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, Unit] = {
-    Apply[Validated[Failures, *]].map(
-      cond((app.deleteRestriction.deleteRestrictionType == NO_RESTRICTION), CommandFailures.GenericFailure(s"Delete is already restricted"))
-    ) { case _ => () }
+    (
+      cond((app.deleteRestriction.deleteRestrictionType == DeleteRestrictionType.NoRestriction), CommandFailures.GenericFailure(s"Delete is already restricted"))
+    ).map(_ => ())
   }
 
   private def asEvents(app: StoredApplication, cmd: RestrictApplicationDelete): NonEmptyList[ApplicationEvent] = {
@@ -61,8 +59,9 @@ class RestrictApplicationDeleteCommandHandler @Inject() (
   def process(app: StoredApplication, cmd: RestrictApplicationDelete): AppCmdResultT = {
 
     for {
-      valid    <- E.fromEither(validate(app).toEither)
-      savedApp <- E.liftF(applicationRepository.updateDeleteRestriction(app.id, DoNotDelete(cmd.reasons, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
+      _        <- E.fromEither(validate(app).toEither)
+      savedApp <-
+        E.liftF(applicationRepository.updateDeleteRestriction(app.id, DeleteRestriction.DoNotDelete(cmd.reasons, Actors.GatekeeperUser(cmd.gatekeeperUser), cmd.timestamp)))
       events    = asEvents(app, cmd)
     } yield (savedApp, events)
   }

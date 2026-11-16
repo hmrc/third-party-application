@@ -27,7 +27,7 @@ trait TestRawApplicationDocuments {
 
   private def dateToJsonObj(date: Instant) = Json.obj(f"$$date" -> date.truncatedTo(ChronoUnit.MILLIS).toEpochMilli)
 
-  import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats._
+  import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository.MongoFormats.given
 
   def applicationToMongoJson(
       application: StoredApplication,

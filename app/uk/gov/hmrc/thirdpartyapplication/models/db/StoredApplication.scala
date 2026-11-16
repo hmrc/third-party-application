@@ -21,12 +21,11 @@ import java.time.{Instant, LocalDate, Period}
 
 import com.typesafe.config.ConfigFactory
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication.grantLengthConfig
 
 case class StoredApplication(
     id: ApplicationId,
@@ -40,15 +39,15 @@ case class StoredApplication(
     createdOn: Instant,
     lastAccess: Instant,
     refreshTokensAvailableFor: Period = Period.ofDays(grantLengthConfig),
-    rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-    environment: Environment = Environment.PRODUCTION,
+    rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.Bronze),
+    environment: Environment = Environment.Production,
     checkInformation: Option[CheckInformation] = None,
     blocked: Boolean = false,
     ipAllowlist: IpAllowlist = IpAllowlist(),
     deleteRestriction: DeleteRestriction = DeleteRestriction.NoRestriction,
     organisationId: Option[OrganisationId] = None
   ) extends HasState with HasAccess with HasCollaborators with HasEnvironment {
-  protected val deployedTo = environment
+  override val deployedTo = environment
 
   def sellResellOrDistribute = access match {
     case Access.Standard(_, _, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
@@ -60,7 +59,7 @@ case class StoredApplication(
     case _                                                       => None
   }
 
-  import monocle.syntax.all._
+  import monocle.syntax.all.*
   def withState(newState: ApplicationState): StoredApplication = this.focus(_.state).replace(newState)
   def withAccess(newAccess: Access): StoredApplication         = this.focus(_.access).replace(newAccess)
 
@@ -70,7 +69,7 @@ case class StoredApplication(
 }
 
 object StoredApplication {
-  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper._
+  import uk.gov.hmrc.apiplatform.modules.common.services.DateTimeHelper.*
 
   private val initialLastAccessDate = LocalDate.of(2019, 6, 25)
 
@@ -93,11 +92,11 @@ object StoredApplication {
         GrantLength.apply(data.refreshTokensAvailableFor).getOrElse(GrantLength.EIGHTEEN_MONTHS),
         data.access,
         data.state,
-        data.rateLimitTier.getOrElse(RateLimitTier.BRONZE),
+        data.rateLimitTier.getOrElse(RateLimitTier.Bronze),
         data.checkInformation,
         data.blocked,
         ipAllowlist = data.ipAllowlist,
-        lastActionActor = ActorType.UNKNOWN,
+        lastActionActor = ActorType.Unknown,
         deleteRestriction = data.deleteRestriction,
         organisationId = data.organisationId
       ),
@@ -112,18 +111,17 @@ object StoredApplication {
       productionToken: StoredToken,
       createdOn: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
     ): StoredApplication = {
-    import createApplicationRequest._
+    import createApplicationRequest.*
 
     val applicationState = (environment, accessType) match {
-      case (Environment.SANDBOX, _)                     => ApplicationState(State.PRODUCTION, updatedOn = createdOn)
-      case (_, AccessType.PRIVILEGED | AccessType.ROPC) => ApplicationState(State.PRODUCTION, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
-      case _                                            => ApplicationState(State.TESTING, updatedOn = createdOn)
+      case (Environment.Sandbox, _)                     => ApplicationState(State.Production, updatedOn = createdOn)
+      case (_, AccessType.Privileged | AccessType.Ropc) => ApplicationState(State.Production, collaborators.headOption.map(_.emailAddress.text), updatedOn = createdOn)
+      case _                                            => ApplicationState(State.Testing, updatedOn = createdOn)
     }
 
     val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if (v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
-      case v2: CreateApplicationRequestV2                                   => None
-      case x: CreateApplicationRequestV1                                    => None
+      case _                                                                => None
     }
 
     val applicationAccess: Access = createApplicationRequest match {
@@ -143,7 +141,7 @@ object StoredApplication {
     StoredApplication(
       ApplicationId.random,
       name,
-      name.value.toLowerCase,
+      name.toLowerCase,
       collaborators,
       createApplicationRequest.description.filterNot(_ => environment.isProduction),
       ApplicationTokens(productionToken),

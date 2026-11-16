@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
@@ -41,11 +41,11 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
     object ApplyEvents {
 
       def succeeds = {
-        when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
+        when(aMock.applyEvents(*)(using *)).thenReturn(Future.successful(true))
       }
 
       def verifyCalledWith(events: NonEmptyList[ApplicationEvent]) = {
-        verify(aMock).applyEvents(eqTo(events))(*)
+        verify(aMock).applyEvents(eqTo(events))(using *)
       }
     }
   }

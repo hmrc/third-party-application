@@ -17,18 +17,18 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.query
 
 import uk.gov.hmrc.apiplatform.modules.applications.query.ErrorsOr
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models._
-import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services._
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.query.domain.services.*
 
 object ParamsValidator {
 
-  def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]], extraHeaders: Map[String, String]): ErrorsOr[List[Param[_]]] = {
+  def parseAndValidateParams(rawQueryParams: Map[String, Seq[String]], rawHeaders: Map[String, Seq[String]], extraHeaders: Map[String, String]): ErrorsOr[List[Param[?]]] = {
     val queryParams       = QueryParamsValidator.parseParams(rawQueryParams)
     val headerParams      = HeaderValidator.parseHeaders(rawHeaders ++ extraHeaders.map { case (k, v) => k -> Seq(v) })
     val allParamsOrErrors = queryParams combine headerParams
 
     allParamsOrErrors.andThen(allParams => {
-      ParamsCombinationValidator.validateParamCombinations(allParams)
+      ParamsCombinationValidator.validateParamCombinations(using allParams)
         .map(_ => allParams)
     })
   }

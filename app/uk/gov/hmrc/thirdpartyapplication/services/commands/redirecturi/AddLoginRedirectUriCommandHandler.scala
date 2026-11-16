@@ -19,22 +19,22 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.redirecturi
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats._
-import cats.data._
+import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.LoginRedirectUri
-import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands._
+import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.CommandFailures
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 
 @Singleton
-class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(implicit val ec: ExecutionContext) extends CommandHandler {
+class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: ApplicationRepository)(using val ec: ExecutionContext) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication, cmd: AddLoginRedirectUri): Validated[Failures, List[LoginRedirectUri]] = {
     val existingRedirects = app.access match {
@@ -44,11 +44,11 @@ class AddLoginRedirectUriCommandHandler @Inject() (applicationRepository: Applic
 
     val hasFourOrFewerURIs = cond((existingRedirects.size < 5), CommandFailures.GenericFailure("Can have at most 5 redirect URIs"))
 
-    Apply[Validated[Failures, *]].map3(
+    (
       ensureStandardAccess(app),
       isAdminIfInProduction(cmd.actor, app),
       hasFourOrFewerURIs
-    )((_, _, _) => existingRedirects)
+    ).mapN((_, _, _) => existingRedirects)
   }
 
   private def asEvents(app: StoredApplication, cmd: AddLoginRedirectUri): NonEmptyList[ApplicationEvent] = {

@@ -75,7 +75,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
 
     object GetVerification {
 
-      def thenGetVerification(code: String) = {
+      def thenGetVerification() = {
         when(aMock.getVerification(*)).thenAnswer((code: String) =>
           Future.successful(Some(
             ResponsibleIndividualToUVerification(

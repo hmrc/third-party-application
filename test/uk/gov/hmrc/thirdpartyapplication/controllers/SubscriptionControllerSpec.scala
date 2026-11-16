@@ -28,15 +28,15 @@ import play.api.libs.json.{Json, Reads}
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, SubscriptionRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule with ApplicationRepositoryMockModule {
 
-  import play.api.test.Helpers._
+  import play.api.test.Helpers.*
 
   override def builder(): GuiceApplicationBuilder =
     super.builder()
@@ -54,7 +54,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.versionNbr.value}/subscribers"
 
     "return the subscribers from the repository" in new Setup {
-      implicit val readsSubscribersResponse: Reads[SubscribersResponse] = Json.reads[SubscribersResponse]
+      given readsSubscribersResponse: Reads[SubscribersResponse] = Json.reads[SubscribersResponse]
 
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       SubscriptionRepoMock.GetSubscribers.thenReturn(apiIdentifier)(subscribers)
@@ -67,7 +67,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     }
 
     "return the subscribers from the repository for a multi-segment API" in new Setup {
-      implicit val readsSubscribersResponse: Reads[SubscribersResponse] = Json.reads[SubscribersResponse]
+      given readsSubscribersResponse: Reads[SubscribersResponse] = Json.reads[SubscribersResponse]
 
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       SubscriptionRepoMock.GetSubscribers.thenReturn(apiIdentifier)(subscribers)

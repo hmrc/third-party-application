@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controller
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 
-import play.api.http._
+import play.api.http.*
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.libs.ws._
+import play.api.libs.ws.*
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import uk.gov.hmrc.utils.ServerBaseISpec
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApplicationId, ClientIdFixtures, UserIdFixtures}
@@ -75,8 +76,8 @@ class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with Befor
     await(applicationRepository.save(application2))
 
     def callQuery(params: Map[String, String] = Map.empty, headers: Map[String, String] = Map.empty) = {
-      val paramString                                           = params.toSeq.map { case (a, b) => s"$a=$b" } mkString ("?", "&", "")
-      implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/query${paramString}").withHeaders(headers.toSeq: _*)
+      val paramString                                    = params.toSeq.map { case (a, b) => s"$a=$b" } mkString ("?", "&", "")
+      given request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest(GET, s"/query${paramString}").withHeaders(headers.toSeq*)
 
       inTest.queryDispatcher()(request)
     }
@@ -85,13 +86,11 @@ class QueryControllerISpec extends ServerBaseISpec with WiremockSugar with Befor
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
 
   def asParams(qry: ApplicationQuery): Map[String, String] = {
-    QueryParamsToQueryStringMap.toQuery(qry).map {
-      case (k, vs) => k -> vs.mkString
-    }
+    QueryParamsToQueryStringMap.toHttpQueryString(qry)
   }
 
   val singleQry    = asParams(ApplicationQueries.applicationByClientId(clientIdOne))
-  val paginatedQry = asParams(ApplicationQuery.attemptToConstructQuery(List(PageNbrQP(1), MatchOneStateQP(State.PENDING_GATEKEEPER_APPROVAL))))
+  val paginatedQry = asParams(ApplicationQuery.attemptToConstructQuery(List(PageNbrQP(1), MatchOneStateQP(State.PendingGatekeeperApproval))))
   val generalQry   = asParams(ApplicationQueries.applicationsByUserId(userIdOne))
 
   "QueryController:queryDispatcher" should {

@@ -18,11 +18,13 @@ package uk.gov.hmrc.apiplatform.modules.approvals.controller
 
 import java.util.UUID
 
+import org.mongodb.scala.ObservableFuture
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
+import play.api.libs.ws.WSBodyWritables.writeableOf_String
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.Helpers.CONTENT_TYPE
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -31,13 +33,13 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.ApplicationWithCollaborators
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDAO, SubmissionsRepository}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApprovalsControllerISpec
     extends ServerBaseISpec
@@ -81,7 +83,7 @@ class ApprovalsControllerISpec
     ): WSResponse =
     wsClient
       .url(url)
-      .withHttpHeaders(headers: _*)
+      .withHttpHeaders(headers*)
       .withFollowRedirects(false)
       .post(body)
       .futureValue
@@ -94,8 +96,8 @@ class ApprovalsControllerISpec
         Some("organisationUrl.com"),
         responsibleIndividual,
         Set(ServerLocation.InUK),
-        TermsAndConditionsLocations.InDesktopSoftware,
-        PrivacyPolicyLocations.InDesktopSoftware,
+        TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware,
         List.empty
       )
       val application: StoredApplication =
@@ -117,6 +119,7 @@ class ApprovalsControllerISpec
       )
 
       result.status shouldBe NOT_FOUND
+      import play.api.libs.ws.WSBodyReadables.readableAsString
       result.body shouldBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
     }
 

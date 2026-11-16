@@ -29,8 +29,8 @@ class NameDescriptionCommandsProcessor @Inject() (
     changeSandboxApplicationDescriptionCommandHandler: ChangeSandboxApplicationDescriptionCommandHandler,
     clearSandboxApplicationDescriptionCommandHandler: ClearSandboxApplicationDescriptionCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: NameDescriptionCommand): AppCmdResultT = command match {
     case cmd: ChangeProductionApplicationName     => changeProductionApplicationNameCommandHandler.process(app, cmd)

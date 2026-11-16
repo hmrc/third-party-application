@@ -23,22 +23,24 @@ import play.api.libs.json.{Json, OWrites}
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
 object QuestionnairesController {
   case class ErrorMessage(message: String)
-  implicit val writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
+  given writesErrorMessage: OWrites[ErrorMessage] = Json.writes[ErrorMessage]
 }
 
 @Singleton
 class QuestionnairesController @Inject() (
     dao: QuestionnaireDAO,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends BackendController(cc) {
-  import QuestionnairesController._
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires._
+
+  import QuestionnairesController.*
+  import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.GroupOfQuestionnaires.given
+  import uk.gov.hmrc.apiplatform.modules.common.domain.services.NonEmptyListFormatters.given
 
   def activeQuestionnaires = Action.async {
     dao.fetchActiveGroupsOfQuestionnaires().map(xs => Ok(Json.toJson(xs)))

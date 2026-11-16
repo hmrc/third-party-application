@@ -26,13 +26,13 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule}
-import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, QueryServiceMockModule}
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.*
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class GatekeeperServiceSpec
     extends AsyncHmrcSpec
@@ -45,32 +45,26 @@ class GatekeeperServiceSpec
   private val bobTheGKUser = Actors.GatekeeperUser("bob")
 
   trait Setup extends AuditServiceMockModule
-      with QueryServiceMockModule
-      with ApplicationRepositoryMockModule
-      with StateHistoryRepositoryMockModule {
+      with ApplicationRepositoryMockModule {
 
     lazy val locked            = false
     val mockEmailConnector     = mock[EmailConnector](withSettings.strictness(Strictness.Lenient))
     val response               = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new GatekeeperService(
-      QueryServiceMock.aMock,
       ApplicationRepoMock.aMock,
-      StateHistoryRepoMock.aMock,
       AuditServiceMock.aMock,
-      mockEmailConnector,
       mockApplicationService,
       clock
     )
 
-    StateHistoryRepoMock.Insert.thenAnswer()
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*[LaxEmailAddress], *[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*[ApplicationName], *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*[ApplicationName], *, *)(using *)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*[ApplicationName], *[ApplicationId], *[LaxEmailAddress], *)(using *)).thenReturn(successful(HasSucceeded))
   }
 
   "fetchAppStateHistories" should {
@@ -85,8 +79,8 @@ class GatekeeperServiceSpec
         "app1",
         2,
         List(
-          StateHistory(appId1, State.TESTING, bobTheGKUser, None, None, ts1),
-          StateHistory(appId1, State.PRODUCTION, bobTheGKUser, Some(State.TESTING), None, ts2)
+          StateHistory(appId1, State.Testing, bobTheGKUser, None, None, ts1),
+          StateHistory(appId1, State.Production, bobTheGKUser, Some(State.Testing), None, ts2)
         )
       )
       val history2 = ApplicationWithStateHistory(
@@ -94,7 +88,7 @@ class GatekeeperServiceSpec
         "app2",
         2,
         List(
-          StateHistory(appId2, State.TESTING, bobTheGKUser, None, None, ts3)
+          StateHistory(appId2, State.Testing, bobTheGKUser, None, None, ts3)
         )
       )
       ApplicationRepoMock.FetchProdAppStateHistories.thenReturn(history1, history2)
@@ -106,8 +100,8 @@ class GatekeeperServiceSpec
           "app1",
           2,
           List(
-            ApplicationStateHistoryResponse.Item(State.TESTING, ts1),
-            ApplicationStateHistoryResponse.Item(State.PRODUCTION, ts2)
+            ApplicationStateHistoryResponse.Item(State.Testing, ts1),
+            ApplicationStateHistoryResponse.Item(State.Production, ts2)
           )
         ),
         ApplicationStateHistoryResponse(
@@ -115,7 +109,7 @@ class GatekeeperServiceSpec
           "app2",
           2,
           List(
-            ApplicationStateHistoryResponse.Item(State.TESTING, ts3)
+            ApplicationStateHistoryResponse.Item(State.Testing, ts3)
           )
         )
       )

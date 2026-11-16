@@ -23,6 +23,6 @@ trait NotificationHelpers {
 
   protected def onlyAdmins(app: StoredApplication): LaxEmailAddress => Boolean = {
     val admins = app.collaborators.filter(_.isAdministrator).map(_.emailAddress)
-    admins.contains _
+    admins.contains
   }
 }

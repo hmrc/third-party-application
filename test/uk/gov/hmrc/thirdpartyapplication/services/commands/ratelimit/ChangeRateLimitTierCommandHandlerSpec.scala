@@ -24,21 +24,21 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.RateLimitTier
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
 class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
 
-  val originalRateLimitTier = RateLimitTier.BRONZE
+  val originalRateLimitTier = RateLimitTier.Bronze
   val app                   = principalApp.copy(rateLimitTier = Some(originalRateLimitTier))
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val gatekeeperUser           = "gkuser"
-    val replaceWithRateLimitTier = RateLimitTier.RHODIUM
+    val replaceWithRateLimitTier = RateLimitTier.Rhodium
     val newApp                   = app.copy(rateLimitTier = Some(replaceWithRateLimitTier))
 
     val timestamp = FixedClock.instant
@@ -49,7 +49,7 @@ class ChangeRateLimitTierCommandHandlerSpec extends CommandHandlerBaseSpec {
     def checkSuccessResult(expectedActor: Actors.GatekeeperUser)(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
         val event = events.head
 

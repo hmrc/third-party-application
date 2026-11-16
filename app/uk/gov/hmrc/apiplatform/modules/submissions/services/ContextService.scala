@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 class ContextService @Inject() (
     applicationRepository: ApplicationRepository,
     subscriptionRepository: SubscriptionRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture

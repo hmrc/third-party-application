@@ -27,8 +27,8 @@ class BlockCommandsProcessor @Inject() (
     blockApplicationCommandHandler: BlockApplicationCommandHandler,
     unblockApplicationCommandHandler: UnblockApplicationCommandHandler
   ) {
-  import CommandHandler._
-  import ApplicationCommands._
+  import CommandHandler.*
+  import ApplicationCommands.*
 
   def process(app: StoredApplication, command: BlockCommand): AppCmdResultT = command match {
     case cmd: BlockApplication   => blockApplicationCommandHandler.process(app, cmd)

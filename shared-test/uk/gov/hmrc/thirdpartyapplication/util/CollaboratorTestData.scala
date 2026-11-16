@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.util
 
 import scala.collection.mutable
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{CollaboratorFixtures, Collaborators}
 
@@ -34,11 +35,9 @@ trait CollaboratorTestData extends CollaboratorFixtures {
     case adminTwo.emailAddress     => adminTwo.userId
     case developerOne.emailAddress => developerOne.userId
     case s: String                 => idsByEmail.getOrElseUpdate(s, UserId.random)
-    case LaxEmailAddress(text)     => idsByEmail.getOrElseUpdate(text, UserId.random)
+    case e: LaxEmailAddress        => idsByEmail.getOrElseUpdate(e.text, UserId.random)
     case _                         => throw new IllegalArgumentException("Only strings and lax email addresses are supported")
   }
-
-  import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
 
   implicit class CollaboratorStringSyntax(emailAddress: String) {
     def admin()     = Collaborators.Administrator(idOf(emailAddress), emailAddress.toLaxEmail)

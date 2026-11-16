@@ -20,24 +20,24 @@ import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant}
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import org.mongodb.scala.SingleObservableFuture
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, _}
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.models.TermsOfUseInvitationState._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationStateFixtures, *}
+import uk.gov.hmrc.thirdpartyapplication.models.db.*
+import uk.gov.hmrc.thirdpartyapplication.models.{TermsOfUseInvitationState, *}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 object TermsOfUseInvitationRepositoryISpecExample extends FixedClock {
   val appId                = ApplicationId.random
@@ -66,7 +66,7 @@ class TermsOfUseInvitationRepositoryISpec
     with TableDrivenPropertyChecks
     with FixedClock {
 
-  import TermsOfUseInvitationRepositoryISpecExample._
+  import TermsOfUseInvitationRepositoryISpecExample.*
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -107,6 +107,7 @@ class TermsOfUseInvitationRepositoryISpec
     import org.mongodb.scala.result.InsertOneResult
 
     def saveMongoJson(rawJson: JsObject): InsertOneResult = {
+      import org.mongodb.scala.SingleObservableFuture
       await(mongoDatabase.getCollection("termsOfUseInvitation").insertOne(Document(rawJson.toString())).toFuture())
     }
 
@@ -120,12 +121,12 @@ class TermsOfUseInvitationRepositoryISpec
   "create" should {
     "create an entry" in {
 
-      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       val result = await(termsOfUseInvitationRepository.create(touInvite))
 
       result shouldBe Some(touInvite)
-      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
+      await(termsOfUseInvitationRepository.collection.countDocuments().toFuture()) shouldBe 1L
     }
   }
 
@@ -133,8 +134,8 @@ class TermsOfUseInvitationRepositoryISpec
     "fetch an entry" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
-      val touInvite1     = TermsOfUseInvitation(applicationId1, instant, instant, instant, None, EMAIL_SENT)
-      val touInvite2     = TermsOfUseInvitation(applicationId2, instant, instant, instant, None, EMAIL_SENT)
+      val touInvite1     = TermsOfUseInvitation(applicationId1, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
+      val touInvite2     = TermsOfUseInvitation(applicationId2, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
@@ -148,8 +149,8 @@ class TermsOfUseInvitationRepositoryISpec
     "fetch an entry" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
-      val touInvite1     = TermsOfUseInvitation(applicationId1, instant, instant, instant, None, EMAIL_SENT)
-      val touInvite2     = TermsOfUseInvitation(applicationId2, instant, instant, instant, None, TERMS_OF_USE_V2)
+      val touInvite1     = TermsOfUseInvitation(applicationId1, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
+      val touInvite2     = TermsOfUseInvitation(applicationId2, instant, instant, instant, None, TermsOfUseInvitationState.TERMS_OF_USE_V2)
 
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
@@ -163,12 +164,12 @@ class TermsOfUseInvitationRepositoryISpec
     "fetch an entry" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
-      val touInvite1     = TermsOfUseInvitation(applicationId1, instant, instant, instant, None, EMAIL_SENT)
-      val touInvite2     = TermsOfUseInvitation(applicationId2, instant, instant, instant, None, TERMS_OF_USE_V2)
+      val touInvite1     = TermsOfUseInvitation(applicationId1, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
+      val touInvite2     = TermsOfUseInvitation(applicationId2, instant, instant, instant, None, TermsOfUseInvitationState.TERMS_OF_USE_V2)
 
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
-      val result = await(termsOfUseInvitationRepository.fetchByStatus(EMAIL_SENT))
+      val result = await(termsOfUseInvitationRepository.fetchByStatus(TermsOfUseInvitationState.EMAIL_SENT))
 
       result.size shouldBe 1
       result.head shouldBe touInvite1
@@ -187,15 +188,15 @@ class TermsOfUseInvitationRepositoryISpec
       val startDate3     = Instant.parse("2023-06-28T12:03:06.000Z")
       val dueBy3         = startDate3.plus(21, ChronoUnit.DAYS)
 
-      val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
-      val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, EMAIL_SENT)
-      val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, TERMS_OF_USE_V2)
+      val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.EMAIL_SENT)
+      val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, TermsOfUseInvitationState.EMAIL_SENT)
+      val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, TermsOfUseInvitationState.TERMS_OF_USE_V2)
 
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
       await(termsOfUseInvitationRepository.create(touInvite3))
       val findDueBy = Instant.parse("2023-07-03T12:00:00.000Z")
-      val result    = await(termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(EMAIL_SENT, findDueBy))
+      val result    = await(termsOfUseInvitationRepository.fetchByStatusBeforeDueBy(TermsOfUseInvitationState.EMAIL_SENT, findDueBy))
 
       result.size shouldBe 1
       result shouldBe List(touInvite1)
@@ -216,11 +217,11 @@ class TermsOfUseInvitationRepositoryISpec
       val startDate3     = Instant.parse("2023-06-28T12:03:06.000Z")
       val dueBy3         = startDate3.plus(21, ChronoUnit.DAYS)
 
-      val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, EMAIL_SENT)
-      val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, REMINDER_EMAIL_SENT)
-      val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, REMINDER_EMAIL_SENT)
-      val touInvite4 = TermsOfUseInvitation(applicationId4, startDate2, startDate2, dueBy2, None, FAILED)
-      val touInvite5 = TermsOfUseInvitation(applicationId5, startDate1, startDate1, dueBy1, None, TERMS_OF_USE_V2)
+      val touInvite1 = TermsOfUseInvitation(applicationId1, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.EMAIL_SENT)
+      val touInvite2 = TermsOfUseInvitation(applicationId2, startDate2, startDate2, dueBy2, None, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
+      val touInvite3 = TermsOfUseInvitation(applicationId3, startDate3, startDate3, dueBy3, None, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
+      val touInvite4 = TermsOfUseInvitation(applicationId4, startDate2, startDate2, dueBy2, None, TermsOfUseInvitationState.FAILED)
+      val touInvite5 = TermsOfUseInvitation(applicationId5, startDate1, startDate1, dueBy1, None, TermsOfUseInvitationState.TERMS_OF_USE_V2)
 
       await(termsOfUseInvitationRepository.create(touInvite1))
       await(termsOfUseInvitationRepository.create(touInvite2))
@@ -228,7 +229,7 @@ class TermsOfUseInvitationRepositoryISpec
       await(termsOfUseInvitationRepository.create(touInvite4))
       await(termsOfUseInvitationRepository.create(touInvite5))
       val findDueBy = Instant.parse("2023-07-03T12:00:00.000Z")
-      val result    = await(termsOfUseInvitationRepository.fetchByStatusesBeforeDueBy(findDueBy, EMAIL_SENT, REMINDER_EMAIL_SENT))
+      val result    = await(termsOfUseInvitationRepository.fetchByStatusesBeforeDueBy(findDueBy, TermsOfUseInvitationState.EMAIL_SENT, TermsOfUseInvitationState.REMINDER_EMAIL_SENT))
 
       result.size shouldBe 2
       result shouldBe List(touInvite1, touInvite2)
@@ -238,28 +239,28 @@ class TermsOfUseInvitationRepositoryISpec
   "updateState" should {
     "update the status of an existing entry" in {
 
-      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       await(termsOfUseInvitationRepository.create(touInvite))
-      val result = await(termsOfUseInvitationRepository.updateState(applicationId, TERMS_OF_USE_V2))
+      val result = await(termsOfUseInvitationRepository.updateState(applicationId, TermsOfUseInvitationState.TERMS_OF_USE_V2))
       result shouldBe HasSucceeded
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
-      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, None, TERMS_OF_USE_V2))
+      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.TERMS_OF_USE_V2))
     }
   }
 
   "updateReminderSent" should {
     "update the status and reminder sent date of an existing entry" in {
 
-      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateReminderSent(applicationId))
       result shouldBe HasSucceeded
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
-      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, Some(instant), REMINDER_EMAIL_SENT))
+      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, instant, Some(instant), TermsOfUseInvitationState.REMINDER_EMAIL_SENT))
     }
   }
 
@@ -267,21 +268,21 @@ class TermsOfUseInvitationRepositoryISpec
     "update the status and due by date of an existing entry" in {
 
       val newDueByDate = instant.plus(30, ChronoUnit.DAYS)
-      val touInvite    = TermsOfUseInvitation(applicationId, instant, instant, instant, None, FAILED)
+      val touInvite    = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.FAILED)
 
       await(termsOfUseInvitationRepository.create(touInvite))
       val result = await(termsOfUseInvitationRepository.updateResetBackToEmailSent(applicationId, newDueByDate))
       result shouldBe HasSucceeded
 
       val fetch = await(termsOfUseInvitationRepository.fetch(applicationId))
-      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, newDueByDate, None, EMAIL_SENT))
+      fetch shouldBe Some(TermsOfUseInvitation(applicationId, instant, instant, newDueByDate, None, TermsOfUseInvitationState.EMAIL_SENT))
     }
   }
 
   "delete" should {
     "delete an entry" in {
 
-      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, EMAIL_SENT)
+      val touInvite = TermsOfUseInvitation(applicationId, instant, instant, instant, None, TermsOfUseInvitationState.EMAIL_SENT)
 
       val result = await(termsOfUseInvitationRepository.create(touInvite))
       result shouldBe Some(touInvite)
@@ -317,22 +318,62 @@ class TermsOfUseInvitationRepositoryISpec
     val application4 = anApplicationData(applicationId4, "Nicola app name")
     val application5 = anApplicationData(applicationId5, "Nicholas app name")
 
-    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT)
-    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT)
-    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT)
-    val touInvite4 = TermsOfUseInvitation(applicationId4, startDate, startDate, dueBy, None, FAILED)
-    val touInvite5 = TermsOfUseInvitation(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2)
+    val touInvite1 = TermsOfUseInvitation(applicationId1, startDate, startDate, dueBy, None, TermsOfUseInvitationState.EMAIL_SENT)
+    val touInvite2 = TermsOfUseInvitation(applicationId2, startDate, startDate, dueBy, None, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
+    val touInvite3 = TermsOfUseInvitation(applicationId3, startDate, startDate, dueBy, None, TermsOfUseInvitationState.REMINDER_EMAIL_SENT)
+    val touInvite4 = TermsOfUseInvitation(applicationId4, startDate, startDate, dueBy, None, TermsOfUseInvitationState.FAILED)
+    val touInvite5 = TermsOfUseInvitation(applicationId5, startDate, startDate, dueBy, None, TermsOfUseInvitationState.TERMS_OF_USE_V2)
 
     val touInviteWithApp1 =
-      TermsOfUseInvitationWithApplication(applicationId1, startDate, startDate, dueBy, None, EMAIL_SENT, Set(TermsOfUseApplication(application1.id, application1.name)))
+      TermsOfUseInvitationWithApplication(
+        applicationId1,
+        startDate,
+        startDate,
+        dueBy,
+        None,
+        TermsOfUseInvitationState.EMAIL_SENT,
+        Set(TermsOfUseApplication(application1.id, application1.name))
+      )
     val touInviteWithApp2 =
-      TermsOfUseInvitationWithApplication(applicationId2, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(TermsOfUseApplication(application2.id, application2.name)))
+      TermsOfUseInvitationWithApplication(
+        applicationId2,
+        startDate,
+        startDate,
+        dueBy,
+        None,
+        TermsOfUseInvitationState.REMINDER_EMAIL_SENT,
+        Set(TermsOfUseApplication(application2.id, application2.name))
+      )
     val touInviteWithApp3 =
-      TermsOfUseInvitationWithApplication(applicationId3, startDate, startDate, dueBy, None, REMINDER_EMAIL_SENT, Set(TermsOfUseApplication(application3.id, application3.name)))
+      TermsOfUseInvitationWithApplication(
+        applicationId3,
+        startDate,
+        startDate,
+        dueBy,
+        None,
+        TermsOfUseInvitationState.REMINDER_EMAIL_SENT,
+        Set(TermsOfUseApplication(application3.id, application3.name))
+      )
     val touInviteWithApp4 =
-      TermsOfUseInvitationWithApplication(applicationId4, startDate, startDate, dueBy, None, FAILED, Set(TermsOfUseApplication(application4.id, application4.name)))
+      TermsOfUseInvitationWithApplication(
+        applicationId4,
+        startDate,
+        startDate,
+        dueBy,
+        None,
+        TermsOfUseInvitationState.FAILED,
+        Set(TermsOfUseApplication(application4.id, application4.name))
+      )
     val touInviteWithApp5 =
-      TermsOfUseInvitationWithApplication(applicationId5, startDate, startDate, dueBy, None, TERMS_OF_USE_V2, Set(TermsOfUseApplication(application5.id, application5.name)))
+      TermsOfUseInvitationWithApplication(
+        applicationId5,
+        startDate,
+        startDate,
+        dueBy,
+        None,
+        TermsOfUseInvitationState.TERMS_OF_USE_V2,
+        Set(TermsOfUseApplication(application5.id, application5.name))
+      )
 
     "return expected result of 1 for email sent status search" in {
       await(applicationRepository.save(application1))

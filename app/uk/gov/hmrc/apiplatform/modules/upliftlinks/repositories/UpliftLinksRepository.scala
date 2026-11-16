@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJsonFormatter
 
 @Singleton
-class UpliftLinksRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+class UpliftLinksRepository @Inject() (mongo: MongoComponent)(using val ec: ExecutionContext)
     extends PlayMongoRepository[UpliftLink](
       collectionName = "upliftlinks",
       mongoComponent = mongo,

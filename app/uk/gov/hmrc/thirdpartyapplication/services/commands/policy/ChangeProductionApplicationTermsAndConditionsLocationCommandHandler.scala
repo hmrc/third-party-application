@@ -19,12 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands.policy
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, TermsAndConditionsLocation, TermsAndConditionsLocations}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{ImportantSubmissionData, TermsAndConditionsLocation}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeProductionApplicationTermsAndConditionsLocation
 import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.{ApplicationEvent, ApplicationEvents, EventId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
@@ -34,25 +34,25 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands.CommandHandler
 @Singleton
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() (
     applicationRepository: ApplicationRepository
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   def processLegacyApp(oldUrl: String, app: StoredApplication, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     def validate: Validated[Failures, String] = {
       val newUrl       = cmd.newLocation match {
-        case TermsAndConditionsLocations.Url(value) => Some(value)
-        case _                                      => None
+        case TermsAndConditionsLocation.Url(value) => Some(value)
+        case _                                     => None
       }
       val ensureIsAUrl = mustBeDefined(newUrl, s"Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
 
-      Apply[Validated[Failures, *]].map4(
+      (
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app),
         ensureIsAUrl
-      ) { case (_, _, _, url) => url }
+      ).mapN((_, _, _, url) => url)
     }
 
     def asEvents(newUrl: String): NonEmptyList[ApplicationEvent] = {
@@ -77,11 +77,11 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   def processApp(oldLocation: TermsAndConditionsLocation, app: StoredApplication, cmd: ChangeProductionApplicationTermsAndConditionsLocation): AppCmdResultT = {
     def validate: Validated[Failures, StoredApplication] = {
-      Apply[Validated[Failures, *]].map3(
+      (
         isAdminOnApp(cmd.instigator, app),
         isNotInProcessOfBeingApproved(app),
         ensureStandardAccess(app)
-      ) { case _ => app }
+      ).mapN((_, _, _) => app)
     }
 
     def asEvents: NonEmptyList[ApplicationEvent] = {
@@ -98,7 +98,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     }
 
     for {
-      valid    <- E.fromEither(validate.toEither)
+      _        <- E.fromEither(validate.toEither)
       savedApp <- E.liftF(applicationRepository.updateApplicationTermsAndConditionsLocation(app.id, cmd.newLocation))
       events    = asEvents
     } yield (savedApp, events)
@@ -108,7 +108,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
     app.access match {
       case Access.Standard(_, _, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => processApp(termsAndConditionsLocation, app, cmd)
       case Access.Standard(_, _, maybeTermsAndConditionsLocation, _, _, _, None)                                       => processLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
-      case _                                                                                                           => processApp(TermsAndConditionsLocations.InDesktopSoftware, app, cmd) // This will not valdate
+      case _                                                                                                           => processApp(TermsAndConditionsLocation.InDesktopSoftware, app, cmd) // This will not valdate
     }
   }
 }

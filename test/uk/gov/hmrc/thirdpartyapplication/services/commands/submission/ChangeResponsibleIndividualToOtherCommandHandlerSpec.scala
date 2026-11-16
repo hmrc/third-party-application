@@ -20,11 +20,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.LaxEmailAddress.StringSyntax.toLaxEmail
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId, ApplicationIdData}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, State}
-import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocations, TermsAndConditionsLocations, _}
+import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, TermsAndConditionsLocation, *}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualTouUpliftVerification,
@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeResponsibleIndividualToOther
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateExamples
@@ -54,7 +54,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       with TermsOfUseInvitationRepositoryMockModule
       with SubmissionsServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
     val submission               = aSubmission
     val riName                   = "Mr Responsible"
@@ -68,8 +68,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       None,
       ResponsibleIndividual.build(riName, riEmail.text),
       Set.empty,
-      TermsAndConditionsLocations.InDesktopSoftware,
-      PrivacyPolicyLocations.InDesktopSoftware,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
       List.empty
     )
 
@@ -128,7 +128,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     def checkSuccessResultToU()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 2
 
         events.collect {
@@ -151,8 +151,8 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
             stateEvent.actor shouldBe Actors.AppCollaborator(adminOne.emailAddress)
             stateEvent.requestingAdminEmail shouldBe requesterEmail
             stateEvent.requestingAdminName shouldBe requesterName
-            stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL.toString()
-            stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION.toString()
+            stateEvent.newAppState shouldBe State.PendingGatekeeperApproval
+            stateEvent.oldAppState shouldBe State.PendingResponsibleIndividualVerification
         }
       }
     }
@@ -161,7 +161,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
       val testMe = await(fn.value).value
 
       if (isPassed) {
-        inside(testMe) { case (returnedApp, events) =>
+        inside(testMe) { case (_, events) =>
           events should have size 2
 
           events.collect {
@@ -187,7 +187,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
           }
         }
       } else {
-        inside(testMe) { case (returnedApp, events) =>
+        inside(testMe) { case (_, events) =>
           events should have size 1
 
           events.collect {
@@ -209,7 +209,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends CommandHandle
     def checkSuccessResultUpdate()(fn: => CommandHandler.AppCmdResultT) = {
       val testMe = await(fn.value).value
 
-      inside(testMe) { case (returnedApp, events) =>
+      inside(testMe) { case (_, events) =>
         events should have size 1
 
         events.collect {

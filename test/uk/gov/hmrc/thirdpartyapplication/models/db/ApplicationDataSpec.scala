@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{ApplicationName, GrantLength}
@@ -27,10 +27,10 @@ import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.{
   CreationAccess,
   StandardAccessDataToCopy
 }
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with CollaboratorTestData {
-  import ApiIdentifierSyntax._
+  import ApiIdentifierSyntax.*
 
   "StoredApplication" should {
     val refreshTokensAvailableFor = GrantLength.EIGHTEEN_MONTHS.period
@@ -43,7 +43,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             name = ApplicationName("bob"),
             access = CreationAccess.Standard,
             description = None,
-            environment = Environment.PRODUCTION,
+            environment = Environment.Production,
             collaborators = Set("jim@example.com".admin()),
             subscriptions = None,
             organisationId = Some(OrganisationId.random)
@@ -60,7 +60,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             name = ApplicationName("bob"),
             access = CreationAccess.Standard,
             description = None,
-            environment = Environment.PRODUCTION,
+            environment = Environment.Production,
             collaborators = Set("jim@example.com".admin()),
             subscriptions = Some(Set("context".asIdentifier)),
             organisationId = Some(OrganisationId.random)
@@ -77,7 +77,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
             name = ApplicationName("bob"),
             access = CreationAccess.Standard,
             description = None,
-            environment = Environment.PRODUCTION,
+            environment = Environment.Production,
             collaborators = Set("jim@example.com".admin()),
             subscriptions = Some(Set("context".asIdentifier)),
             organisationId = Some(OrganisationId.random)
@@ -95,7 +95,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples with Collab
           name = ApplicationName("bob"),
           access = StandardAccessDataToCopy(),
           description = None,
-          environment = Environment.PRODUCTION,
+          environment = Environment.Production,
           collaborators = Set("jim@example.com".admin()),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
           requestedBy = "user@example.com",

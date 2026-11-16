@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.HeaderCarrier
@@ -34,7 +34,7 @@ class StrideGatekeeperRoleAuthorisationService @Inject() (
     authControlConfig: AuthControlConfig,
     strideAuthRoles: StrideAuthRoles,
     strideAuthConnector: StrideAuthConnector
-  )(implicit val ec: ExecutionContext
+  )(using ec: ExecutionContext
   ) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   private lazy val hasAnyGatekeeperEnrolment =

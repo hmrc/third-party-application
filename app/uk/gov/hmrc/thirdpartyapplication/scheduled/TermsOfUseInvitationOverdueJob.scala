@@ -38,7 +38,7 @@ class TermsOfUseInvitationOverdueJob @Inject() (
     applicationRepository: ApplicationRepository,
     val clock: Clock,
     jobConfig: TermsOfUseInvitationOverdueJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "TermsOfUseInvitationOverdueJob"
@@ -46,7 +46,7 @@ class TermsOfUseInvitationOverdueJob @Inject() (
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
   override val lockService: LockService     = termsOfUseInvitationOverdueLockService
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  given hc: HeaderCarrier                   = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val overdueTime: Instant = instant
@@ -73,9 +73,9 @@ class TermsOfUseInvitationOverdueJob @Inject() (
 
     (
       for {
-        app     <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
-        _       <- E.cond(!app.state.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
-        updated <- E.liftF(termsOfUseInvitationRepository.updateState(invite.applicationId, TermsOfUseInvitationState.OVERDUE))
+        app <- E.fromOptionF(applicationRepository.fetch(invite.applicationId), s"Couldn't find application with id=${invite.applicationId}")
+        _   <- E.cond(!app.state.isDeleted, (), s"The application ${invite.applicationId} has been deleted")
+        _   <- E.liftF(termsOfUseInvitationRepository.updateState(invite.applicationId, TermsOfUseInvitationState.OVERDUE))
       } yield HasSucceeded
     ).value
   }

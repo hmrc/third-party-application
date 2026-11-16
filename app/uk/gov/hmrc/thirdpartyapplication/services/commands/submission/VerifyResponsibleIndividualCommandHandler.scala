@@ -20,8 +20,8 @@ import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
+import cats.syntax.apply.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, LaxEmailAddress}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.Access
@@ -43,11 +43,11 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     submissionService: SubmissionsService,
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler {
 
-  import CommandHandler._
-  import CommandFailures._
+  import CommandHandler.*
+  import CommandFailures.*
 
   private def isNotCurrentRi(name: String, email: LaxEmailAddress, app: StoredApplication) =
     cond(
@@ -60,13 +60,13 @@ class VerifyResponsibleIndividualCommandHandler @Inject() (
     )
 
   private def validate(app: StoredApplication, cmd: VerifyResponsibleIndividual): Validated[Failures, Collaborator] = {
-    Apply[Validated[Failures, *]].map5(
+    (
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
       isNotCurrentRi(cmd.riName, cmd.riEmail, app),
       ensureRequesterEmailDefined(app)
-    ) { case (_, _, instigator, _, _) => instigator }
+    ).mapN((_, _, instigator, _, _) => instigator)
   }
 
   private def asEvents(app: StoredApplication, cmd: VerifyResponsibleIndividual, submission: Submission, requesterEmail: LaxEmailAddress): NonEmptyList[ApplicationEvent] = {

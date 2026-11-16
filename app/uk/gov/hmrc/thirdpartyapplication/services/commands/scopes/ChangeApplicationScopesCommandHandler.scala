@@ -21,7 +21,6 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.sequence
 
-import cats.Apply
 import cats.data.{NonEmptyList, Validated}
 
 import uk.gov.hmrc.http.HeaderCarrier
@@ -30,8 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, ClockNow}
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.{Access, AccessType}
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.ChangeApplicationScopes
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents._
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.ApplicationEvents.*
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ScopeAdded, ScopeRemoved}
@@ -43,15 +42,15 @@ class ChangeApplicationScopesCommandHandler @Inject() (
     val applicationRepository: ApplicationRepository,
     auditService: AuditService,
     val clock: Clock
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends CommandHandler with ApplicationLogger with ClockNow {
 
-  import CommandHandler._
+  import CommandHandler.*
 
   private def validate(app: StoredApplication): Validated[Failures, StoredApplication] = {
-    Apply[Validated[Failures, *]].map(
+    (
       ensurePrivilegedOrROPCAccess(app)
-    ) { case _ => app }
+    ).map(_ => app)
   }
 
   private def asEvents(
@@ -86,13 +85,13 @@ class ChangeApplicationScopesCommandHandler @Inject() (
     }
 
     for {
-      validateResult           <- E.fromValidated(validate(app))
-      oldScopes                 = getScopes(app)
-      newScopes                 = cmd.scopes
-      persistedApplicationData <- E.liftF(applicationRepository.save(updateWithScopes(app, newScopes)))
-      _                         = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
-      _                         = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
-      events                    = asEvents(app, cmd, oldScopes, newScopes)
+      _        <- E.fromValidated(validate(app))
+      oldScopes = getScopes(app)
+      newScopes = cmd.scopes
+      _        <- E.liftF(applicationRepository.save(updateWithScopes(app, newScopes)))
+      _         = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
+      _         = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
+      events    = asEvents(app, cmd, oldScopes, newScopes)
     } yield (app, events)
   }
 
@@ -112,8 +111,8 @@ class ChangeApplicationScopesCommandHandler @Inject() (
     applicationData.access.asInstanceOf[Access.Ropc]
 
   private def privilegedOrRopc[T](applicationData: StoredApplication, privilegedFunction: StoredApplication => T, ropcFunction: StoredApplication => T) =
-    (applicationData.access.accessType: @unchecked) match { // There is no need to check for AccessType.STANDARD because of validation done earlier
-      case AccessType.PRIVILEGED => privilegedFunction(applicationData)
-      case AccessType.ROPC       => ropcFunction(applicationData)
+    (applicationData.access.accessType: @unchecked) match { // There is no need to check for AccessType.Standard because of validation done earlier
+      case AccessType.Privileged => privilegedFunction(applicationData)
+      case AccessType.Ropc       => ropcFunction(applicationData)
     }
 }

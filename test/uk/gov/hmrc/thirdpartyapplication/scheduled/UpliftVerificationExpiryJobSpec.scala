@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.time.{Duration => JavaTimeDuration}
+import java.time.Duration as JavaTimeDuration
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -30,14 +30,14 @@ import uk.gov.hmrc.mongo.test.MongoSupport
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{Actors, ApplicationId}
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models._
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQueries
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 class UpliftVerificationExpiryJobSpec
     extends AsyncHmrcSpec
@@ -65,7 +65,7 @@ class UpliftVerificationExpiryJobSpec
         override val ttl: Duration = 1.minutes
 
         override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-          if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
+          if (lockKeeperSuccess()) body.map(value => Some(value))(using ec) else Future.successful(None)
       }
 
     val upliftVerificationValidity: FiniteDuration = FiniteDuration(expiryTimeInDays, DAYS)
@@ -85,7 +85,7 @@ class UpliftVerificationExpiryJobSpec
       val app2: StoredApplication =
         storedApp.withId(ApplicationId.random).withState(appStatePendingRequesterVerification.copy(requestedByEmailAddress = Some("requester2@example.com")))
       val expectedDate            = instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays))
-      val expectedQry             = ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expectedDate)
+      val expectedQry             = ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, expectedDate)
 
       ApplicationRepoMock.FetchApplications.thenReturnsFor(expectedQry, app1, app2)
 
@@ -100,16 +100,16 @@ class UpliftVerificationExpiryJobSpec
       ApplicationRepoMock.Save.verifyCalledWith(app2.withState(appStateTesting))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
-        State.TESTING,
+        State.Testing,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
-        Some(State.PENDING_REQUESTER_VERIFICATION),
+        Some(State.PendingRequesterVerification),
         changedAt = instant
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
-        State.TESTING,
+        State.Testing,
         Actors.ScheduledJob("UpliftVerificationExpiryJob"),
-        Some(State.PENDING_REQUESTER_VERIFICATION),
+        Some(State.PendingRequesterVerification),
         changedAt = instant
       ))
       verify(mockSubmissionsService).declineSubmission(
@@ -135,7 +135,7 @@ class UpliftVerificationExpiryJobSpec
 
       val result = await(underTest.execute)
 
-      result.message shouldBe
+      result shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing fetchAllByStatusDetails db query'." +
         " The next execution of the job will do retry."
     }
@@ -145,14 +145,14 @@ class UpliftVerificationExpiryJobSpec
       val app2: StoredApplication = storedApp.withId(ApplicationId.random).withState(appStateTesting)
 
       val expectedDate = instant.minus(JavaTimeDuration.ofDays(expiryTimeInDays))
-      val expectedQry  = ApplicationQueries.applicationsByStateAndDate(State.PENDING_REQUESTER_VERIFICATION, expectedDate)
+      val expectedQry  = ApplicationQueries.applicationsByStateAndDate(State.PendingRequesterVerification, expectedDate)
       ApplicationRepoMock.FetchApplications.thenReturnsFor(expectedQry, app1, app2)
 
       ApplicationRepoMock.Save.thenFail(new RuntimeException("A failure on executing save db query"))
 
-      val result: underTest.Result = await(underTest.execute)
+      val result: String = await(underTest.execute)
 
-      result.message shouldBe
+      result shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
         " The next execution of the job will do retry."
     }

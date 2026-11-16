@@ -47,14 +47,14 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
     applicationService: ApplicationService,
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationReminderJobConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ScheduledMongoJob with ApplicationLogger with ClockNow {
 
   override def name: String                 = "ResponsibleIndividualVerificationReminderJob"
   override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  given hc: HeaderCarrier                   = HeaderCarrier()
   override val lockService: LockService     = responsibleIndividualVerificationReminderJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
@@ -82,7 +82,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
       _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(
                           ri.fullName.value,
                           ri.emailAddress,
-                          app.name.value,
+                          app.name,
                           requesterName,
                           verificationDueForReminder.id.value
                         ))

@@ -34,7 +34,7 @@ class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
     clientSecretService: ClientSecretService,
     config: CredentialConfig
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ApplicationLogger {
 
   val clientSecretLimit = config.clientSecretLimit

@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.*
 
 trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with StoredApplicationFixtures {
 
@@ -34,7 +34,7 @@ trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     object SendNotifications {
 
       def thenReturnSuccess() =
-        when(aMock.sendNotifications(*[StoredApplication], *, *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
+        when(aMock.sendNotifications(*[StoredApplication], *, *)(using *)).thenReturn(Future.successful(List(HasSucceeded)))
     }
   }
 

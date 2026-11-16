@@ -26,31 +26,31 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.*
 
 trait AnyGatekeeperRoleAuthorisationAction extends ApplicationLogger {
   self: BackendController =>
 
-  implicit val ec: ExecutionContext
+  given ec: ExecutionContext
   def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
 
-  def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] = {
+  def anyAuthenticatedUserAction(block: Request[?] => Future[Result]): Action[AnyContent] = {
     Action.async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         .recoverWith { case NonFatal(_) =>
           logger.warn("LDAP Authenticate errored trying to find user, trying stride")
           ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE
         }
         .flatMap(_ match {
-          case Some(failureToAuthorise) =>
+          case Some(_) =>
             strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
               .flatMap(_ match {
                 case None                     => block(request)
                 case Some(failureToAuthorise) => successful(failureToAuthorise)
               })
-          case None                     => block(request)
+          case None    => block(request)
         })
     }
   }

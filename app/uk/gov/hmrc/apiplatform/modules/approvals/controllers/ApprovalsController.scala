@@ -32,10 +32,10 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 object ApprovalsController {
   case class TouUpliftRequest(gatekeeperUserName: String, reasons: String)
-  implicit val readsTouUpliftRequest: Reads[TouUpliftRequest] = Json.reads[TouUpliftRequest]
+  given readsTouUpliftRequest: Reads[TouUpliftRequest] = Json.reads[TouUpliftRequest]
 
   case class TouDeleteRequest(gatekeeperUserName: String)
-  implicit val readsTouDeleteRequest: Reads[TouDeleteRequest] = Json.reads[TouDeleteRequest]
+  given readsTouDeleteRequest: Reads[TouDeleteRequest] = Json.reads[TouDeleteRequest]
 }
 
 @Singleton
@@ -44,16 +44,16 @@ class ApprovalsController @Inject() (
     val submissionService: SubmissionsService,
     grantApprovalService: GrantApprovalsService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with ApprovalsActionBuilders
     with JsonUtils
     with JsonErrorResponse {
 
-  import ApprovalsController._
+  import ApprovalsController.*
 
   def grantWithWarningsForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.grantWithWarningsForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
@@ -61,7 +61,7 @@ class ApprovalsController @Inject() (
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
@@ -69,7 +69,7 @@ class ApprovalsController @Inject() (
   }
 
   def declineForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.declineForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
@@ -77,7 +77,7 @@ class ApprovalsController @Inject() (
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_WARNINGS_STATE", s"Submission for $applicationId was not in a warnings state"))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
@@ -85,7 +85,7 @@ class ApprovalsController @Inject() (
   }
 
   def resetForTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
     withJsonBodyFromAnyContent[TouUpliftRequest] { upliftRequest =>
       grantApprovalService.resetForTouUplift(request.application, request.submission, upliftRequest.gatekeeperUserName, upliftRequest.reasons)
@@ -94,7 +94,7 @@ class ApprovalsController @Inject() (
           case RejectedDueToIncorrectSubmissionState  =>
             PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId was not in the expected state"))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
           case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
         })
     }
@@ -102,14 +102,14 @@ class ApprovalsController @Inject() (
   }
 
   def deleteTouUplift(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantApprovalsService._
+    import GrantApprovalsService.*
 
-    withJsonBodyFromAnyContent[TouDeleteRequest] { deleteRequest =>
-      grantApprovalService.deleteTouUplift(request.application, request.submission, deleteRequest.gatekeeperUserName)
+    withJsonBodyFromAnyContent[TouDeleteRequest] { _ =>
+      grantApprovalService.deleteTouUplift(request.application)
         .map(_ match {
           case Actioned(application)                  => Ok(Json.toJson(application.asAppWithCollaborators))
           case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PRODUCTION}'"))
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.Production}'"))
         })
     }
       .recover(recovery)

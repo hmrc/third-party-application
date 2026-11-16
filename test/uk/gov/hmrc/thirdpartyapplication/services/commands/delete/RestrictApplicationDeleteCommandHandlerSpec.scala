@@ -22,9 +22,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.Actors
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
-import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.DoNotDelete
+import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.DeleteRestriction.*
 import uk.gov.hmrc.apiplatform.modules.commands.applications.domain.models.ApplicationCommands.RestrictApplicationDelete
-import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models._
+import uk.gov.hmrc.apiplatform.modules.events.applications.domain.models.*
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.services.commands.{CommandHandler, CommandHandlerBaseSpec}
 
@@ -34,9 +34,9 @@ class RestrictApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec
 
   trait Setup extends ApplicationRepositoryMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given hc: HeaderCarrier = HeaderCarrier()
 
-    val appWithDeleteAllowed         = storedApp.inSandbox()
+    val appWithDeleteAllowed         = storedApp.inSandbox().copy(deleteRestriction = NoRestriction)
     val timestamp                    = FixedClock.instant
     val deleteRestrictionDoNotDelete = DoNotDelete(reasons, Actors.GatekeeperUser(gatekeeperUser), timestamp)
     val appWithDeleteRestricted      = appWithDeleteAllowed.copy(deleteRestriction = deleteRestrictionDoNotDelete)
@@ -73,7 +73,6 @@ class RestrictApplicationDeleteCommandHandlerSpec extends CommandHandlerBaseSpec
     }
 
     "return an error if delete is already restricted" in new Setup {
-
       checkFailsWith("Delete is already restricted") {
         underTest.process(appWithDeleteRestricted, cmd)
       }
