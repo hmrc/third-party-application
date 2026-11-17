@@ -42,14 +42,6 @@ object HeaderValidator {
       }
   }
 
-  object ServerTokenHeaderValidator extends HeaderValidator {
-    val headerName = HttpHeaders.SERVER_TOKEN_HEADER
-
-    def validate(values: Seq[String]): ErrorsOr[Param.ServerTokenQP] = {
-      SingleValueExpected(headerName)(values) map { Param.ServerTokenQP(_) }
-    }
-  }
-
   object InternalUserAgentValidator extends HeaderValidator {
     val headerName                  = HttpHeaders.INTERNAL_USER_AGENT
     val ApiGatewayUserAgent: String = "APIPlatformAuthorizer"
@@ -65,7 +57,6 @@ object HeaderValidator {
   }
 
   private val headerValidators: List[HeaderValidator] = List(
-    HeaderValidator.ServerTokenHeaderValidator,
     HeaderValidator.InternalUserAgentValidator
   )
 

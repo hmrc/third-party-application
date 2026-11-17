@@ -34,11 +34,12 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiIdentifierSyntax.*
 import uk.gov.hmrc.apiplatform.modules.applications.access.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.{DeleteRestriction, GrantLength, State, StateHistory}
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.Param.*
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.models.db.{QueriedApplicationWithOptionalToken, StoredApplication}
+import uk.gov.hmrc.thirdpartyapplication.models.db.StoredApplication
 import uk.gov.hmrc.thirdpartyapplication.scheduled.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.util.*
 
@@ -137,44 +138,6 @@ class ApplicationQueriesISpec
 
     "do not retrieve the application for a given client id when it has a matching client id but is deleted" in new Setup {
       val retrieved = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByClientId(application3.tokens.production.clientId)))
-
-      retrieved shouldBe None
-    }
-  }
-
-  "applicationByServerToken" should {
-
-    "retrieve the application when it is matched for access token" in {
-      val application1 = anApplicationDataForTest(
-        ApplicationId.random,
-        clientIdOne
-      )
-        .withState(appStateProduction)
-
-      val application2 = anApplicationDataForTest(
-        ApplicationId.random,
-        clientIdTwo
-      )
-        .withState(appStateProduction)
-
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-
-      val retrieved = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByServerToken(application2.tokens.production.accessToken)))
-
-      retrieved.value.app shouldBe application2
-    }
-
-    "do not retrieve the application when it is matched for access token but is deleted" in {
-      val application1 = anApplicationDataForTest(
-        ApplicationId.random,
-        ClientId("aaa")
-      )
-        .withState(appStateDeleted)
-
-      await(applicationRepository.save(application1))
-
-      val retrieved = await(applicationRepository.fetchSingleAppByAggregates(ApplicationQueries.applicationByServerToken(application1.tokens.production.accessToken)))
 
       retrieved shouldBe None
     }
@@ -807,45 +770,8 @@ class ApplicationQueriesISpec
       ))
 
       inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
+        case QueriedApplication(details, collaborators, maybeSubscriptions, None, None) =>
           maybeSubscriptions.value
-          maybeToken.value
-      }
-    }
-
-    "prove that no server token is exposed when not from lambda authoriser (by client id)" in new Setup {
-      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
-        ApplicationQuery.ByClientId(clientIdTwo, false, Nil, wantSubscriptions = true)
-      ))
-
-      inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
-          maybeSubscriptions.value
-          maybeToken shouldBe None
-      }
-    }
-
-    "retrieve the application for a given server token when it has a matches" in new Setup {
-      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
-        ApplicationQuery.ByServerToken(application2.tokens.production.accessToken, true, Nil, wantSubscriptions = true)
-      ))
-
-      inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
-          maybeSubscriptions.value
-          maybeToken.value
-      }
-    }
-
-    "prove that no server token is exposed when not from lambda authoriser (by server token)" in new Setup {
-      val retrieved = await(applicationRepository.fetchBySingleApplicationQuery(
-        ApplicationQuery.ByServerToken(application2.tokens.production.accessToken, false, Nil, wantSubscriptions = true)
-      ))
-
-      inside(retrieved.value) {
-        case QueriedApplicationWithOptionalToken(details, collaborators, maybeSubscriptions, None, None, maybeToken) =>
-          maybeSubscriptions.value
-          maybeToken shouldBe None
       }
     }
   }

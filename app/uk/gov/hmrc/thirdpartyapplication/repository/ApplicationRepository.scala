@@ -325,20 +325,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[StoredApplication]] = {
-    timeFuture("Find and Record Application Server Token Usage", "application.repository.findAndRecordServerTokenUsage") {
-      val query = and(
-        equal("tokens.production.accessToken", serverToken),
-        notEqual("state.name", State.Deleted)
-      )
-      collection.findOneAndUpdate(
-        filter = query,
-        update = Updates.combine(Updates.currentDate("lastAccess"), Updates.currentDate("tokens.production.lastAccessTokenUsage")),
-        options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
-      ).headOption()
-    }
-  }
-
   // Historically emailAddress was the unique identifier for User and it didn't have a userId.
   // So this method was to back fix any records without the userId.
   // This is difficult to test as the model does not allow a User without a userId.
@@ -842,24 +828,17 @@ class ApplicationRepository @Inject() (mongo: MongoComponent, val metrics: Metri
     }
   }
 
-  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplicationWithOptionalToken]] = {
-    def fetchAndMap(allowServerToken: Boolean) = OptionT(fetchSingleAppByAggregates(qry)).map(_.asQueriedApplicationWithOptionalToken(allowServerToken))
+  def fetchBySingleApplicationQuery(qry: SingleApplicationQuery): Future[Option[QueriedApplication]] = {
+    def fetchAndMap() = OptionT(fetchSingleAppByAggregates(qry)).map(_.asQueriedApplication)
 
     (qry match {
       case ApplicationQuery.ByClientId(clientId, true, _, _, _, _) =>
         (for {
           _     <- OptionT(findAndRecordApplicationUsage(clientId))
-          fetch <- fetchAndMap(true)
+          fetch <- fetchAndMap()
         } yield fetch)
-
-      case ApplicationQuery.ByServerToken(serverToken, true, _, _, _, _) =>
-        (for {
-          _     <- OptionT(findAndRecordServerTokenUsage(serverToken))
-          fetch <- fetchAndMap(true)
-        } yield fetch)
-
-      case _ =>
-        fetchAndMap(false)
+      case _                                                       =>
+        fetchAndMap()
     })
       .value
   }

@@ -462,22 +462,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "findAndRecordServerTokenUsage" should {
-    "update the Application and return an application with subscriptions and server token (accessToken)" in new Setup {
-      val subscriptions = Set("myContext".asIdentifier("myVersion"))
-      val aServerToken  = applicationData.tokens.production.accessToken
-      ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(aServerToken)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
-
-      val result = await(underTest.findAndRecordServerTokenUsage(aServerToken))
-
-      result.value._1.id shouldBe applicationId
-      result.value._1.subscriptions shouldBe subscriptions
-      result.value._2 shouldBe serverToken
-      ApplicationRepoMock.FindAndRecordServerTokenUsage.verifyCalledWith(aServerToken)
-    }
-  }
-
   "update approval" should {
     val approvalInformation = CheckInformation(Some(ContactDetails(FullName("Tester"), LaxEmailAddress("test@example.com"), "12345677890")))
 
