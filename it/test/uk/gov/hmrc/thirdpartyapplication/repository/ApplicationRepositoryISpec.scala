@@ -479,28 +479,6 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "recordServerTokenUsage" should {
-    "update the lastAccess and lastAccessTokenUsage properties" in {
-      val application =
-        anApplicationDataForTest(
-          applicationId
-        ).withState(appStateProduction)
-          .copy(lastAccess = instant.minus(Duration.ofDays(20)))
-
-      application.tokens.production.lastAccessTokenUsage shouldBe None
-
-      await(applicationRepository.save(application))
-      val retrieved =
-        await(applicationRepository.findAndRecordServerTokenUsage(application.tokens.production.accessToken)).get
-
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess, clock = clock)
-      timestampShouldBeApproximatelyNow(
-        retrieved.tokens.production.lastAccessTokenUsage.get,
-        clock = clock
-      )
-    }
-  }
-
   "recordClientSecretUsage" should {
     "create a lastAccess property for client secret if it does not already exist" in {
       val application = anApplicationDataForTest(

@@ -40,7 +40,7 @@ val it = (project in file("it"))
   .dependsOn(microservice % "test->test")
   .settings(
     name := "integration-tests",
-    DefaultBuildSettings.itSettings()
+    DefaultBuildSettings.integrationTestSettings()
   )
 
 commands ++= Seq(
