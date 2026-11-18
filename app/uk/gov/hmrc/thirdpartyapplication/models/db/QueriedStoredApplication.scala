@@ -39,18 +39,4 @@ case class QueriedStoredApplication(
       stateHistory = stateHistory
     )
   }
-
-  def asQueriedApplicationWithOptionalToken(allowServerToken: Boolean): QueriedApplicationWithOptionalToken = {
-    val awc              = app.asAppWithCollaborators
-    val maybeServerToken = Some(app.tokens.production.accessToken).filter(_ => allowServerToken)
-
-    QueriedApplicationWithOptionalToken(
-      details = awc.details,
-      collaborators = awc.collaborators,
-      subscriptions = subscriptions,
-      fieldValues = fieldValues,
-      stateHistory = stateHistory,
-      serverToken = maybeServerToken
-    )
-  }
 }

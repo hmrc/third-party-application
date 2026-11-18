@@ -195,9 +195,8 @@ object ApplicationQueryConverter {
 
   def asSingleQueryFilters(implicit params: List[Param[?]]): List[Bson] = {
     onFirst[UniqueFilterParam[?]](_ match {
-      case ApplicationIdQP(id)  => List(equal("id", Codecs.toBson(id)))
-      case ClientIdQP(id)       => List(equal("tokens.production.clientId", Codecs.toBson(id)))
-      case ServerTokenQP(value) => List(equal("tokens.production.accessToken", value))
+      case ApplicationIdQP(id) => List(equal("id", Codecs.toBson(id)))
+      case ClientIdQP(id)      => List(equal("tokens.production.clientId", Codecs.toBson(id)))
     })
   }
 

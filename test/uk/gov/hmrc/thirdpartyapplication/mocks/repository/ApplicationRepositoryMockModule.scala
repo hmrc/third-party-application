@@ -30,6 +30,7 @@ import uk.gov.hmrc.http.NotFoundException
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{LaxEmailAddress, UserId, *}
 import uk.gov.hmrc.apiplatform.modules.applications.core.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.applications.core.interface.models.QueriedApplication
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.ApplicationQuery.GeneralOpenEndedApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.query.domain.models.SingleApplicationQuery
 import uk.gov.hmrc.apiplatform.modules.applications.submissions.domain.models.{PrivacyPolicyLocation, SubmissionId, TermsAndConditionsLocation, TermsOfUseAcceptance}
@@ -143,15 +144,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnWhen(clientId: ClientId)(applicationData: StoredApplication) =
         when(aMock.findAndRecordApplicationUsage(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
-    }
-
-    object FindAndRecordServerTokenUsage {
-
-      def thenReturnWhen(serverToken: String)(applicationData: StoredApplication) =
-        when(aMock.findAndRecordServerTokenUsage(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
-
-      def verifyCalledWith(serverToken: String) =
-        ApplicationRepoMock.verify.findAndRecordServerTokenUsage(eqTo(serverToken))
     }
 
     object UpdateIpAllowlist {
@@ -422,13 +414,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturnsNoneFor(qry: SingleApplicationQuery) =
         when(aMock.fetchBySingleApplicationQuery(eqTo(qry))).thenReturn(successful(None))
 
-      def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedApplicationWithOptionalToken) =
+      def thenReturnsFor(qry: SingleApplicationQuery, app: QueriedApplication) =
         when(aMock.fetchBySingleApplicationQuery(eqTo(qry))).thenReturn(successful(Some(app)))
 
       def thenReturnsNone() =
         when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(None))
 
-      def thenReturns(app: QueriedApplicationWithOptionalToken) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
+      def thenReturns(app: QueriedApplication) = when(aMock.fetchBySingleApplicationQuery(*)).thenReturn(successful(Some(app)))
     }
 
     object FetchApplications {
