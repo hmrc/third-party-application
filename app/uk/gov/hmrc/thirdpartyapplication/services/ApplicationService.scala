@@ -164,15 +164,14 @@ class ApplicationService @Inject() (
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
-  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[(ApplicationWithSubscriptions, String)]] = {
+  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ApplicationWithSubscriptions]] = {
     timeFuture("Service Find And Record Application Usage", "application.service.findAndRecordApplicationUsage") {
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordApplicationUsage(clientId))
-          serverToken    = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
           result         = app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet)
-        } yield (result, serverToken)
+        } yield result
       )
         .value
     }
