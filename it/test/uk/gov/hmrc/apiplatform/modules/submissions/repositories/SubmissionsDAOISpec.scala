@@ -18,7 +18,6 @@ package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
 import java.time.Clock
 import java.time.temporal.ChronoUnit
-import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.mongodb.MongoException
 import org.mongodb.scala.ObservableFuture
