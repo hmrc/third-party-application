@@ -76,13 +76,8 @@ object ApplicationRepository {
 
     given writesStandard: OWrites[Access.Standard] = Json.writes[Access.Standard]
 
-    // Because the data in the db might be old and not a valid redirect URI we need this
-    // to use new to avoid the filter on RedirectUri.apply()
-    private val convertToLoginRedirectUri: List[String] => List[LoginRedirectUri] = items =>
-      items.map(LoginRedirectUri.unsafeApply(_))
-
     given readsStandard: Reads[Access.Standard] = (
-      ((JsPath \ "redirectUris").read[List[String]].map[List[LoginRedirectUri]](convertToLoginRedirectUri)) and
+      ((JsPath \ "redirectUris").read[List[LoginRedirectUri]]) and
         ((JsPath \ "postLogoutRedirectUris").read[List[PostLogoutRedirectUri]] or Reads.pure(List.empty[PostLogoutRedirectUri])) and
         (JsPath \ "termsAndConditionsUrl").readNullable[String] and
         (JsPath \ "privacyPolicyUrl").readNullable[String] and
