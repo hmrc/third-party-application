@@ -59,7 +59,7 @@ object ConfigHelper {
   }
 
   def getJobConfig(configuration: Configuration, key: String): Option[JobConfig] = {
-    val conf = configuration.underlying.atKey(key)
+    val conf = configuration.underlying.getConfig(key)
     ConfigSource.fromConfig(conf).load[JobConfig].toOption
   }
 }
