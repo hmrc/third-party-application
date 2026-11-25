@@ -40,6 +40,8 @@ class ScheduledJobsRunner @Inject() (
 
   val cancellables: Seq[Cancellable] =
     scheduledJobs.allJobs.map { job =>
+      logger.info(s"Scheduling $job")
+      
       scheduler.scheduleWithFixedDelay(job.initialDelay, job.interval)(new Runnable() {
         override def run(): Unit = {
           val stopWatch = new StopWatch
