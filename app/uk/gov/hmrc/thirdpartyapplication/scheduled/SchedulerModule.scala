@@ -28,7 +28,7 @@ import play.api.{Configuration, Environment, LoggerLike}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.scheduling.ScheduledJobs
+import uk.gov.hmrc.apiplatform.modules.scheduling.{ScheduledJobs, ScheduledJobsRunner}
 import uk.gov.hmrc.thirdpartyapplication.config.ConfigHelper
 import uk.gov.hmrc.thirdpartyapplication.scheduled.*
 
@@ -47,7 +47,8 @@ class SchedulerModule extends Module with ApplicationLogger {
     bind[ScheduledJobs].toProvider[ScheduledJobsProvider],
     bind[TestApplicationsCleanupJob.Config].toProvider[TestApplicationsCleanupJobConfigProvider],
     bind[MetricsScheduler].toSelf.eagerly(),
-    bind[LoggerLike].toInstance(logger)
+    bind[LoggerLike].toInstance(logger),
+    bind[ScheduledJobsRunner].toSelf.eagerly()
   )
 }
 

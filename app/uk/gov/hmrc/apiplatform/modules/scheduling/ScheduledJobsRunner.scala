@@ -44,12 +44,12 @@ class ScheduledJobsRunner @Inject() (
         override def run(): Unit = {
           val stopWatch = new StopWatch
           stopWatch.start()
-          logger.debug(s"Executing job ${job.name}")
+          logger.info(s"Executing job ${job.name}")
 
           job.execute.onComplete {
             case Success(message: String) =>
               stopWatch.stop()
-              logger.debug(s"Completed job ${job.name} in $stopWatch: $message")
+              logger.info(s"Completed job ${job.name} in $stopWatch: $message")
             case Failure(throwable)       =>
               stopWatch.stop()
 
