@@ -947,7 +947,6 @@ object QuestionnaireDAO {
           QuestionItem(question6, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
           QuestionItem(question7, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
           QuestionItem(question8, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
-          QuestionItem(question8, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
           QuestionItem(question9, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
           QuestionItem(question10, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
           QuestionItem(question11, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
