@@ -94,6 +94,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with StoredApplicationFixtures
       val secret                      = UUID.randomUUID().toString
       val matchingClientSecret        = applicationData.tokens.production.clientSecrets.head
 
+      println(s"****** ${secret}")
+
       ApplicationRepoMock.FetchSingleAppByAggregates.thenReturnsFor(expectedQry, QueriedStoredApplication(applicationData))
 
       ClientSecretServiceMock.ClientSecretIsValid

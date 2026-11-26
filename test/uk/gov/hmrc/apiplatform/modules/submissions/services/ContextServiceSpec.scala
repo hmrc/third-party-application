@@ -48,7 +48,14 @@ class ContextServiceSpec
 
       val result = await(underTest.deriveContext(applicationId).value)
 
-      val expectedContext = Map(Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.VAT_OR_ITSA -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
+      val expectedContext = Map(
+        Keys.IN_HOUSE_SOFTWARE       -> "Yes",
+        Keys.VAT_OR_ITSA             -> "No",
+        Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes",
+        Keys.ITSA_END_TO_END         -> "No",
+        Keys.ITSA_IN_YEAR            -> "No",
+        Keys.ITSA_END_OF_YEAR        -> "No"
+      )
 
       result.value shouldBe expectedContext
     }
