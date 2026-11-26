@@ -34,18 +34,18 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
   val newUplift  = "No"
 
   "DeriveContext" when {
-    "deriveFraudPrevention is called" should {
+    "deriveFromSubscription is called" should {
       "return 'Yes' when at least one subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention(newUplift, fpSubs) shouldBe "Yes"
+        DeriveContext.deriveFromSubscription(newUplift, fpSubs, FraudPrevention.contexts) shouldBe "Yes"
       }
       "return 'No' when not a single subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention(newUplift, nonFpSubs) shouldBe "No"
+        DeriveContext.deriveFromSubscription(newUplift, nonFpSubs, FraudPrevention.contexts) shouldBe "No"
       }
       "return 'No' when new uplift and at least one subscription is a fraud prevention candidate" in {
 
-        DeriveContext.deriveFraudPrevention("Yes", fpSubs) shouldBe "No"
+        DeriveContext.deriveFromSubscription("Yes", fpSubs, FraudPrevention.contexts) shouldBe "No"
       }
     }
   }
@@ -56,21 +56,42 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
       when(aMock.state).thenReturn(ApplicationStateExamples.testing)
 
-      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(
+        Keys.VAT_OR_ITSA             -> "Yes",
+        Keys.IN_HOUSE_SOFTWARE       -> "No",
+        Keys.NEW_TERMS_OF_USE_UPLIFT -> "No",
+        Keys.ITSA_END_TO_END         -> "No",
+        Keys.ITSA_IN_YEAR            -> "No",
+        Keys.ITSA_END_OF_YEAR        -> "No"
+      )
     }
     "return the appropriate context when no subscription is a fraud prevention candidate" in {
       val aMock: StoredApplication = mock[StoredApplication]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("No")))
       when(aMock.state).thenReturn(ApplicationStateExamples.testing)
 
-      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.NEW_TERMS_OF_USE_UPLIFT -> "No")
+      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(
+        Keys.VAT_OR_ITSA             -> "No",
+        Keys.IN_HOUSE_SOFTWARE       -> "Yes",
+        Keys.NEW_TERMS_OF_USE_UPLIFT -> "No",
+        Keys.ITSA_END_TO_END         -> "No",
+        Keys.ITSA_IN_YEAR            -> "No",
+        Keys.ITSA_END_OF_YEAR        -> "No"
+      )
     }
     "return the appropriate context when the application is already in production" in {
       val aMock: StoredApplication = mock[StoredApplication]
       when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
       when(aMock.state).thenReturn(ApplicationStateExamples.production("requesterEmail", "requesterName"))
 
-      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "No", Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes")
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(
+        Keys.VAT_OR_ITSA             -> "No",
+        Keys.IN_HOUSE_SOFTWARE       -> "No",
+        Keys.NEW_TERMS_OF_USE_UPLIFT -> "Yes",
+        Keys.ITSA_END_TO_END         -> "No",
+        Keys.ITSA_IN_YEAR            -> "No",
+        Keys.ITSA_END_OF_YEAR        -> "No"
+      )
     }
   }
 }

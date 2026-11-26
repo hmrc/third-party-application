@@ -693,6 +693,276 @@ object QuestionnaireDAO {
       )
     }
 
+    object ItsaGeneral {
+
+      val question1 = Question.YesNoQuestion(
+        Question.Id("68af9855-98b3-4209-ac0d-024d2e0f0299"),
+        Wording("Have you read the Process for being granted Production access?"),
+        statement = Statement(
+          CompoundFragment(
+            StatementText("Have you read the "),
+            StatementLink(
+              "Process for being granted Production access (opens in new tab)",
+              "https://developer.service.hmrc.gov.uk/guides/income-tax-mtd-end-to-end-service-guide/documentation/how-to-integrate.html#process-for-being-granted-production-access"
+            ),
+            StatementText(" in the "),
+            StatementLink(
+              "Making Tax Digital Income Tax end-to-end service guide (opens in new tab)",
+              "https://developer.service.hmrc.gov.uk/guides/income-tax-mtd-end-to-end-service-guide/"
+            ),
+            StatementText("?")
+          )
+        ).some,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that you have read the document or No if you have not").some
+      )
+
+      val question2 = Question.YesNoQuestion(
+        Question.Id("217161e7-80c3-4a46-bcb3-c3aeab675ab6"),
+        Wording("Have you tested all APIs and endpoints as described in the Testing requirements?"),
+        statement = Statement(
+          CompoundFragment(
+            StatementText("Have you tested all APIs and endpoints as described in the "),
+            StatementLink(
+              "Testing requirements (opens in new tab)",
+              "https://developer.service.hmrc.gov.uk/guides/income-tax-mtd-end-to-end-service-guide/documentation/how-to-integrate.html#testing-requirements"
+            ),
+            StatementText("?")
+          )
+        ).some,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that you have tested all APIs and endpoints or No if you have not").some
+      )
+
+      // Note that question 3 is a duplicate question about fraud headers and has been left out deliberately
+
+      val question4 = Question.YesNoQuestion(
+        Question.Id("eb343a3b-13fe-4e6b-bc23-6624d27491cc"),
+        Wording("Have all API calls been made through your software during testing, rather than through a submission tool?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that all API calls have been made through your software during testing or No if not").some
+      )
+
+      val question5 = Question.YesNoQuestion(
+        Question.Id("14946732-0850-432d-be4d-f13f4f46bebe"),
+        Wording("Can customers access and export all records created in the software?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that customers can access and export all records created in the software or No if not").some
+      )
+
+      val question6 = Question.ChooseOneOfQuestion(
+        Question.Id("5c428263-bc45-4839-9cbb-95d0160d6a1d"),
+        Wording("Who is your software designed for?"),
+        statement = None,
+        marking = ListMap(
+          (PossibleAnswer("Agents")      -> Mark.Pass),
+          (PossibleAnswer("Individuals") -> Mark.Pass)
+        ),
+        errorInfo = ErrorInfo("Select who your software is designed for").some
+      )
+
+      val question7 = Question.ChooseOneOfQuestion(
+        Question.Id("a5e0b14e-d264-4a5d-a412-ce0a880e0f7d"),
+        Wording("Which type of product does your software support?"),
+        statement = None,
+        marking = ListMap(
+          (PossibleAnswer("In-Year product only")     -> Mark.Pass),
+          (PossibleAnswer("End of Year product only") -> Mark.Pass),
+          (PossibleAnswer("Full End to End product")  -> Mark.Pass)
+        ),
+        errorInfo = ErrorInfo("Select the type of product that your software supports").some
+      )
+
+      val question8 = Question.YesNoQuestion(
+        Question.Id("9748f2b0-93b3-4a15-92dd-6fe4d6bc217a"),
+        Wording("Are you building your software iteratively?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that you are building your software iteratively or No if not").some
+      )
+
+      val question9 = Question.ChooseOneOfQuestion(
+        Question.Id("8dca895a-b82e-449b-8cbe-d0dedfd8921a"),
+        Wording("If you are building your software iteratively, which stage of the build are you requesting production access for?"),
+        statement = None,
+        marking = ListMap(
+          (PossibleAnswer("In-Year product only")     -> Mark.Pass),
+          (PossibleAnswer("End of Year product only") -> Mark.Pass),
+          (PossibleAnswer("Full End to End product")  -> Mark.Pass)
+        ),
+        errorInfo = ErrorInfo("Select the stage of the build are you requesting production access for").some
+      )
+
+      val question10 = Question.YesNoQuestion(
+        Question.Id("31d92952-4a4d-418e-a33e-954ffd5efaf2"),
+        Wording("Do you have customers submitting returns for the 2024 to 2025 testing year?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that you have customers submitting returns for the 2024 to 2025 testing year or No if not").some
+      )
+
+      val question11 = Question.MultiChoiceQuestion(
+        Question.Id("540b516f-1b22-44df-a529-4546ad9d564e"),
+        Wording("Which business income types does your software support?"),
+        statement = None,
+        marking = ListMap(
+          (PossibleAnswer("Self-Employment")  -> Mark.Pass),
+          (PossibleAnswer("UK Property")      -> Mark.Pass),
+          (PossibleAnswer("Foreign Property") -> Mark.Pass)
+        ),
+        hintText = StatementText("Select all that apply.").some,
+        errorInfo = ErrorInfo("Select the business income types that your software supports").some
+      )
+
+      val question12 = Question.MultiChoiceQuestion(
+        Question.Id("b27d4fa7-4903-4751-a8dd-2cf281ae5d38"),
+        Wording("Which quarterly period types does your software support?"),
+        statement = None,
+        marking = ListMap(
+          (PossibleAnswer("Standard quarterly") -> Mark.Pass),
+          (PossibleAnswer("Calendar quarterly") -> Mark.Pass)
+        ),
+        hintText = StatementText("Select all that apply.").some,
+        errorInfo = ErrorInfo("Select the quarterly period types that your software supports").some
+      )
+
+      val question13 = Question.YesNoQuestion(
+        Question.Id("e6335a3c-66da-4587-b405-90ed7a573154"),
+        Wording("Do you clearly tell customers when non-mandated income sources are not supported and link them to the list of compatible software?"),
+        statement = Statement(
+          CompoundFragment(
+            StatementText("Do you clearly tell customers when non-mandated income sources are not supported and link them to the list of "),
+            StatementLink(
+              "compatible software (opens in new tab)",
+              "https://www.gov.uk/guidance/choose-the-right-software-for-making-tax-digital-for-income-tax"
+            ),
+            StatementText("?")
+          )
+        ).some,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo(
+          "Select Yes to confirm that you clearly tell customers when non-mandated income sources are not supported and link them to the list of compatible software or No if you do not"
+        ).some
+      )
+
+      val question14 = Question.MultiChoiceQuestion(
+        Question.Id("fd2cf61a-08de-4517-975c-729bf7ea5681"),
+        Wording("Which accounting methods does your software support?"),
+        statement = None,
+        marking = ListMap(
+          (PossibleAnswer("Cash")     -> Mark.Pass),
+          (PossibleAnswer("Accruals") -> Mark.Pass)
+        ),
+        hintText = StatementText("Select all that apply.").some,
+        errorInfo = ErrorInfo("Select the accounting methods that your software supports").some
+      )
+
+      // Note question 15 been left out because it's a duplicate with question 13
+
+      val question16 = Question.YesNoQuestion(
+        Question.Id("51dd35e9-2445-4041-8e8e-1122cf367aff"),
+        Wording("If your software does not support end of year functionality, including final declaration, do you clearly tell customers where to find compatible software?"),
+        statement = Statement(
+          CompoundFragment(
+            StatementText("If your software does not support end of year functionality, including final declaration, do you clearly tell customers where to find "),
+            StatementLink(
+              "compatible software (opens in new tab)",
+              "https://www.gov.uk/guidance/choose-the-right-software-for-making-tax-digital-for-income-tax"
+            ),
+            StatementText("?")
+          )
+        ).some,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo(
+          "Select Yes to confirm that you clearly tell customers if your software does not support end of year functionality, including final declaration, and link them to the list of compatible software or No if you do not"
+        ).some
+      )
+
+      val question17 = Question.YesNoQuestion(
+        Question.Id("902e1624-2640-4fdf-88df-89eaeeb4bc5f"),
+        Wording("Does your software allow customers to request and view a tax calculation using the Individual Calculations (MTD) API?"),
+        statement = Statement(
+          CompoundFragment(
+            StatementText("Does your software allow customers to request and view a tax calculation using the "),
+            StatementLink(
+              "Individual Calculations (MTD) API (opens in new tab)",
+              "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/individual-calculations-api"
+            ),
+            StatementText("?")
+          )
+        ).some,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo =
+          ErrorInfo("Select Yes to confirm that your software allows customers to request and view a tax calculation using the Individual Calculations (MTD) API or No if not").some
+      )
+
+      val question18 = Question.YesNoQuestion(
+        Question.Id("38ff589a-d06f-4220-8d48-ea5821092063"),
+        Wording("If customers can view a tax calculation, does it include a disclaimer about its accuracy?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that if customers can view a tax calculation it includes a disclaimer about its accuracy or No if not").some
+      )
+
+      val question19 = Question.YesNoQuestion(
+        Question.Id("389872f8-f322-426d-a25f-7c77406ef25e"),
+        Wording("If customers cannot view a tax calculation, do you direct them to their HMRC personal tax or business tax account to view the calculation?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo(
+          "Select Yes to confirm that if customers cannot view a tax calculation you direct them to their HMRC personal tax or business tax account to view the calculation or No if not"
+        ).some
+      )
+
+      val question20 = Question.YesNoQuestion(
+        Question.Id("b3fd766a-7c00-4109-af00-6a96683b2fe9"),
+        Wording("Does your software return and display appropriate error messages for all API calls?"),
+        statement = None,
+        yesMarking = Mark.Pass,
+        noMarking = Mark.Pass,
+        errorInfo = ErrorInfo("Select Yes to confirm that your software returns and displays appropriate error messages for all API calls or No if not").some
+      )
+
+      val questionnaire = Questionnaire(
+        id = Questionnaire.Id("d43642d2-b741-458a-8008-bbd442b8b844"),
+        label = Questionnaire.Label("Income Tax Self Assessment (ITSA) - General"),
+        questions = NonEmptyList.of(
+          QuestionItem(question1, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question2, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question4, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question5, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question6, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question7, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question8, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question8, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question9, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question10, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question11, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question12, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question13, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question14, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question16, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question17, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question18, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question19, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes")),
+          QuestionItem(question20, AskWhen.AskWhenContext(Keys.ITSA_END_TO_END, "Yes"))
+        )
+      )
+    }
+
     object MarketingYourSoftware {
 
       val question1 = Question.YesNoQuestion(
@@ -777,6 +1047,7 @@ object QuestionnaireDAO {
       CustomersAuthorisingYourSoftware.questionnaire,
       SoftwareSecurity.questionnaire,
       FraudPreventionHeaders.questionnaire,
+      ItsaGeneral.questionnaire,
       MarketingYourSoftware.questionnaire
     )
 
@@ -802,6 +1073,7 @@ object QuestionnaireDAO {
             HandlingPersonalData.questionnaire,
             SoftwareSecurity.questionnaire,
             FraudPreventionHeaders.questionnaire,
+            ItsaGeneral.questionnaire,
             CustomersAuthorisingYourSoftware.questionnaire
           )
         )
