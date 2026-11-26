@@ -27,6 +27,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.{Application, Logging}
 
 case class ScheduledJobs(allJobs: List[ExclusiveScheduledJob])
+
 @Singleton
 class ScheduledJobsRunner @Inject() (
     application: Application,
