@@ -75,7 +75,7 @@ class ParamsValidatorSpec
     "fail for applicationId, clientId, pageSize and two subscription params" in {
       test(Map(appOneParam, clientIdParam, pageSizeParam, noSubsParam, "context" -> Seq(apiContextOne.toString))) shouldBe
         Left(NonEmptyList.of(
-          "Cannot mix one or more unique query params (serverToken, clientId and applicationId)",
+          "Cannot mix one or more unique query params (clientId and applicationId)",
           "Cannot mix unique queries with sorting or pagination",
           "Cannot query for no subscriptions and then query context"
         ))

@@ -164,30 +164,14 @@ class ApplicationService @Inject() (
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
-  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[(ApplicationWithSubscriptions, String)]] = {
+  def findAndRecordApplicationUsage(clientId: ClientId): Future[Option[ApplicationWithSubscriptions]] = {
     timeFuture("Service Find And Record Application Usage", "application.service.findAndRecordApplicationUsage") {
       (
         for {
           app           <- OptionT(applicationRepository.findAndRecordApplicationUsage(clientId))
-          serverToken    = app.tokens.production.accessToken
           subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
           result         = app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet)
-        } yield (result, serverToken)
-      )
-        .value
-    }
-  }
-
-  def findAndRecordServerTokenUsage(serverToken: String): Future[Option[(ApplicationWithSubscriptions, String)]] = {
-    timeFuture("Service Find And Record Server Token Usage", "application.service.findAndRecordServerTokenUsage") {
-      (
-        for {
-          app           <- OptionT(applicationRepository.findAndRecordServerTokenUsage(serverToken))
-          // Unlike findAndRecordApplicationUsage(clientId), in this method the serverToken is provided as input and is used as a search term for accessToken
-          // so it's not necessary create a variable here, such as serverToken = app.tokens.production.accessToken
-          subscriptions <- OptionT.liftF(subscriptionRepository.getSubscriptions(app.id))
-          result         = app.asAppWithCollaborators.withSubscriptions(subscriptions.toSet)
-        } yield (result, serverToken)
+        } yield result
       )
         .value
     }

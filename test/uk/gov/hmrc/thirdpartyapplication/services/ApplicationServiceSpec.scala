@@ -414,18 +414,16 @@ class ApplicationServiceSpec
   }
 
   "recordApplicationUsage" should {
-    "update the Application and return an application with subscriptions and accessToken (serverToken)" in new Setup {
+    "update the Application and return an application with subscriptions" in new Setup {
       val subscriptions = Set("myContext".asIdentifier("myVersion"))
       val clientId      = applicationData.tokens.production.clientId
-      val expectedToken = applicationData.tokens.production.accessToken
       ApplicationRepoMock.FindAndRecordApplicationUsage.thenReturnWhen(clientId)(applicationData)
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
 
       val result = await(underTest.findAndRecordApplicationUsage(clientId))
 
-      result.value._1.id shouldBe applicationId
-      result.value._1.subscriptions shouldBe subscriptions
-      result.value._2 shouldBe expectedToken
+      result.value.id shouldBe applicationId
+      result.value.subscriptions shouldBe subscriptions
     }
   }
 
@@ -459,22 +457,6 @@ class ApplicationServiceSpec
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.confirmSetupComplete(applicationId, requestedByEmail)))
       ex.getMessage shouldBe "Transition to 'Production' state requires the application to be in 'PreProduction' state, but it was in 'PendingGatekeeperApproval'"
-    }
-  }
-
-  "findAndRecordServerTokenUsage" should {
-    "update the Application and return an application with subscriptions and server token (accessToken)" in new Setup {
-      val subscriptions = Set("myContext".asIdentifier("myVersion"))
-      val aServerToken  = applicationData.tokens.production.accessToken
-      ApplicationRepoMock.FindAndRecordServerTokenUsage.thenReturnWhen(aServerToken)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions.toSeq*)
-
-      val result = await(underTest.findAndRecordServerTokenUsage(aServerToken))
-
-      result.value._1.id shouldBe applicationId
-      result.value._1.subscriptions shouldBe subscriptions
-      result.value._2 shouldBe serverToken
-      ApplicationRepoMock.FindAndRecordServerTokenUsage.verifyCalledWith(aServerToken)
     }
   }
 
